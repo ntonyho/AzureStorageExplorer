@@ -103,6 +103,7 @@
     <Compile Include="BinaryMediaConverter.cs" />
     <Compile Include="Data\Blob Descriptor.cs" />
     <Compile Include="Data\Column.cs" />
+    <Compile Include="Data\ContentTypeMapping.cs" />
     <Compile Include="Data\GenericEntity.cs" />
     <Compile Include="Data\Property.cs" />
     <Compile Include="Data\StorageAccount.cs" />
@@ -111,6 +112,9 @@
     </Compile>
     <Compile Include="Dialogs\BlobDetailDialog.xaml.cs">
       <DependentUpon>BlobDetailDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\OptionsDialog.xaml.cs">
+      <DependentUpon>OptionsDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dialogs\WelcomeDialog.xaml.cs">
       <DependentUpon>WelcomeDialog.xaml</DependentUpon>
@@ -201,6 +205,9 @@
     </EmbeddedResource>
     <None Include="app.config" />
     <None Include="Docs\Azure Storage Explorer 4 User Guide.docx" />
+    <Resource Include="Data\MimeTypes.xml">
+      <SubType>Designer</SubType>
+    </Resource>
     <Content Include="Docs\Azure Storage Explorer 4 User Guide.pdf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -224,6 +231,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Dialogs\BlobDetailDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\OptionsDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

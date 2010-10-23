@@ -20,9 +20,9 @@ namespace Neudesic.AzureStorageExplorer
             // Ensure the current culture passed into bindings is the OS culture.
             // By default, WPF uses en-US as the culture, regardless of the system settings.
             //
-            FrameworkElement.LanguageProperty.OverrideMetadata(
-              typeof(FrameworkElement),
-              new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
+            //FrameworkElement.LanguageProperty.OverrideMetadata(
+            //  typeof(FrameworkElement),
+            //  new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
         }
 
         protected override void OnStartup(StartupEventArgs e)

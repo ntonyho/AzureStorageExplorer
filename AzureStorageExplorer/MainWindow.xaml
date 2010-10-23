@@ -10,7 +10,8 @@
   MinWidth="650" MinHeight="420"
   Title="{Binding Path=DisplayName}"
   Width="800" Height="580"
-  WindowStartupLocation="CenterScreen"
+  WindowStartupLocation="Manual"
+  Closing="Window_Closing"
   >
   <Window.Resources>
     <ResourceDictionary Source="MainWindowResources.xaml" />
@@ -22,6 +23,7 @@
         <CommandBinding Command="windows:Commands.HelpWelcome" CanExecute="HelpWelcomeCanExecute" Executed="HelpWelcomeExecuted"/>
         <CommandBinding Command="windows:Commands.HelpFeedback" CanExecute="HelpFeedbackCanExecute" Executed="HelpFeedbackExecuted"/>
         <CommandBinding Command="windows:Commands.ViewErrors" CanExecute="ViewErrorsCanExecute" Executed="ViewErrorsExecuted"/>
+        <CommandBinding Command="windows:Commands.ToolsOptions" CanExecute="ToolsOptionsCanExecute" Executed="ToolsOptionsExecuted"/>
     </Window.CommandBindings>
 
 
@@ -36,6 +38,10 @@
                     <MenuItem Header="_Errors" Command="windows:Commands.ViewErrors" />
                 </MenuItem>
 
+                <MenuItem Header="_Tools">
+                    <MenuItem Header="_Options" Command="windows:Commands.ToolsOptions" />
+                </MenuItem>
+                
                 <MenuItem Header="_Help" >
                     <MenuItem Header="User Guide" Command="Help" />
                     <MenuItem Header="Welcome Screen" Command="windows:Commands.HelpWelcome" />

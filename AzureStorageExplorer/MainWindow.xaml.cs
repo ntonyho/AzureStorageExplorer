@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 using Neudesic.AzureStorageExplorer;
 using Neudesic.AzureStorageExplorer.Data;
 using Neudesic.AzureStorageExplorer.ViewModel;
@@ -14,6 +15,7 @@ namespace Neudesic.AzureStorageExplorer
         #region Properties
 
         public static System.Windows.Window Window { get; set; }
+        public static MainWindow This { get; set; }
 
         public static List<Exception> Exceptions = new List<Exception>();
 
@@ -33,6 +35,7 @@ namespace Neudesic.AzureStorageExplorer
         {
             InitializeComponent();
 
+            This = this;
             Window = this as System.Windows.Window;
             this.Loaded += new System.Windows.RoutedEventHandler(MainWindow_Loaded);
         }
@@ -47,6 +50,58 @@ namespace Neudesic.AzureStorageExplorer
             if (ViewModel.ShowWelcomeOnStartup)
             {
                 ShowWelcome();
+            }
+        }
+
+        #endregion
+
+        #region Set / Get Window Position and Size
+
+        public static double WindowTop
+        {
+            get
+            {
+                return This.Top;
+            }
+            set
+            {
+                This.Top = value;
+            }
+        }
+
+        public static double WindowLeft
+        {
+            get
+            {
+                return This.Left;
+            }
+            set
+            {
+                This.Left = value;
+            }
+        }
+
+        public static double WindowHeight
+        {
+            get
+            {
+                return This.Height;
+            }
+            set
+            {
+                This.Height = value;
+            }
+        }
+
+        public static double WindowWidth
+        {
+            get
+            {
+                return This.Width;
+            }
+            set
+            {
+                This.Width = value;
             }
         }
 
@@ -176,6 +231,56 @@ namespace Neudesic.AzureStorageExplorer
 
         #endregion
 
+        #region Tools Menu
+
+        #region Tools / Options
+
+        private void ToolsOptionsCanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void ToolsOptionsExecuted(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            OptionsDialog dlg = new OptionsDialog();
+            dlg.Owner = MainWindow.Window;
+            dlg.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
+            dlg.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+            
+            dlg.Culture = ViewModel.Culture;
+            dlg.ShowWelcomeOnStartup = ViewModel.ShowWelcomeOnStartup;
+            dlg.PreserveWindowPosition = ViewModel.PreserveWindowPosition;
+
+            dlg.SetContentTypeAutomtically = ViewModel.SetContentTypeAutomatically;
+            dlg.ContentTypes = ViewModel.ContentTypes;
+
+            if (dlg.ShowDialog().Value)
+            {
+                if (ViewModel.Culture != dlg.Culture)
+                {
+                    MessageBox.Show("Culture changes will apply the next time you launch Azure Storage Explorer",
+                        "Culture Changed", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                
+                Cursor = Cursors.Wait;
+
+                ViewModel.Culture = dlg.Culture;
+                ViewModel.ShowWelcomeOnStartup = dlg.ShowWelcomeOnStartup;
+                ViewModel.PreserveWindowPosition = dlg.PreserveWindowPosition;
+
+                ViewModel.SetContentTypeAutomatically = dlg.SetContentTypeAutomtically;
+                ViewModel.ContentTypes = dlg.ContentTypes;
+                
+                ViewModel.SaveConfiguration();
+
+                Cursor = Cursors.Arrow;
+            }
+        }
+
+        #endregion
+
+        #endregion
+
         #region Help Menu
 
         #region Show Welcome Screen
@@ -232,7 +337,7 @@ namespace Neudesic.AzureStorageExplorer
 
         private void HelpAboutExecuted(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
-            MessageBox.Show("Azure Storage Explorer version 4.0 Beta 1 (10.22.2010).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            MessageBox.Show("Azure Storage Explorer version 4.0.0.1 Beta 1 Refresh 1 (10.23.2010).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
         }
 
         #endregion
@@ -263,6 +368,16 @@ namespace Neudesic.AzureStorageExplorer
         }
 
         #endregion
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (ViewModel.PreserveWindowPosition)
+            {
+                Cursor = Cursors.Wait;
+
+                ViewModel.SaveConfiguration();
+            }
+        }
 
         #endregion
 

@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Globalization;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Windows;
 using System.Windows.Data;
+using System.Windows.Markup;
 using Neudesic.AzureStorageExplorer.Data;
 using Neudesic.AzureStorageExplorer.Dialogs;
 using Neudesic.AzureStorageExplorer.Properties;
@@ -189,6 +192,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         #region Storage Accounts Load/Store
 
+        // Load configuration from AzureStorageExplorer.config
+
         private void LoadConfiguration()
         {
             string name, value;
@@ -229,6 +234,9 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                                 case "[Options]":
                                     item = line;
                                     break;
+                                case "[ContentTypes]":
+                                    item = line;
+                                    break;
                             }
                         }
                         else
@@ -238,13 +246,59 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                             {
                                 name = line.Substring(0, pos);
                                 value = line.Substring(pos + 1);
+                                double doubleValue;
                                 switch (item)
                                 {
                                     case "[Options]":
                                         switch (name)
                                         {
+                                            case "Culture":
+                                                culture = value;
+                                                break;
                                             case "ShowWelcomeOnStartup":
                                                 showWelcomeOnStartup = (value == "1");
+                                                break;
+                                            case "PreserveWindowPosition":
+                                                preserveWindowPosition = (value == "1");
+                                                break;
+                                            case "WindowTop":
+                                                if (PreserveWindowPosition && Double.TryParse(value, out doubleValue))
+                                                {
+                                                    MainWindow.WindowTop = doubleValue;
+                                                }
+                                                break;
+                                            case "WindowLeft":
+                                                if (PreserveWindowPosition && Double.TryParse(value, out doubleValue))
+                                                {
+                                                    MainWindow.WindowLeft = doubleValue;
+                                                }
+                                                break;
+                                            case "WindowHeight":
+                                                if (PreserveWindowPosition && Double.TryParse(value, out doubleValue))
+                                                {
+                                                    MainWindow.WindowHeight = doubleValue;
+                                                }
+                                                break;
+                                            case "WindowWidth":
+                                                if (PreserveWindowPosition && Double.TryParse(value, out doubleValue))
+                                                {
+                                                    MainWindow.WindowWidth = doubleValue;
+                                                }
+                                                break;
+                                        }
+                                        break;
+                                    case "[ContentTypes]":
+                                        switch (name)
+                                        {
+                                            case "SetContentTypeAutomatically":
+                                                ContentTypeMapping.SetContentTypeAutomatically = (value == "1");
+                                                break;
+                                            case "Mapping":
+                                                if (ContentTypeMapping.Values == null)
+                                                {
+                                                    ContentTypeMapping.Values = new List<ContentTypeMapping>();
+                                                }
+                                                ContentTypeMapping.Values.Add(new ContentTypeMapping(value));
                                                 break;
                                         }
                                         break;
@@ -282,6 +336,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 }
             }
 
+            SetCulture();
+
             Accounts = new ObservableCollection<AccountViewModel>(accounts);
         }
 
@@ -297,7 +353,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
         }
 
-        private void SaveConfiguration()
+        public void SaveConfiguration()
         {
             String folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\AzureStorageExplorer\\";
             Directory.CreateDirectory(folder);
@@ -306,7 +362,23 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             using (TextWriter tw = File.CreateText(filename))
             {
                 tw.WriteLine("[Options]");
+                tw.WriteLine("Culture=" + Culture);
                 tw.WriteLine("ShowWelcomeOnStartup=" + BoolText(ShowWelcomeOnStartup));
+                tw.WriteLine("PreserveWindowPosition=" + BoolText(PreserveWindowPosition));
+                tw.WriteLine("WindowTop=" + MainWindow.WindowTop.ToString());
+                tw.WriteLine("WindowLeft=" + MainWindow.WindowLeft.ToString());
+                tw.WriteLine("WindowHeight=" + MainWindow.WindowHeight.ToString());
+                tw.WriteLine("WindowWidth=" + MainWindow.WindowWidth.ToString());
+
+                tw.WriteLine("[ContentTypes]");
+                tw.WriteLine("SetContentTypeAutomatically=" + BoolText(SetContentTypeAutomatically));
+                if (ContentTypeMapping.Values != null)
+                {
+                    foreach (ContentTypeMapping mapping in ContentTypeMapping.Values)
+                    {
+                        tw.WriteLine("Mapping=" + mapping.ToString());
+                    }
+                }
 
                 if (Accounts != null)
                 {
@@ -353,6 +425,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             OnPropertyChanged("Accounts");
         }
 
+        #region Configuration / Options
+
         private bool showWelcomeOnStartup = true;
         public bool ShowWelcomeOnStartup
         {
@@ -370,5 +444,134 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
         }
 
+        private bool preserveWindowPosition = true;
+        public bool PreserveWindowPosition
+        {
+            get
+            {
+                return preserveWindowPosition;
+            }
+            set
+            {
+                if (preserveWindowPosition != value)
+                {
+                    preserveWindowPosition = value;
+                    SaveConfiguration();
+                }
+            }
+        }
+
+
+        public bool SetContentTypeAutomatically
+        {
+            get
+            {
+                return ContentTypeMapping.SetContentTypeAutomatically;
+            }
+            set
+            {
+                if (ContentTypeMapping.SetContentTypeAutomatically != value)
+                {
+                    ContentTypeMapping.SetContentTypeAutomatically = value;
+                    SaveConfiguration();
+                }
+            }
+        }
+
+
+        #region Culture
+
+        private string culture = string.Empty;
+        public string Culture
+        {
+            get
+            {
+                return culture;
+            }
+            set
+            {
+                if (culture != value)
+                {
+                    culture = value;
+                    SetCulture();
+                    SaveConfiguration();
+                }
+            }
+        }
+
+        private void SetCulture()
+        {
+            if (String.IsNullOrEmpty(Culture))
+            {
+                // Use the OS culture.
+
+                FrameworkElement.LanguageProperty.OverrideMetadata(
+                    typeof(FrameworkElement),
+                    new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(
+                        CultureInfo.CurrentCulture.IetfLanguageTag)));
+            }
+            else
+            {
+                // Set a specific culture such as it-IT, en-US, etc.
+                
+                try
+                {
+                    System.Threading.Thread.CurrentThread.CurrentCulture =
+                        System.Threading.Thread.CurrentThread.CurrentUICulture =
+                            new System.Globalization.CultureInfo(culture);
+                }
+                catch (Exception)
+                {
+                    // Couldn't set the culture - go with en-US.
+
+                    System.Threading.Thread.CurrentThread.CurrentCulture =
+                        System.Threading.Thread.CurrentThread.CurrentUICulture =
+                            new System.Globalization.CultureInfo("en-US");
+                }
+            }
+        }
+
+        #endregion
+
+        #region Content Types
+
+        public ObservableCollection<ContentTypeMapping> ContentTypes
+        {
+            get
+            {
+                if (ContentTypeMapping.Values == null)
+                {
+                    ContentTypeMapping.Values = ContentTypeMapping.DefaultValues();
+                }
+
+                // Return a copy of the content type values in an observable collection to allow editing and cancellation.
+
+                ObservableCollection<ContentTypeMapping> contentTypes = new ObservableCollection<ContentTypeMapping>();
+                if (ContentTypeMapping.Values != null)
+                {
+                    foreach (ContentTypeMapping mapping in ContentTypeMapping.Values)
+                    {
+                        contentTypes.Add(mapping);
+                    }
+                }
+                return contentTypes;
+            }
+            set
+            {
+                List<ContentTypeMapping> contentTypes = new List<ContentTypeMapping>();
+                if (value != null)
+                {
+                    foreach(ContentTypeMapping mapping in value)
+                    {
+                        contentTypes.Add(mapping);
+                    }
+                }
+                ContentTypeMapping.Values = new List<ContentTypeMapping>(contentTypes);
+            }
+        }
+
+        #endregion
+
+        #endregion
     }
 }

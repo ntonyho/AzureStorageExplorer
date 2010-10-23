@@ -1253,6 +1253,17 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                         }
                         CloudBlob blob = UploadContainer.GetBlobReference(blobName);
                         blob.UploadByteArray(File.ReadAllBytes(filename));
+
+                        if (ContentTypeMapping.SetContentTypeAutomatically)
+                        {
+                            string contentType = ContentTypeMapping.GetFileContentType(filename);
+                            if (contentType != null)
+                            {
+                                blob.Properties.ContentType = contentType;
+                                blob.SetProperties();
+                            }
+                        }
+
                         RefreshDetail(UploadContainerName);
                     }
                     ReportSuccess("Upload Complete");
