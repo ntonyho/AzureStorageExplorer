@@ -188,7 +188,7 @@ namespace Neudesic.AzureStorageExplorer.View
                     CreateEntityListColumns(ViewModel.TableColumnNames);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // TODO: investigate "The calling thread cannot access this object because a different thread owns it." exception after an upload of entities.
             }
@@ -308,7 +308,6 @@ namespace Neudesic.AzureStorageExplorer.View
 
         private void NewBlobCommandExecute()
         {
-            bool created = false;
             NewBlobDialog dlg = new NewBlobDialog();
             dlg.Owner = MainWindow.Window;
             dlg.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
@@ -322,7 +321,6 @@ namespace Neudesic.AzureStorageExplorer.View
                 if (dlg.BlockBlob.IsChecked.Value)
                 {
                     ViewModel.NewBlockBlob(containerName, blobName, textContent);
-                    created = true;
                 }
                 else if (dlg.PageBlob.IsChecked.Value)
                 {
@@ -373,7 +371,7 @@ namespace Neudesic.AzureStorageExplorer.View
                         }
                         size = long.Parse(value) * multiplier;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         MessageBox.Show("The page blob size value is invalid.", "Size Invalid", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                         return;
@@ -382,7 +380,6 @@ namespace Neudesic.AzureStorageExplorer.View
                     try
                     {
                         ViewModel.NewPageBlob(containerName, blobName, size);
-                        created = true;
                     }
                     catch(Exception ex)
                     {

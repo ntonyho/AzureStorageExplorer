@@ -91,7 +91,7 @@
   <ItemGroup>
     <Compile Include="BinaryImageConverter.cs" />
     <Compile Include="Commands\Commands.cs" />
-    <Compile Include="Controls\ContenSpinner.cs" />
+    <Compile Include="Controls\ContentSpinner.cs" />
     <Compile Include="Controls\DomainUpDown.cs" />
     <Compile Include="Controls\Marquee.cs" />
     <Compile Include="Controls\ToolbarButton.xaml.cs">

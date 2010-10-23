@@ -20,8 +20,6 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
     /// </summary>
     public partial class EditEntityDialog : Window
     {
-        private bool NewEntity = false;
-        private bool EditEntity = false;
         private bool CopyEntity = false;
 
         private EntityViewModel ViewModel
@@ -39,12 +37,10 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
             switch(mode)
             {
                 case "new":
-                    this.NewEntity = true;
                     this.Title = "New Entity";
                     this.SaveEntity.Content = "Create Entity";
                     break;
                 case "edit":
-                    this.EditEntity = true;
                     this.Title = "Edit Entity";
                     this.SaveEntity.Content = "Update Entity";
                     break;

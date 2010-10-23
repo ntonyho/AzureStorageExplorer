@@ -104,7 +104,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 Text = Blob.CloudBlob.DownloadText();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Text = null;
             }
@@ -126,7 +126,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 Bytes = Blob.CloudBlob.DownloadByteArray();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Bytes = null;
             }

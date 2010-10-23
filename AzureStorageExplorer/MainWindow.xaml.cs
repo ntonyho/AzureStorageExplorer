@@ -256,7 +256,7 @@ namespace Neudesic.AzureStorageExplorer
                 string url = "\"Docs\\Azure Storage Explorer 4 User Guide.pdf\"";
                 System.Diagnostics.Process.Start(url);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 MessageBox.Show("The user guide could not be opened.", "File Not Found", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }

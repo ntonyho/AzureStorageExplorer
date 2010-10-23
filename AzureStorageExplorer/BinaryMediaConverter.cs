@@ -30,7 +30,7 @@ namespace Neudesic.AzureStorageExplorer.Converters
                 }
                 return null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }

@@ -102,7 +102,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 Text = Blob.CloudBlob.DownloadText();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Text = null;
             }
@@ -124,7 +124,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 Bytes = Blob.CloudBlob.DownloadByteArray();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Bytes = null;
             }
@@ -209,7 +209,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 if (properties == null)
                 {
                     properties = new List<Property>();
-                    properties.Add(new Property("(Name)", blob.Uri.LocalPath));
+                    properties.Add(new Property("(Name)", BlobDescriptor.BlobName(blob))); // was: .Uri.LocalPath));
                     if (!editable) properties.Add(new Property("AbsoluteUri", blob.Attributes.Uri.AbsoluteUri));
                     if (!editable) properties.Add(new Property("Blob Type", blob.Properties.BlobType.ToString()));
                     properties.Add(new Property("CacheControl", blob.Properties.CacheControl));
@@ -231,9 +231,6 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         public BlobViewModel(BlobDescriptor blob)
         {
-            //if (command == null)
-            //    throw new ArgumentNullException("command");
-
             TextSpinnerVisibility = Visibility.Visible;
             PreviewTextVisibility = Visibility.Collapsed;
 
@@ -243,10 +240,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             Blob = blob;
 
             base.DisplayName = blob.CloudBlob.Uri.LocalPath;
-            // this.Command = command;
         }
-
-        //public ICommand Command { get; private set; }
 
 
         public override string ToString()
