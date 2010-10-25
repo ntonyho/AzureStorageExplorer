@@ -2023,8 +2023,6 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 IQueryable<GenericEntity> entities = null;
                 entities = (from entity in tableServiceContext.CreateQuery<GenericEntity>(DownloadTable) select entity);
 
-                //List<GenericEntity> entitiesList = entities.ToList<GenericEntity>();
-
                 int col = 0;
                 int row = 0;
                 foreach (GenericEntity entity in entities)
@@ -2040,6 +2038,13 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                         {
                             tw.Write(",");
                             tw.Write(q(column.Key));
+
+                            if (column.Value.Type != "string" && !String.IsNullOrEmpty(column.Value.Type))
+                            {
+                                // If the column is not of type string, append <name> with :<type>.
+                                tw.Write(":" + column.Value.Type);
+                            }
+
                             col++;
                         }
                         tw.WriteLine();
@@ -2058,14 +2063,13 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                     foreach (KeyValuePair<string, Column> column in TableColumnNames)
                     {
                         tw.Write(",");
-                        obj = entity[column.Key];
-                        if (obj == null)
+                        if (entity.Properties.TryGetValue(column.Key, out obj) && obj != null)
                         {
-                            //tw.Write(String.Empty);
+                            tw.Write(q(obj.ToString()));
                         }
                         else
                         {
-                            tw.Write(q(obj.ToString()));
+                            tw.Write("null");
                         }
                         col++;
                     }
@@ -2122,7 +2126,6 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
         {
             try
             {
-                //ClearStatus();
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
                 TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
                 tableServiceContext.ResolveType = ResolveEntityType;
@@ -2134,10 +2137,27 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 string line = tr.ReadLine();
 
                 System.Text.RegularExpressions.Regex r = new System.Text.RegularExpressions.Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
-                List<string> columnNames = new List<string>(r.Split(line));
+
+                List<Column> columns = new List<Column>();
+                string[] columnItems;
+
+                foreach (string columnDef in r.Split(line))
+                {
+                    columnItems = columnDef.Split(':');
+                    switch(columnItems.Length)
+                    {
+                        case 1:
+                            columns.Add(new Column(columnItems[0]));
+                            break;
+                        case 2:
+                            columns.Add(new Column(columnItems[0], columnItems[1], null));
+                            break;
+                    }
+                }
 
                 int col;
                 int count = 0;
+                string value;
                 string[] values;
 
                 GenericEntity entity;
@@ -2150,12 +2170,11 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                         entity = new GenericEntity();
 
                         col = 0;
-                        foreach(string columnName in columnNames)
+                        foreach(Column columnDef in columns)
                         {
                             if (col < values.Length)
                             {
-                                //fields[columName] = values[col];
-                                switch (columnName)
+                                switch (columnDef.Name)
                                 {
                                     case "PartitionKey":
                                         entity.PartitionKey = values[col];
@@ -2166,14 +2185,29 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                                     //case "Timestamp":
                                     //    break;
                                     default:
-                                        entity.Properties[columnName] = values[col];
+                                        value = values[col];
+                                        if (value == "null")
+                                        {
+                                            entity.Properties[columnDef.Name] = null;
+                                        }
+                                        else
+                                        {
+                                            if (value.StartsWith("\"") && value.EndsWith("\""))
+                                            {
+                                                if (value.Length <= 2)
+                                                {
+                                                    value = String.Empty;
+                                                }
+                                                else
+                                                {
+                                                    value = value.Substring(1, value.Length - 2);
+                                                }
+                                            }
+                                            entity.Properties[columnDef.Name] = Column.ConvertToStandardType(value, columnDef.Type);
+                                        }
                                         break;
                                 }
                             }
-                            //else
-                            //{
-                            //    fields[columName] = null;
-                            //}
                             col++;
                         }
 
