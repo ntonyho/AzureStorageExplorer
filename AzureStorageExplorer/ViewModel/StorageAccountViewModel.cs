@@ -918,16 +918,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 {
                     blob = blobItem as CloudBlob;
 
-                    blobName = blob.Attributes.Uri.LocalPath;
-                    if (blobName.StartsWith("/"))
-                    {
-                        blobName = blobName.Substring(1);
-                    }
-                    int pos = blobName.IndexOf('/');
-                    if (pos != -1)
-                    {
-                        blobName = blobName.Substring(pos + 1);
-                    }
+                    blobName = BlobDescriptor.BlobName(blob);
 
                     destBlob = destContainer.GetBlobReference(blobName);
                     destBlob.CopyFromBlob(blob);
@@ -985,20 +976,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 {
                     blob = blobItem as CloudBlob;
 
-                    blobName = blob.Attributes.Uri.LocalPath;
-                    int pos = blobName.IndexOf("//");
-                    if (pos != -1)
-                    {
-                        blobName = blobName.Substring(pos + 2);
-                    }
-                    else
-                    {
-                        pos = blobName.LastIndexOf('/');
-                        if (pos != -1)
-                        {
-                            blobName = blobName.Substring(pos + 1);
-                        }
-                    }
+                    blobName = BlobDescriptor.BlobName(blob);
 
                     destBlob = destContainer.GetBlobReference(blobName);
                     destBlob.CopyFromBlob(blob);
