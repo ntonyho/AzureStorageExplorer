@@ -26,7 +26,7 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
             DestQueueName.Focus();
         }
 
-        private void CreateQueue_Click(object sender, RoutedEventArgs e)
+        private void RenameQueue_Click(object sender, RoutedEventArgs e)
         {
             if (!ValidateInput()) return;
 

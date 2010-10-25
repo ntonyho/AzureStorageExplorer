@@ -43,12 +43,12 @@
                  />
 
         <StackPanel Grid.Row="6" Orientation="Horizontal" >
-            <Button Content="Copy Queue" IsDefault="True"
+            <Button Content="Rename Queue" IsDefault="True"
                     Margin="0,0,8,0"
                     Height="22"
                     FontFamily="Calibri" FontSize="12"
                     Template="{DynamicResource GlassButton}" Foreground="Black"                     
-                    Click="CreateQueue_Click" />
+                    Click="RenameQueue_Click" />
             <Button Content="Cancel" IsCancel="True" 
                     Margin="0,0,8,0"
                     Height="22"

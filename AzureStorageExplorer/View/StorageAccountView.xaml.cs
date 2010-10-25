@@ -1141,7 +1141,6 @@ namespace Neudesic.AzureStorageExplorer.View
         #endregion
 
 
-
         private void RefreshCommandExecute()
         {
             ViewModel.Refresh();
@@ -1153,27 +1152,25 @@ namespace Neudesic.AzureStorageExplorer.View
 
         private void ViewBlobsButton_Click(object sender, RoutedEventArgs e)
         {
-            //ChangingView = true;
             ViewModel.ClearStatus();
             ViewBlobsCommandView.Command.Execute(null);
         }
 
         private void ViewQueuesButton_Click(object sender, RoutedEventArgs e)
         {
-            //ChangingView = true;
             ViewModel.ClearStatus();
             ViewQueuesCommandView.Command.Execute(null);
         }
 
         private void ViewTablesButton_Click(object sender, RoutedEventArgs e)
         {
-            //ChangingView = true;
             ViewModel.ClearStatus();
             ViewTablesCommandView.Command.Execute(null);
         }
 
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
+            ViewModel.ClearStatus();
             RefreshCommandView.Command.Execute(null);
         }
 
@@ -1183,6 +1180,7 @@ namespace Neudesic.AzureStorageExplorer.View
 
         private void NewContainerButton_Click(object sender, RoutedEventArgs e)
         {
+            ViewModel.ClearStatus();
             NewContainerCommandView.Command.Execute(null);
         }
 
@@ -1193,6 +1191,8 @@ namespace Neudesic.AzureStorageExplorer.View
                 MessageBox.Show("Please select a container to copy.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return;
             }
+
+            ViewModel.ClearStatus();
             CopyContainerCommandView.Command.Execute(null);
         }
 
@@ -1203,6 +1203,8 @@ namespace Neudesic.AzureStorageExplorer.View
                 MessageBox.Show("Please select a container to rename.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return;
             }
+
+            ViewModel.ClearStatus();
             RenameContainerCommandView.Command.Execute(null);
         }
 
@@ -1213,6 +1215,8 @@ namespace Neudesic.AzureStorageExplorer.View
                 MessageBox.Show("Please select a container to delete.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return;
             }
+
+            ViewModel.ClearStatus();
             DeleteContainerCommandView.Command.Execute(null);
         }
 
@@ -1228,6 +1232,8 @@ namespace Neudesic.AzureStorageExplorer.View
                     "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return;
             }
+
+            ViewModel.ClearStatus();
 
             BlobDescriptor blob = BlobList.SelectedItems[0] as BlobDescriptor;
 
@@ -1254,6 +1260,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             NewBlobCommandView.Command.Execute(null);
         }
 
@@ -1266,6 +1273,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             CopyBlobCommandView.Command.Execute(null);
         }
 
@@ -1278,6 +1286,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             RenameBlobCommandView.Command.Execute(null);
         }
 
@@ -1289,7 +1298,8 @@ namespace Neudesic.AzureStorageExplorer.View
                     "Selection Required", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
-            
+
+            ViewModel.ClearStatus();
             DeleteBlobCommandView.Command.Execute(null);
         }
 
@@ -1316,6 +1326,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             UploadBlobCommandView.Command.Execute(null);
         }
 
@@ -1342,6 +1353,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             DownloadBlobCommandView.Command.Execute(null);
         }
 
@@ -1351,16 +1363,19 @@ namespace Neudesic.AzureStorageExplorer.View
 
         private void NewQueueButton_Click(object sender, RoutedEventArgs e)
         {
+            ViewModel.ClearStatus();
             NewQueueCommandView.Command.Execute(null);
         }
 
         private void CopyQueueButton_Click(object sender, RoutedEventArgs e)
         {
+            ViewModel.ClearStatus();
             CopyQueueCommandView.Command.Execute(null);
         }
 
         private void RenameQueueButton_Click(object sender, RoutedEventArgs e)
         {
+            ViewModel.ClearStatus();
             RenameQueueCommandView.Command.Execute(null);
         }
 
@@ -1371,6 +1386,8 @@ namespace Neudesic.AzureStorageExplorer.View
                 MessageBox.Show("Please select a queue to delete.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return;
             }
+
+            ViewModel.ClearStatus();
             DeleteQueueCommandView.Command.Execute(null);
         }
 
@@ -1387,6 +1404,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             CloudQueueMessage message = MessageList.SelectedItems[0] as CloudQueueMessage;
 
             if (message != null)
@@ -1412,17 +1430,8 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             NewMessageCommandView.Command.Execute(null);
-        }
-
-        private void CopyMessageButton_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void RenameMessageButton_Click(object sender, RoutedEventArgs e)
-        {
-
         }
 
         private void DeleteMessageButton_Click(object sender, RoutedEventArgs e)
@@ -1444,6 +1453,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 }
             }
 
+            ViewModel.ClearStatus();
             DeleteMessageCommandView.Command.Execute(null);
         }
 
@@ -1456,6 +1466,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             DeleteAllMessagesCommandView.Command.Execute(null);
         }
 
@@ -1482,6 +1493,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             UploadMessageCommandView.Command.Execute(null);
         }
 
@@ -1508,6 +1520,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             DownloadMessageCommandView.Command.Execute(null);
         }
 
@@ -1517,16 +1530,19 @@ namespace Neudesic.AzureStorageExplorer.View
 
         private void NewTableButton_Click(object sender, RoutedEventArgs e)
         {
+            ViewModel.ClearStatus();
             NewTableCommandView.Command.Execute(null);
         }
 
         private void CopyTableButton_Click(object sender, RoutedEventArgs e)
         {
+            ViewModel.ClearStatus();
             CopyTableCommandView.Command.Execute(null);
         }
 
         private void RenameTableButton_Click(object sender, RoutedEventArgs e)
         {
+            ViewModel.ClearStatus();
             RenameTableCommandView.Command.Execute(null);
         }
 
@@ -1537,6 +1553,8 @@ namespace Neudesic.AzureStorageExplorer.View
                 MessageBox.Show("Please select a table to delete.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return;
             }
+
+            ViewModel.ClearStatus();
             DeleteTableCommandView.Command.Execute(null);
         }
 
@@ -1553,6 +1571,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             NewEntityCommandView.Command.Execute(null);
         }
 
@@ -1564,6 +1583,8 @@ namespace Neudesic.AzureStorageExplorer.View
                     "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return;
             }
+
+            ViewModel.ClearStatus();
 
             GenericEntity entity = EntityList.SelectedItems[0] as GenericEntity;
 
@@ -1597,6 +1618,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             DeleteEntityCommandView.Command.Execute(null);
         }
 
@@ -1623,6 +1645,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             UploadEntityCommandView.Command.Execute(null);
         }
 
@@ -1653,6 +1676,7 @@ namespace Neudesic.AzureStorageExplorer.View
             if (MessageBox.Show("All entities from table '" + tableName + "' will be downloaded to a file in CSV format that can be opened in Excel or a text editor.\r\n\r\nColumn headers on the first row will be based on the fields contained in the first entity.\r\n\r\nDo you want to proceed?",
                 "Confirm Table Download", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
+                ViewModel.ClearStatus();
                 DownloadEntityCommandView.Command.Execute(null);
             }
         }
@@ -1774,6 +1798,7 @@ namespace Neudesic.AzureStorageExplorer.View
         {
             if (BlobList.SelectedItems.Count == 0) return;
 
+            ViewModel.ClearStatus();
             ViewBlobButton_Click(sender, new RoutedEventArgs());
         }
 
@@ -1791,6 +1816,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             GenericEntity entity = EntityList.SelectedItems[0] as GenericEntity;
 
             if (entity != null)
@@ -1822,6 +1848,7 @@ namespace Neudesic.AzureStorageExplorer.View
         {
             if (MessageList.SelectedItems.Count == 0) return;
 
+            ViewModel.ClearStatus();
             ViewMessageButton_Click(sender, new RoutedEventArgs());
         }
 
@@ -1874,6 +1901,7 @@ namespace Neudesic.AzureStorageExplorer.View
         {
             if (EntityList.SelectedItems.Count == 0) return;
 
+            ViewModel.ClearStatus();
             ViewEntityButton_Click(sender, new RoutedEventArgs());
         }
 
@@ -1887,6 +1915,7 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
+            ViewModel.ClearStatus();
             string tableName = (FolderTree.SelectedItem as TreeItem).Text;
             ViewModel.ViewEntities(tableName, EntityQuery(), EntityMaxRecords());
         }
@@ -1923,6 +1952,7 @@ namespace Neudesic.AzureStorageExplorer.View
 
             if (MessageBox.Show(message, "Confirm Delete Entities", MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
             {
+                ViewModel.ClearStatus();
                 ViewModel.DeleteEntities(tableName, query);
             }
         }

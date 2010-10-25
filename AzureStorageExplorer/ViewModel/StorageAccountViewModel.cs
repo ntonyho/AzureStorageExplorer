@@ -951,7 +951,19 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
                 CloudBlobContainer container = client.GetContainerReference(name);
                 CloudBlobContainer destContainer = client.GetContainerReference(destName);
-                destContainer.CreateIfNotExist();
+
+                try
+                {
+                    destContainer.FetchAttributes();
+                    ReportError("Cannot rename container - the destination container '" + destName + "' already exists");
+                    ListSpinnerVisible = Visibility.Collapsed;
+                    return;
+                }
+                catch (StorageClientException ex)
+                {
+                }
+                
+                destContainer.Create();
 
                 BlobContainerPermissions permissions = new BlobContainerPermissions();
                 switch (access)
@@ -1392,7 +1404,15 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 CloudQueueClient client = CloudStorageAccount.CreateCloudQueueClient();
                 CloudQueue queue = client.GetQueueReference(name);
                 CloudQueue destQueue = client.GetQueueReference(destName);
-                destQueue.CreateIfNotExist();
+
+                if (destQueue.Exists())
+                {
+                    ReportError("Cannot rename queue - the destination queue '" + destName + "' already exists");
+                    ListSpinnerVisible = Visibility.Collapsed;
+                    return;
+                }
+
+                destQueue.Create();
 
                 CloudQueueMessage message;
                 while ((message = queue.GetMessage()) != null)
@@ -1400,6 +1420,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                     destQueue.AddMessage(new CloudQueueMessage(message.AsBytes));
                     queue.DeleteMessage(message);
                 }
+
+                queue.Delete();
 
                 ReportSuccess("Queue " + name + " renamed to " + destName);
             }
@@ -1723,7 +1745,15 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 ClearStatus();
 
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                tableClient.CreateTableIfNotExist(destName);
+
+                if (tableClient.DoesTableExist(destName))
+                {
+                    ReportError("Cannot rename table - the destination table '" + destName + "' already exists");
+                    ListSpinnerVisible = Visibility.Collapsed;
+                    return;
+                }
+
+                tableClient.CreateTable(destName);
 
                 TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
                 tableServiceContext.ResolveType = ResolveEntityType;
