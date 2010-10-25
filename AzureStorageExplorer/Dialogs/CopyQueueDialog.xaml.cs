@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Neudesic.AzureStorageExplorer.ViewModel;
 
 namespace Neudesic.AzureStorageExplorer.Dialogs
 {
@@ -51,6 +52,27 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
                 MessageBox.Show("A destination queue name is required", "Destination Queue Name Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return false;
             }
+
+            string rules = "Queue names must be 3-63 characters in length and may contain lower-case alphanumeric characters and dashes. Dashes must be preceded and followed by an alphanumeric character.";
+
+            if (!StorageAccountViewModel.ValidQueueName(SourceQueueName.Text))
+            {
+                MessageBox.Show("The source queue name is invalid.\r\n\r\n" + rules, "Invalid Source Queue Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return false;
+            }
+
+            if (!StorageAccountViewModel.ValidQueueName(DestQueueName.Text))
+            {
+                MessageBox.Show("The source queue name is invalid.\r\n\r\n" + rules, "Invalid Source Queue Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return false;
+            }
+
+            if (String.Compare(SourceQueueName.Text, DestQueueName.Text) == 0)
+            {
+                MessageBox.Show("The destination queue name must be different from the original queue name", "Destination Table Name Not Unique", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return false;
+            }
+
 
             return true;
         }

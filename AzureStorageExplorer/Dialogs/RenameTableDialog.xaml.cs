@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Neudesic.AzureStorageExplorer.ViewModel;
 
 namespace Neudesic.AzureStorageExplorer.Dialogs
 {
@@ -49,6 +50,26 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
             else if (String.IsNullOrEmpty(DestTableName.Text))
             {
                 MessageBox.Show("A destination table name is required", "Destination Table Name Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return false;
+            }
+
+            string rules = "Table names must be valid DNS names, 3-63 characters in length, beginning with a letter and containing only alphanumeric characters. Table names are case-sensitive.";
+
+            if (!StorageAccountViewModel.ValidTableName(SourceTableName.Text))
+            {
+                MessageBox.Show("The source table name is invalid.\r\n\r\n" + rules, "Invalid Source Table Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return false;
+            }
+
+            if (!StorageAccountViewModel.ValidTableName(DestTableName.Text))
+            {
+                MessageBox.Show("The source table name is invalid.\r\n\r\n" + rules, "Invalid Source Table Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return false;
+            }
+
+            if (String.Compare(SourceTableName.Text, DestTableName.Text) == 0)
+            {
+                MessageBox.Show("The destination table name must be different from the original table name", "Destination Table Name Not Unique", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return false;
             }
 

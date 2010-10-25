@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Neudesic.AzureStorageExplorer.ViewModel;
 
 namespace Neudesic.AzureStorageExplorer.Dialogs
 {
@@ -44,6 +45,12 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
             if (String.IsNullOrEmpty(QueueName.Text))
             {
                 MessageBox.Show("A queue name is required", "Queue Name Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return false;
+            }
+
+            if (!StorageAccountViewModel.ValidQueueName(QueueName.Text))
+            {
+                MessageBox.Show("The queue name is invalid.\r\n\r\nQueue names must be 3-63 characters in length and may contain lower-case alphanumeric characters and dashes. Dashes must be preceded and followed by an alphanumeric character.", "Invalid Queue Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return false;
             }
 

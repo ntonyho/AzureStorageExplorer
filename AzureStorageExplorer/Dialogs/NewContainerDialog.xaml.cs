@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Neudesic.AzureStorageExplorer.ViewModel;
 
 namespace Neudesic.AzureStorageExplorer.Dialogs
 {
@@ -44,6 +45,12 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
             if (String.IsNullOrEmpty(ContainerName.Text))
             {
                 MessageBox.Show("A container name is required", "Container Name Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return false;
+            }
+
+            if (!StorageAccountViewModel.ValidContainerName(ContainerName.Text))
+            {
+                MessageBox.Show("The container name is invalid.\r\n\r\nContainer names must be 3-63 characters in length and may contain lower-case alphanumeric characters and dashes. Dashes must be preceded and followed by an alphanumeric character.", "Invalid Container Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return false;
             }
 

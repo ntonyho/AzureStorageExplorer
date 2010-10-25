@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using Neudesic.AzureStorageExplorer.Controls;
@@ -2701,6 +2702,57 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
         #endregion
 
         #endregion
+
+        #endregion
+
+        #region Validation
+
+        public static bool ValidContainerName(string containerName)
+        {
+            // Container names are 3-63 characters in length and may contain lower-case alphanumeric characters 
+            // and dashes. Dashes must be preceded and followed by an alphanumeric character. 
+
+            if (containerName.Length < 3 || containerName.Length > 63) return false;
+
+            if (!Regex.IsMatch(containerName, "^[a-z0-9](([a-z0-9])|(\\-[a-z0-9]))+$")) return false;
+
+            return true;
+        }
+
+        public static bool ValidBlobName(string blobName)
+        {
+            // A blob name can contain any combination of characters, but reserved URL characters must be properly escaped. 
+            // A blob name must be at least one character long and cannot be more than 1,024 characters long.
+
+            if (blobName.Length < 1 || blobName.Length > 1024) return false;
+
+            return true;
+        }
+
+        public static bool ValidQueueName(string queueName)
+        {
+            // Queue names are 3-63 characters in length and may contain lower-case alphanumeric characters 
+            // and dashes. Dashes must be preceded and followed by an alphanumeric character. 
+
+            if (queueName.Length < 3 || queueName.Length > 63) return false;
+
+            if (!Regex.IsMatch(queueName, "^[a-z0-9](([a-z0-9])|(\\-[a-z0-9]))+$")) return false;
+
+            return true;
+        }
+
+        public static bool ValidTableName(string tableName)
+        {
+            // Table names must be valid DNS names, 3-63 characters in length, 
+            // beginning with a letter and containing only alphanumeric characters. 
+            // Table names are case-sensitive.
+
+            if (tableName.Length < 3 || tableName.Length > 63) return false;
+
+            if (!Regex.IsMatch(tableName, "^[a-zA-Z][a-zA-Z0-9]([a-zA-Z0-9])+$")) return false;
+
+            return true;
+        }
 
         #endregion
 
