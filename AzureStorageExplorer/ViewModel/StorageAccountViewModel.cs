@@ -27,6 +27,10 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
     /// 
     public class StorageAccountViewModel : WorkspaceViewModel
     {
+        XNamespace AtomNamespace = "http://www.w3.org/2005/Atom";
+        XNamespace AstoriaDataNamespace = "http://schemas.microsoft.com/ado/2007/08/dataservices";
+        XNamespace AstoriaMetadataNamespace = "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata";
+
         #region Properties
 
         #region Status Reporting
@@ -959,7 +963,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                     ListSpinnerVisible = Visibility.Collapsed;
                     return;
                 }
-                catch (StorageClientException ex)
+                catch (StorageClientException)
                 {
                 }
                 
@@ -1226,6 +1230,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
         {
             int pos;
             string blobName;
+            int count = 0;
+            int errors = 0;
 
             try
             {
@@ -1235,29 +1241,57 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 {
                     foreach (string filename in UploadFileList)
                     {
-                        DetailSpinnerVisible = Visibility.Visible;
-                        blobName = filename;
-                        pos = blobName.LastIndexOf("\\");
-                        if (pos != -1)
+                        try
                         {
-                            blobName = blobName.Substring(pos + 1);
-                        }
-                        CloudBlob blob = UploadContainer.GetBlobReference(blobName);
-                        blob.UploadByteArray(File.ReadAllBytes(filename));
-
-                        if (ContentTypeMapping.SetContentTypeAutomatically)
-                        {
-                            string contentType = ContentTypeMapping.GetFileContentType(filename);
-                            if (contentType != null)
+                            DetailSpinnerVisible = Visibility.Visible;
+                            blobName = filename;
+                            pos = blobName.LastIndexOf("\\");
+                            if (pos != -1)
                             {
-                                blob.Properties.ContentType = contentType;
-                                blob.SetProperties();
+                                blobName = blobName.Substring(pos + 1);
                             }
+                            CloudBlob blob = UploadContainer.GetBlobReference(blobName);
+                            blob.UploadByteArray(File.ReadAllBytes(filename));
+
+                            if (ContentTypeMapping.SetContentTypeAutomatically)
+                            {
+                                string contentType = ContentTypeMapping.GetFileContentType(filename);
+                                if (contentType != null)
+                                {
+                                    blob.Properties.ContentType = contentType;
+                                    blob.SetProperties();
+                                }
+                            }
+
+                            count++;
+                        }
+                        catch (Exception ex)
+                        {
+                            if (errors == 0)
+                            {
+                                ReportException(ex);
+                            }
+                            errors++;
                         }
 
                         RefreshDetail(UploadContainerName);
                     }
-                    ReportSuccess("Upload Complete");
+
+                    if (errors > 0)
+                    {
+                        if (count > 0)
+                        {
+                            ReportWarning("Upload complete, " + numberof(count, "blob", "blobs") + " added, " + numberof(errors, "error", "errors"));
+                        }
+                        else
+                        {
+                            ReportError("Upload failed, " + numberof(count, "blob", "blobs") + " added, " + numberof(errors, "error", "errors"));
+                        }
+                    }
+                    else
+                    {
+                        ReportSuccess("Upload complete, " + numberof(count, "blob", "blobs") + " added");
+                    }
                 }
             }
             catch (Exception ex)
@@ -1569,19 +1603,48 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
         {
             try
             {
+                int count = 0;
+                int errors = 0;
+
                 if (UploadQueue != null)
                 {
                     foreach (string filename in UploadFileList)
                     {
                         DetailSpinnerVisible = Visibility.Visible;
-                        
-                        UploadQueue.AddMessage(new CloudQueueMessage(File.ReadAllBytes(filename)));
+
+                        try
+                        {
+                            UploadQueue.AddMessage(new CloudQueueMessage(File.ReadAllBytes(filename)));
+                            count++;
+                        }
+                        catch (Exception ex)
+                        {
+                            if (errors == 0)
+                            {
+                                ReportException(ex);
+                            }
+                            errors++;
+                        }
 
                         RefreshDetail(UploadQueueName);
                     }
                 }
 
-                ReportSuccess("Upload Complete");
+                if (errors > 0)
+                {
+                    if (count > 0)
+                    {
+                        ReportWarning("Upload complete, " + numberof(count, "message", "messages") + " added, " + numberof(errors, "error", "errors"));
+                    }
+                    else
+                    {
+                        ReportError("Upload failed, " + numberof(count, "message", "messages") + " added, " + numberof(errors, "error", "errors"));
+                    }
+                }
+                else
+                {
+                    ReportSuccess("Upload complete, " + numberof(count, "message", "messages") + " added");
+                }
             }
             catch (Exception ex)
             {
@@ -1693,10 +1756,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
                 tableClient.CreateTableIfNotExist(destName);
 
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ResolveType = ResolveEntityType;
-
-                tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
 
                 IQueryable<GenericEntity> entities =
                     (from entity in tableServiceContext.CreateQuery<GenericEntity>(name) select entity);
@@ -1711,10 +1771,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 }
 
                 tableClient = CloudStorageAccount.CreateCloudTableClient();
-                tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ResolveType = ResolveEntityType;
-
-                tableServiceContext.WritingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnWritingEntity);
+                tableServiceContext = CreateTableServiceContext(tableClient);
 
                 foreach (GenericEntity entity in entityList)
                 {
@@ -1755,10 +1812,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
                 tableClient.CreateTable(destName);
 
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ResolveType = ResolveEntityType;
-
-                tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
 
                 IQueryable<GenericEntity> entities =
                     (from entity in tableServiceContext.CreateQuery<GenericEntity>(name) select entity);
@@ -1773,10 +1827,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 }
 
                 tableClient = CloudStorageAccount.CreateCloudTableClient();
-                tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ResolveType = ResolveEntityType;
-
-                tableServiceContext.WritingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnWritingEntity);
+                tableServiceContext = CreateTableServiceContext(tableClient);
 
                 foreach (GenericEntity entity in entityList)
                 {
@@ -1833,11 +1884,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 ClearStatus();
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ResolveType = ResolveEntityType;
-                
-                tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
-                tableServiceContext.WritingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnWritingEntity);
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
 
                 tableServiceContext.AddObject(tableName, entity);
                 tableServiceContext.SaveChanges();
@@ -1868,11 +1915,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
                 ClearStatus();
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ResolveType = ResolveEntityType;
-
-                tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
-                tableServiceContext.WritingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnWritingEntity);
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
 
                 IQueryable<GenericEntity> entities = 
                     (from entity in tableServiceContext.CreateQuery<GenericEntity>(tableName)
@@ -1922,8 +1965,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 ClearStatus();
 
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ResolveType = ResolveEntityType;
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
 
                 IQueryable<GenericEntity> entities =
                     (from entity in tableServiceContext.CreateQuery<GenericEntity>(tableName)
@@ -1981,15 +2023,27 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         private string DownloadTable;
         private string DownloadFile;
+        private string DownloadFormat;
+        private bool DownloadOutputColumnHeaderRow = false;
+        private bool DownloadIncludeColumnTypes = false;
+        private bool DownloadIncludeNullValues = false;
 
-        public void DownloadEntities(string tableName, string filename)
+        public void DownloadEntities(string tableName, string format /* csv|xml|atom */, 
+                                     bool outputcolumnHeaderRow, bool includeColumnTypes, 
+                                     bool includeNullValues,
+                                     string filename)
         {
             if (CloudStorageAccount == null) return;
 
             //tableName = NormalizeTableName(tableName);
 
             DownloadTable = tableName;
+            DownloadFormat = format;
             DownloadFile = filename;
+
+            DownloadOutputColumnHeaderRow = outputcolumnHeaderRow;
+            DownloadIncludeColumnTypes = includeColumnTypes;
+            DownloadIncludeNullValues = includeNullValues;
 
             DetailSpinnerVisible = Visibility.Visible;
 
@@ -1998,12 +2052,28 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             DownloadInProgress = true;
 
             BackgroundWorker background = new BackgroundWorker();
-            background.DoWork += new DoWorkEventHandler(Background_DownloadEntities);
+
+            switch (format)
+            {
+                case "csv":
+                default:
+                    background.DoWork += new DoWorkEventHandler(Background_DownloadEntitiesCSV);
+                    break;
+                case "xml":
+                    background.DoWork += new DoWorkEventHandler(Background_DownloadEntitiesPlainXML);
+                    break;
+                case "atom":
+                    background.DoWork += new DoWorkEventHandler(Background_DownloadEntitiesAtomPub);
+                    break;
+            }
+            
             background.RunWorkerCompleted += new RunWorkerCompletedEventHandler(Background_DownloadEntitiesCompleted);
             background.RunWorkerAsync();
         }
 
-        void Background_DownloadEntities(object sender, DoWorkEventArgs e)
+        // Download entities in Comma-Separated Values (CSV) format.
+
+        void Background_DownloadEntitiesCSV(object sender, DoWorkEventArgs e)
         {
             TextWriter tw = File.CreateText(DownloadFile);
 
@@ -2016,9 +2086,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             try
             {
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
-                tableServiceContext.ResolveType = ResolveEntityType;
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
 
                 IQueryable<GenericEntity> entities = null;
                 entities = (from entity in tableServiceContext.CreateQuery<GenericEntity>(DownloadTable) select entity);
@@ -2029,7 +2097,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 {
                     // Write header row.
 
-                    if (row == 0)
+                    if (DownloadOutputColumnHeaderRow && row == 0)
                     {
                         tw.Write("PartitionKey,RowKey,Timestamp");
 
@@ -2039,7 +2107,9 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                             tw.Write(",");
                             tw.Write(q(column.Key));
 
-                            if (column.Value.Type != "string" && !String.IsNullOrEmpty(column.Value.Type))
+                            if (DownloadIncludeColumnTypes &&
+                                column.Value.Type != "string" && 
+                                !String.IsNullOrEmpty(column.Value.Type))
                             {
                                 // If the column is not of type string, append <name> with :<type>.
                                 tw.Write(":" + column.Value.Type);
@@ -2069,7 +2139,10 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                         }
                         else
                         {
-                            tw.Write("null");
+                            if (DownloadIncludeNullValues)
+                            {
+                                tw.Write("null");
+                            }
                         }
                         col++;
                     }
@@ -2079,6 +2152,243 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 }
 
                 tw.Close();
+
+                ReportSuccess("Download Complete");
+            }
+            catch (Exception ex)
+            {
+                ReportException(ex);
+            }
+        }
+
+        // Download entities in Plain XML format.
+
+        void Background_DownloadEntitiesPlainXML(object sender, DoWorkEventArgs e)
+        {
+            XmlWriter xw = XmlWriter.Create(File.CreateText(DownloadFile));
+            
+            xw.WriteStartDocument();
+            
+            xw.WriteStartElement(DownloadTable);
+
+            TableColumnNames.Clear();
+
+            List<GenericEntity> entityNodes = new List<GenericEntity>();
+
+            if (!OpenAccount()) return;
+
+            try
+            {
+                CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
+
+                IQueryable<GenericEntity> entities = null;
+                entities = (from entity in tableServiceContext.CreateQuery<GenericEntity>(DownloadTable) select entity);
+
+                int col = 0;
+                int row = 0;
+                foreach (GenericEntity entity in entities)
+                {
+                    col = 0;
+                    object obj;
+
+                    xw.WriteStartElement("entity");
+
+                    xw.WriteStartElement("PartitionKey");
+                    xw.WriteValue(entity.PartitionKey);
+                    xw.WriteEndElement();
+
+                    xw.WriteStartElement("RowKey");
+                    xw.WriteValue(entity.RowKey);
+                    xw.WriteEndElement();
+
+                    xw.WriteStartElement("Timestamp");
+                    xw.WriteValue(entity.Timestamp);
+                    xw.WriteEndElement();
+
+                    foreach (KeyValuePair<string, Column> column in TableColumnNames)
+                    {
+                        if (entity.Properties.TryGetValue(column.Key, out obj) && obj != null)
+                        {
+                            xw.WriteStartElement(column.Value.Name);
+
+                            if (column.Value.Type != "string")
+                            {
+                                xw.WriteStartAttribute("type");
+                                xw.WriteValue(column.Value.Type);
+                                xw.WriteEndAttribute();
+                            }
+
+                            xw.WriteValue(obj.ToString());
+
+                            xw.WriteEndElement();
+                        }
+                        else
+                        {
+                            if (DownloadIncludeNullValues)
+                            {
+                                xw.WriteStartElement(column.Value.Name);
+
+                                if (column.Value.Type != "string")
+                                {
+                                    xw.WriteStartAttribute("type");
+                                    xw.WriteValue(column.Value.Type);
+                                    xw.WriteEndAttribute();
+                                }
+
+                                xw.WriteStartAttribute("null");
+                                xw.WriteValue(true);
+                                xw.WriteEndAttribute();
+
+                                xw.WriteEndElement();
+                            }
+                        }
+
+                        col++;
+                    }
+
+                    xw.WriteEndElement();
+
+                    row++;
+                }
+
+                xw.WriteEndElement();
+
+                xw.WriteEndDocument();
+                xw.Close();
+
+                ReportSuccess("Download Complete");
+            }
+            catch (Exception ex)
+            {
+                ReportException(ex);
+            }
+        }
+
+        // Download entities in AtomPub XML format.
+
+        //<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+        //<entry xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns="http://www.w3.org/2005/Atom">
+        //  <title />
+        //  <updated>2008-09-18T23:46:19.3857256Z<updated/>
+        //  <author>
+        //    <name />
+        //  </author>
+        //  <id />
+        //  <content type="application/xml">
+        //    <m:properties>
+        //      <d:Address>Mountain View</d:Address>
+        //      <d:Age m:type="Edm.Int32">23</d:Age>
+        //      <d:AmountDue m:type="Edm.Double">200.23</d:AmountDue>
+        //      <d:BinaryData m:type="Edm.Binary" m:null="true" />
+        //      <d:CustomerCode m:type="Edm.Guid">c9da6455-213d-42c9-9a79-3e9149a57833</d:CustomerCode>
+        //      <d:CustomerSince m:type="Edm.DateTime">2008-07-10T00:00:00</d:CustomerSince>
+        //      <d:IsActive m:type="Edm.Boolean">true</d:IsActive>
+        //      <d:NumOfOrders m:type="Edm.Int64">255</d:NumOfOrders>
+        //      <d:PartitionKey>mypartitionkey</d:PartitionKey>
+        //      <d:RowKey>myrowkey1</d:RowKey>
+        //      <d:Timestamp m:type="Edm.DateTime">0001-01-01T00:00:00</d:Timestamp>
+        //    </m:properties>
+        //  </content>
+        //</entry>
+
+        void Background_DownloadEntitiesAtomPub(object sender, DoWorkEventArgs e)
+        {
+            string def = "http://www.w3.org/2005/Atom";
+            string b = "http://myaccount.tables.core.windows.net/";
+            string m = "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata";
+            string d = "http://schemas.microsoft.com/ado/2007/08/dataservices";
+
+            XmlWriter xw = XmlWriter.Create(File.CreateText(DownloadFile));
+
+            xw.WriteStartDocument();
+
+            xw.WriteStartElement("feed", def);
+            xw.WriteAttributeString("xmlns", "base", null, b);
+            xw.WriteAttributeString("xmlns", "d", null, d);
+            xw.WriteAttributeString("xmlns", "m", null, m);
+
+            TableColumnNames.Clear();
+
+            List<GenericEntity> entityNodes = new List<GenericEntity>();
+
+            if (!OpenAccount()) return;
+
+            try
+            {
+                CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
+
+                IQueryable<GenericEntity> entities = null;
+                entities = (from entity in tableServiceContext.CreateQuery<GenericEntity>(DownloadTable) select entity);
+
+                int col = 0;
+                int row = 0;
+                foreach (GenericEntity entity in entities)
+                {
+                    col = 0;
+                    object obj;
+
+                    xw.WriteStartElement("entry");
+
+                    xw.WriteStartElement("content");
+                    xw.WriteAttributeString("type", "application/xml");
+
+                    xw.WriteStartElement("properties", m);
+
+                    xw.WriteStartElement("PartitionKey", d);
+                    xw.WriteValue(entity.PartitionKey);
+                    xw.WriteEndElement();
+
+                    xw.WriteStartElement("RowKey", d);
+                    xw.WriteValue(entity.RowKey);
+                    xw.WriteEndElement();
+
+                    xw.WriteStartElement("Timestamp", d);
+                    xw.WriteValue(entity.Timestamp);
+                    xw.WriteEndElement();
+
+                    foreach (KeyValuePair<string, Column> column in TableColumnNames)
+                    {
+                        if (entity.Properties.TryGetValue(column.Key, out obj) && obj != null)
+                        {
+                            xw.WriteStartElement(column.Value.Name, d);
+
+                            xw.WriteStartAttribute("type", m);
+                            xw.WriteValue(Column.EdmTypeName(column.Value.Type));
+                            xw.WriteEndAttribute();
+
+                            xw.WriteValue(obj.ToString());
+                            xw.WriteEndElement();
+                        }
+                        else
+                        {
+                            if (DownloadIncludeNullValues)
+                            {
+                                xw.WriteStartElement(column.Value.Name, d);
+
+                                xw.WriteStartAttribute("null", m);
+                                xw.WriteValue(true);
+                                xw.WriteEndAttribute();
+
+                                xw.WriteEndElement();
+                            }
+                        }
+
+                        col++;
+                    }
+
+                    xw.WriteEndElement();
+                    xw.WriteEndElement();
+                    xw.WriteEndElement();
+
+                    row++;
+                }
+
+                xw.WriteEndElement();
+
+                xw.WriteEndDocument();
+                xw.Close();
 
                 ReportSuccess("Download Complete");
             }
@@ -2099,16 +2409,21 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
         #region Upload Entities
 
         private string UploadTable;
+        private string UploadFormat;
         private string UploadFile;
+        private bool UploadColumnHeaderRow = true;
 
-        public void UploadEntities(string tableName, string filename)
+        public void UploadEntities(string filename, string format, bool optionColumnHeaderRow, string tableName)
         {
             if (CloudStorageAccount == null) return;
 
             //tableName = NormalizeTableName(tableName);
 
             UploadTable = tableName;
+            UploadFormat = format;
             UploadFile = filename;
+
+            UploadColumnHeaderRow = optionColumnHeaderRow;
 
             DetailSpinnerVisible = Visibility.Visible;
 
@@ -2117,46 +2432,68 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             UploadInProgress = true;
 
             BackgroundWorker background = new BackgroundWorker();
-            background.DoWork += new DoWorkEventHandler(Background_UploadEntities);
+
+            switch (format)
+            {
+                case "csv":
+                default:
+                    background.DoWork += new DoWorkEventHandler(Background_UploadEntitiesCSV);
+                    break;
+                case "xml":
+                    background.DoWork += new DoWorkEventHandler(Background_UploadEntitiesPlainXML);
+                    break;
+                case "atom":
+                    background.DoWork += new DoWorkEventHandler(Background_UploadEntitiesAtomPub);
+                    break;
+            }
+
             background.RunWorkerCompleted += new RunWorkerCompletedEventHandler(Background_UploadEntitiesCompleted);
             background.RunWorkerAsync();
         }
 
-        void Background_UploadEntities(object sender, DoWorkEventArgs e)
+        // Upload entities from a Comma-Separated Values (CSV) file.
+
+        void Background_UploadEntitiesCSV(object sender, DoWorkEventArgs e)
         {
             try
             {
-                CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ResolveType = ResolveEntityType;
-                tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
-                tableServiceContext.WritingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnWritingEntity);
-                
-                TextReader tr = File.OpenText(UploadFile);
+                int count = 0;
+                int errors = 0;
 
-                string line = tr.ReadLine();
+                CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
+                tableClient.CreateTableIfNotExist(UploadTable);
 
                 System.Text.RegularExpressions.Regex r = new System.Text.RegularExpressions.Regex(",(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))");
 
-                List<Column> columns = new List<Column>();
-                string[] columnItems;
+                TextReader tr = File.OpenText(UploadFile);
 
-                foreach (string columnDef in r.Split(line))
+                List<Column> columns = new List<Column>();
+                string line;
+
+                if (UploadColumnHeaderRow)
                 {
-                    columnItems = columnDef.Split(':');
-                    switch(columnItems.Length)
+                    line = tr.ReadLine();
+
+                    string[] columnItems;
+
+                    foreach (string columnDef in r.Split(line))
                     {
-                        case 1:
-                            columns.Add(new Column(columnItems[0]));
-                            break;
-                        case 2:
-                            columns.Add(new Column(columnItems[0], columnItems[1], null));
-                            break;
+                        columnItems = columnDef.Split(':');
+                        switch (columnItems.Length)
+                        {
+                            case 1:
+                                columns.Add(new Column(columnItems[0]));
+                                break;
+                            case 2:
+                                columns.Add(new Column(columnItems[0], columnItems[1], null));
+                                break;
+                        }
                     }
                 }
 
                 int col;
-                int count = 0;
+                int row = 1;
                 string value;
                 string[] values;
 
@@ -2169,68 +2506,363 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
                         entity = new GenericEntity();
 
-                        col = 0;
-                        foreach(Column columnDef in columns)
+                        if (UploadColumnHeaderRow)
                         {
-                            if (col < values.Length)
+                            col = 0;
+                            foreach (Column columnDef in columns)
                             {
-                                switch (columnDef.Name)
+                                if (col < values.Length)
                                 {
-                                    case "PartitionKey":
-                                        entity.PartitionKey = values[col];
-                                        break;
-                                    case "RowKey":
-                                        entity.RowKey = values[col];
-                                        break;
-                                    //case "Timestamp":
-                                    //    break;
-                                    default:
-                                        value = values[col];
-                                        if (value == "null")
-                                        {
-                                            entity.Properties[columnDef.Name] = null;
-                                        }
-                                        else
-                                        {
-                                            if (value.StartsWith("\"") && value.EndsWith("\""))
+                                    switch (columnDef.Name)
+                                    {
+                                        case "PartitionKey":
+                                            entity.PartitionKey = values[col];
+                                            break;
+                                        case "RowKey":
+                                            entity.RowKey = values[col];
+                                            break;
+                                        //case "Timestamp":
+                                        //    break;
+                                        default:
+                                            value = values[col];
+                                            if (value == "null")
                                             {
-                                                if (value.Length <= 2)
-                                                {
-                                                    value = String.Empty;
-                                                }
-                                                else
-                                                {
-                                                    value = value.Substring(1, value.Length - 2);
-                                                }
+                                                entity.Properties[columnDef.Name] = null;
                                             }
-                                            entity.Properties[columnDef.Name] = Column.ConvertToStandardType(value, columnDef.Type);
-                                        }
-                                        break;
+                                            else
+                                            {
+                                                if (value.StartsWith("\"") && value.EndsWith("\""))
+                                                {
+                                                    if (value.Length <= 2)
+                                                    {
+                                                        value = String.Empty;
+                                                    }
+                                                    else
+                                                    {
+                                                        value = value.Substring(1, value.Length - 2);
+                                                    }
+                                                }
+                                                entity.Properties[columnDef.Name] = Column.ConvertToStandardType(value, columnDef.Type);
+                                            }
+                                            break;
+                                    }
                                 }
+                                col++;
                             }
-                            col++;
+                        }
+                        else
+                        {
+                            // No defined columns - generate field names. 
+
+                            entity.PartitionKey = String.Empty;
+                            entity.RowKey = row.ToString();
+                            row++;
+
+                            col = 1;
+                            string fieldName;
+                            foreach (string fieldValue in values)
+                            {
+                                fieldName = "Field" + col.ToString();
+                                entity[fieldName] = fieldValue;
+                                col++;
+                            }
                         }
 
                         tableServiceContext.AddObject(UploadTable, entity);
-
+                        tableServiceContext.SaveChanges();
                         count++;
-
-                        if (count >= 100)
-                        {
-                            tableServiceContext.SaveChanges();
-                            count = 0;
-                        }
                     }
                     catch (Exception ex)
                     {
-                        ReportException(ex);
+                        if (errors == 0)
+                        {
+                            ReportException(ex);
+                        }
+
+                        tableServiceContext = CreateTableServiceContext(tableClient);
+
+                        errors++;
                     }
                 }
 
-                tableServiceContext.SaveChanges();
                 RefreshDetail(UploadTable);
 
-                ReportSuccess("Upload Complete");
+                if (errors > 0)
+                {
+                    if (count > 0)
+                    {
+                        ReportWarning("Upload complete, " + numberof(count, "entity", "entities") + " added, " + numberof(errors, "error", "errors"));
+                    }
+                    else
+                    {
+                        ReportError("Upload failed, " + numberof(count, "entity", "entities") + " added, " + numberof(errors, "error", "errors"));
+                    }
+                }
+                else
+                {
+                    ReportSuccess("Upload complete, " + numberof(count, "entity", "entities") + " added");
+                }
+            }
+            catch (Exception ex)
+            {
+                ReportException(ex);
+            }
+        }
+
+        // Upload entities from a plain XML file. Take all children of the root to be entities.
+
+        void Background_UploadEntitiesPlainXML(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                int count = 0;
+                int errors = 0;
+
+                bool havePartitionKey = false;
+                bool haveRowKey = false;
+
+                CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
+                tableClient.CreateTableIfNotExist(UploadTable);
+
+                XDocument doc = XDocument.Parse(File.ReadAllText(UploadFile));
+
+                XElement rootNode = doc.Root;
+
+                List<XElement> entities = new List<XElement>(from XElement ent in rootNode.Elements() select ent);
+
+                GenericEntity entity;
+                string name;
+                XAttribute type;
+                object value;
+                int row = 1;
+
+                foreach (XElement en in entities)
+                {
+                    havePartitionKey = false;
+                    haveRowKey = false;
+
+                    entity = new GenericEntity();
+
+                    foreach (XElement prop in en.Elements())
+                    {
+                        switch (prop.Name.LocalName)
+                        {
+                            case "PartitionKey":
+                                entity.PartitionKey = prop.Value;
+                                havePartitionKey = true;
+                                break;
+                            case "RowKey":
+                                entity.RowKey = prop.Value;
+                                haveRowKey = true;
+                                break;
+                            default:
+                                name = prop.Name.LocalName;
+                                value = prop.Value;
+                                type = prop.Attribute("type");
+                                if (prop.Attribute("null") != null && Convert.ToBoolean(prop.Attribute("null").Value))
+                                {
+                                    value = null;
+                                }
+                                else
+                                {
+                                    if (type != null)
+                                    {
+                                        value = Column.ConvertToStandardType(prop.Value, type.Value);   
+                                    }
+                                }
+                                entity[name] = value;
+                                break;
+                        }
+                    }
+
+                    if (!havePartitionKey)
+                    {
+                        entity.PartitionKey = string.Empty;
+                    }
+
+                    if (!haveRowKey)
+                    {
+                        entity.RowKey = row.ToString();
+                    }
+
+                    try
+                    {
+                        tableServiceContext.AddObject(UploadTable, entity);
+                        tableServiceContext.SaveChanges();
+                        count++;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (errors == 0)
+                        {
+                            ReportException(ex);
+                        }
+
+                        tableServiceContext = CreateTableServiceContext(tableClient);
+
+                        errors++;
+                    }
+
+                    row++;
+                }
+
+                RefreshDetail(UploadTable);
+
+                if (errors > 0)
+                {
+                    if (count > 0)
+                    {
+                        ReportWarning("Upload complete, " + numberof(count, "entity", "entities") + " added, " + numberof(errors, "error", "errors"));
+                    }
+                    else
+                    {
+                        ReportError("Upload failed, " + numberof(count, "entity", "entities") + " added, " + numberof(errors, "error", "errors"));
+                    }
+                }
+                else
+                {
+                    ReportSuccess("Upload complete, " + numberof(count, "entity", "entities") + " added");
+                }
+            }
+            catch (Exception ex)
+            {
+                ReportException(ex);
+            }
+        }
+
+        // Upload entities from an AtomPub XML file. Take all children of the root to be entities.
+
+        void Background_UploadEntitiesAtomPub(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                int count = 0;
+                int errors = 0;
+
+                bool havePartitionKey = false;
+                bool haveRowKey = false;
+
+                XName typeAttrName = XName.Get("type", AstoriaMetadataNamespace.NamespaceName);
+                XName nullAttrName = XName.Get("null", AstoriaMetadataNamespace.NamespaceName);
+
+                CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
+                tableClient.CreateTableIfNotExist(UploadTable);
+
+                XDocument doc = XDocument.Parse(File.ReadAllText(UploadFile));
+
+                XElement rootNode = doc.Root;
+
+                List<XElement> entities = new List<XElement>(from XElement ent in rootNode.Elements() select ent);
+
+                GenericEntity entity;
+                string name;
+                XAttribute typeAttr, nullAttr;
+                object value;
+                int row = 1;
+                XElement content, properties;
+
+                foreach (XElement entry in entities)
+                {
+                    havePartitionKey = false;
+                    haveRowKey = false;
+
+                    entity = new GenericEntity();
+
+                    if (entry != null && entry.Name.LocalName == "entry")
+                    {
+                        content = entry.Element(AtomNamespace + "content");
+                        if (content != null && content.Name.LocalName == "content")
+                        {
+                            properties = content.Element(AstoriaMetadataNamespace + "properties");
+                            if (properties != null)
+                            {
+                                foreach (XElement prop in properties.Elements())
+                                {
+                                    switch (prop.Name.LocalName)
+                                    {
+                                        case "PartitionKey":
+                                            entity.PartitionKey = prop.Value;
+                                            havePartitionKey = true;
+                                            break;
+                                        case "RowKey":
+                                            entity.RowKey = prop.Value;
+                                            haveRowKey = true;
+                                            break;
+                                        default:
+                                            name = prop.Name.LocalName;
+                                            value = prop.Value;
+                                            typeAttr = prop.Attribute(typeAttrName);
+                                            nullAttr = prop.Attribute(nullAttrName);
+                                            if (nullAttr != null &&
+                                                Convert.ToBoolean(prop.Attribute(nullAttrName).Value))
+                                            {
+                                                value = null;
+                                            }
+                                            else
+                                            {
+                                                if (typeAttr != null)
+                                                {
+                                                    value = Column.ConvertToStandardType(prop.Value, typeAttr.Value);
+                                                }
+                                            }
+                                            entity[name] = value;
+                                            break;
+                                    }
+                                }
+
+                                if (!havePartitionKey)
+                                {
+                                    entity.PartitionKey = string.Empty;
+                                }
+
+                                if (!haveRowKey)
+                                {
+                                    entity.RowKey = row.ToString();
+                                }
+
+                                try
+                                {
+                                    tableServiceContext.AddObject(UploadTable, entity);
+                                    tableServiceContext.SaveChanges();
+                                    count++;
+                                }
+                                catch (Exception ex)
+                                {
+                                    if (errors == 0)
+                                    {
+                                        ReportException(ex);
+                                    }
+
+                                    tableServiceContext = CreateTableServiceContext(tableClient);
+
+                                    errors++;
+                                }
+
+                                row++;
+                            }
+                        }
+                    }
+                }
+
+                RefreshDetail(UploadTable);
+
+                if (errors > 0)
+                {
+                    if (count > 0)
+                    {
+                        ReportWarning("Upload complete, " + numberof(count, "entity", "entities") + " added, " + numberof(errors, "error", "errors"));
+                    }
+                    else
+                    {
+                        ReportError("Upload failed, " + numberof(count, "entity", "entities") + " added, " + numberof(errors, "error", "errors"));
+                    }
+                }
+                else
+                {
+                    ReportSuccess("Upload complete, " + numberof(count, "entity", "entities") + " added");
+                }
             }
             catch (Exception ex)
             {
@@ -2243,7 +2875,6 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             UploadInProgress = false;
             DetailSpinnerVisible = Visibility.Collapsed;
         }
-
 
         #endregion
 
@@ -2297,9 +2928,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             try
             {
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
-                tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
-                tableServiceContext.ResolveType = ResolveEntityType;
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
 
                 IQueryable<GenericEntity> entities = null;
                 entities = (from entity in tableServiceContext.CreateQuery<GenericEntity>(SelectedTableName) select entity);
@@ -2568,10 +3197,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             try
             {
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
+                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
                 tableServiceContext.IgnoreMissingProperties = true; 
-                tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
-                tableServiceContext.ResolveType = ResolveEntityType;
 
                 IQueryable<GenericEntity> entities = null;
                 entities = (from entity in tableServiceContext.CreateQuery<GenericEntity>(tableName) select entity);
@@ -2837,6 +3464,27 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 return text;
             }
+        }
+
+        private string numberof(int count, string singular, string plural)
+        {
+            if (count == 1)
+            {
+                return "1 " + singular;
+            }
+            else
+            {
+                return count.ToString() + " " + plural;
+            }
+        }
+
+        private TableServiceContext CreateTableServiceContext(CloudTableClient tableClient)
+        {
+            TableServiceContext tableServiceContext = tableClient.GetDataServiceContext();
+            tableServiceContext.ResolveType = ResolveEntityType;
+            tableServiceContext.ReadingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnReadingEntity);
+            tableServiceContext.WritingEntity += new EventHandler<ReadingWritingEntityEventArgs>(OnWritingEntity);
+            return tableServiceContext;
         }
     }
 }

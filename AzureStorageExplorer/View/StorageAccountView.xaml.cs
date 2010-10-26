@@ -1059,22 +1059,29 @@ namespace Neudesic.AzureStorageExplorer.View
             }
 
             string tableName = (FolderTree.SelectedItem as TreeItem).Text;
+            string format = "csv";
+            string filename;
+            bool optionColumnDefinitions = true;
 
-            System.Windows.Forms.OpenFileDialog dlg = new System.Windows.Forms.OpenFileDialog();
-            dlg.Title = "Upload Table Entities";
-            dlg.Filter = "Comma-separated Value Files (*.csv)|*.csv|Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
+            UploadTableDialog dlg = new UploadTableDialog();
+            dlg.Owner = MainWindow.Window;
+            dlg.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
+            dlg.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+            dlg.TableName.Text = tableName;
+            dlg.Format = format;
 
-            HwndSource source = PresentationSource.FromVisual(MainWindow.Window) as HwndSource;
-            System.Windows.Forms.IWin32Window win = new OldWindow(source.Handle);
-
-            System.Windows.Forms.DialogResult result = dlg.ShowDialog(win);
-            if (result == System.Windows.Forms.DialogResult.OK)
+            if (dlg.ShowDialog().Value)
             {
                 Cursor = Cursors.Wait;
 
+                format = dlg.Format;
+                tableName = dlg.TableName.Text;
+                filename = dlg.FileName.Text;
+                optionColumnDefinitions = dlg.OptionColumnDefinitions.IsChecked.Value;
+
                 try
                 {
-                    ViewModel.UploadEntities(tableName, dlg.FileName);
+                    ViewModel.UploadEntities(filename, format, optionColumnDefinitions, tableName);
                 }
                 catch (Exception ex)
                 {
@@ -1092,39 +1099,47 @@ namespace Neudesic.AzureStorageExplorer.View
 
             bool proceed = true;
 
-            System.Windows.Forms.SaveFileDialog dlg = new System.Windows.Forms.SaveFileDialog();
-            dlg.Title = "Choose Download File Name";
-            dlg.InitialDirectory = DownloadDirectory;
-            dlg.FileName = tableName + ".csv";
-            dlg.OverwritePrompt = false;
-            dlg.Filter = "Comma-separated Value Files (*.csv)|*.csv|Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
+            string format = "csv";
 
-            HwndSource source = PresentationSource.FromVisual(MainWindow.Window) as HwndSource;
-            System.Windows.Forms.IWin32Window win = new OldWindow(source.Handle);
+            bool optionOutputColumnHeader = true;
+            bool includeColumnTypes = true;
+            bool includeNullableValues = true;
 
-            System.Windows.Forms.DialogResult result = dlg.ShowDialog(win);
-            if (result == System.Windows.Forms.DialogResult.OK)
+            DownloadTableDialog dlg = new DownloadTableDialog();
+            dlg.Owner = MainWindow.Window;
+            dlg.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
+            dlg.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+            dlg.TableName.Text = tableName;
+            dlg.Format = format;
+            dlg.OptionColumnDefinitions.IsChecked = optionOutputColumnHeader;
+            dlg.OptionTypeDefinitions.IsChecked = includeColumnTypes;
+            dlg.OptionNullValues.IsChecked = includeNullableValues;
+
+            if (dlg.ShowDialog().Value)
             {
-                Cursor = Cursors.Wait;
+                tableName = dlg.TableName.Text;
+                format = dlg.Format;
+                string filename = dlg.FileName.Text;
+                optionOutputColumnHeader = dlg.OptionColumnDefinitions.IsChecked.Value;
+                includeColumnTypes = dlg.OptionTypeDefinitions.IsChecked.Value;
+                includeNullableValues = dlg.OptionNullValues.IsChecked.Value;
 
-                //DownloadDirectory = dlg.FileName;
+                Cursor = Cursors.Wait;
 
                 try
                 {
-                    string filename = dlg.FileName;
-
                     if (File.Exists(filename))
                     {
-                        if (MessageBox.Show("File " + filename + " exists - overwrite it?", "Overwrite Local Files?", 
+                        if (MessageBox.Show("File " + filename + " exists - overwrite it?", "Overwrite Local Files?",
                             MessageBoxButton.YesNoCancel, MessageBoxImage.Question) != MessageBoxResult.Yes)
-                            {
-                                proceed = false;
-                            }
+                        {
+                            proceed = false;
+                        }
                     }
 
                     if (proceed)
                     {
-                        ViewModel.DownloadEntities(tableName, filename);
+                        ViewModel.DownloadEntities(tableName, format, optionOutputColumnHeader, includeColumnTypes, includeNullableValues, filename);
                     }
                 }
                 catch (Exception ex)
@@ -1135,7 +1150,6 @@ namespace Neudesic.AzureStorageExplorer.View
 
                 Cursor = Cursors.Arrow;
             }
- 
         }
 
         #endregion
@@ -1673,12 +1687,12 @@ namespace Neudesic.AzureStorageExplorer.View
                 return;
             }
 
-            if (MessageBox.Show("All entities from table '" + tableName + "' will be downloaded to a file in CSV format that can be opened in Excel or a text editor.\r\n\r\nColumn headers on the first row will be based on the fields contained in the first entity.\r\n\r\nDo you want to proceed?",
-                "Confirm Table Download", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-            {
+            //if (MessageBox.Show("All entities from table '" + tableName + "' will be downloaded to a file in CSV format that can be opened in Excel or a text editor.\r\n\r\nColumn headers on the first row will be based on the fields contained in the first entity.\r\n\r\nDo you want to proceed?",
+            //    "Confirm Table Download", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            //{
                 ViewModel.ClearStatus();
                 DownloadEntityCommandView.Command.Execute(null);
-            }
+            //}
         }
 
         #endregion

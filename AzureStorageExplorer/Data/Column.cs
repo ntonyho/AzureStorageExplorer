@@ -127,6 +127,49 @@ namespace Neudesic.AzureStorageExplorer.Data
             }
         }
 
+        // Convert a standard type name to an Edm type name we use in serialized messages.
+        // Turn the internal standard names ("string", etc.) into Edm.<type> names.
+
+        public static string EdmTypeName(string typeName)
+        {
+            if (string.IsNullOrEmpty(typeName)) return "Edm.String";
+
+            switch (typeName.ToLower())
+            {
+                default:
+                    return "Edm.String";
+                case "string":
+                    return "Edm.String";
+                case "byte":
+                    return "Edm.Byte";
+                case "sbyte":
+                    return "Edm.SByte";
+                case "int":
+                case "int32":
+                    return "Edm.Int32";
+                case "int16":
+                    return "Edm.Int16";
+                case "int64":
+                    return "Edm.Int64";
+                case "double":
+                    return "Edm.Double";
+                case "single":
+                    return "Edm.Single";
+                case "bool":
+                case "boolean":
+                    return "Edm.Boolean";
+                case "decimal":
+                    return "Edm.Decimal";
+                case "datetime":
+                    return "Edm.DateTime";
+                case "binary":
+                    return "Edm.Binary";
+                case "guid":
+                    return "Edm.Guid";
+            }
+        }
+
+
         // Convert an object to a desired type. 
 
         public static object ConvertToStandardType(string value, string type)
