@@ -88,9 +88,20 @@
                     <TextBlock Grid.Row="4" Grid.Column="0"
                                Margin="8,0,0,0"
                                HorizontalAlignment="Right" VerticalAlignment="Center"
-                               Text="Preserve window size and position:" />
+                               Text="Check for newer version on start-up:" />
 
                     <CheckBox Grid.Row="4" Grid.Column="2"
+                              Margin="0,0,0,0"
+                              IsChecked="{Binding CheckForNewerVersion,Mode=TwoWay}"
+                              HorizontalAlignment="Left" VerticalAlignment="Center"
+                              />
+
+                    <TextBlock Grid.Row="6" Grid.Column="0"
+                               Margin="8,0,0,0"
+                               HorizontalAlignment="Right" VerticalAlignment="Center"
+                               Text="Preserve window size and position:" />
+
+                    <CheckBox Grid.Row="6" Grid.Column="2"
                               IsChecked="{Binding PreserveWindowPosition,Mode=TwoWay}"
                               HorizontalAlignment="Left" VerticalAlignment="Center"
                               />
@@ -160,12 +171,12 @@
                     Margin="0,8,0,0"
                     Orientation="Horizontal" HorizontalAlignment="Left" >
             <Button Content="Save Changes" IsDefault="True"
-                    Margin="0,0,8,0"
+                    Margin="0,0,4,0"
                     Height="22"
                     FontFamily="Calibri" FontSize="12"
                     Template="{DynamicResource GlassButton}" Foreground="Black"                     
                     Click="Save_Click" />
-            <Button Content="Cancel" 
+            <Button Content="Cancel" IsCancel="True"
                     Margin="0,0,8,0"
                     Height="22"
                     FontFamily="Calibri" FontSize="12"

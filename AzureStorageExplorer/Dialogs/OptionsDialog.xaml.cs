@@ -23,6 +23,7 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
         public string Culture { get; set; }
         public bool ShowWelcomeOnStartup { get; set; }
         public bool PreserveWindowPosition { get; set; }
+        public bool CheckForNewerVersion { get; set; }
 
         public bool SetContentTypeAutomtically { get; set; }
         public ObservableCollection<ContentTypeMapping> ContentTypes { get; set; }

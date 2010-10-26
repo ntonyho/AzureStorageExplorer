@@ -113,6 +113,9 @@
     <Compile Include="Dialogs\BlobDetailDialog.xaml.cs">
       <DependentUpon>BlobDetailDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\NewVersionDialog.xaml.cs">
+      <DependentUpon>NewVersionDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\UploadTableDialog.xaml.cs">
       <DependentUpon>UploadTableDialog.xaml</DependentUpon>
     </Compile>
@@ -237,6 +240,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Dialogs\BlobDetailDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\NewVersionDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

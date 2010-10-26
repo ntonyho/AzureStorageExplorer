@@ -1261,7 +1261,18 @@ namespace Neudesic.AzureStorageExplorer.View
 
                 dlg.DataContext = new BlobViewModel(blob);
 
-                dlg.ShowDialog();
+                if (dlg.ShowDialog().Value)
+                {
+                    RefreshDetail();
+                }
+            }
+        }
+
+        private void RefreshDetail()
+        {
+            if (FolderTree.SelectedItem != null)
+            {
+                ViewModel.RefreshDetail((FolderTree.SelectedItem as TreeItem).Text);
             }
         }
 

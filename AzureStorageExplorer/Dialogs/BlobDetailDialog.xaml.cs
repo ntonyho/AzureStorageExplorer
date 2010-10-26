@@ -39,7 +39,7 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
             }
         }
 
-        private void SaveProperties_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void SaveProperties_Click(object sender, RoutedEventArgs e)
         {
             if (MessageBox.Show("Are you SURE you want to update this blob's properties?", "Confirm Update",
                  MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
@@ -49,7 +49,8 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
                 try
                 {
                     ViewModel.SaveProperties();
-                    MessageBox.Show("The blob properties have been updated", "Update Successful", MessageBoxButton.OK);
+                    DialogResult = true;
+                    Close();
                 }
                 catch (Exception ex)
                 {
@@ -129,9 +130,9 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
             VideoSpinner.Visibility = System.Windows.Visibility.Collapsed;
         }
 
-        private void SaveText_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void SaveTextContent_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("Are you SURE you want to overwrite the text to this blob?", "Confirm Overwrite",
+            if (MessageBox.Show("Are you SURE you want to update the content of this blob?", "Confirm Overwrite",
                  MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
             {
                 Cursor = Cursors.Wait;
@@ -139,7 +140,8 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
                 try
                 {
                     ViewModel.SaveText(TextEdit.Text);
-                    MessageBox.Show("The blob has been updated", "Update Successful", MessageBoxButton.OK);
+                    DialogResult = true;
+                    Close();
                 }
                 catch (Exception ex)
                 {
@@ -251,6 +253,12 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
                 MessageBox.Show("The blob Uri could not be opened.\r\n\r\n" + ex.ToString(), "Unable to View Blob", 
                     MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+            Close();
         }
 
     }

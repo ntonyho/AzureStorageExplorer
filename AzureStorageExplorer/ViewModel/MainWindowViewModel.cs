@@ -285,6 +285,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                                                     MainWindow.WindowWidth = doubleValue;
                                                 }
                                                 break;
+                                            case "CheckForNewerVersion":
+                                                checkForNewerVersion = (value == "1");
+                                                break;
+                                            case "LastVersionOffered":
+                                                lastVersionOffered = value;
+                                                break;
                                         }
                                         break;
                                     case "[ContentTypes]":
@@ -369,6 +375,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 tw.WriteLine("WindowLeft=" + MainWindow.WindowLeft.ToString());
                 tw.WriteLine("WindowHeight=" + MainWindow.WindowHeight.ToString());
                 tw.WriteLine("WindowWidth=" + MainWindow.WindowWidth.ToString());
+                tw.WriteLine("CheckForNewerVersion=" + BoolText(CheckForNewerVersion));
+                tw.WriteLine("LastVersionOffered=" + LastVersionOffered);
 
                 tw.WriteLine("[ContentTypes]");
                 tw.WriteLine("SetContentTypeAutomatically=" + BoolText(SetContentTypeAutomatically));
@@ -427,6 +435,19 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         #region Configuration / Options
 
+        private bool autoSaveConfiguration = true;
+        public bool AutoSaveConfiguration
+        {
+            get
+            {
+                return autoSaveConfiguration;
+            }
+            set
+            {
+                autoSaveConfiguration = value;
+            }
+        }
+
         private bool showWelcomeOnStartup = true;
         public bool ShowWelcomeOnStartup
         {
@@ -439,7 +460,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 if (showWelcomeOnStartup != value)
                 {
                     showWelcomeOnStartup = value;
-                    SaveConfiguration();
+                    if (autoSaveConfiguration) SaveConfiguration();
                 }
             }
         }
@@ -456,11 +477,48 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 if (preserveWindowPosition != value)
                 {
                     preserveWindowPosition = value;
-                    SaveConfiguration();
+                    if (autoSaveConfiguration) SaveConfiguration();
                 }
             }
         }
 
+        private bool checkForNewerVersion = true;
+        public bool CheckForNewerVersion
+        {
+            get
+            {
+                return checkForNewerVersion;
+            }
+            set
+            {
+                if (checkForNewerVersion != value)
+                {
+                    checkForNewerVersion = value;
+                    lastVersionOffered = String.Empty;
+                    if (autoSaveConfiguration)
+                    {
+                        SaveConfiguration();
+                    }
+                }
+            }
+        }
+
+        private string lastVersionOffered = String.Empty;
+        public string LastVersionOffered
+        {
+            get
+            {
+                return lastVersionOffered;
+            }
+            set
+            {
+                if (lastVersionOffered != value)
+                {
+                    lastVersionOffered = value;
+                    if (autoSaveConfiguration) SaveConfiguration();
+                }
+            }
+        }
 
         public bool SetContentTypeAutomatically
         {
@@ -473,11 +531,10 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 if (ContentTypeMapping.SetContentTypeAutomatically != value)
                 {
                     ContentTypeMapping.SetContentTypeAutomatically = value;
-                    SaveConfiguration();
+                    if (autoSaveConfiguration) SaveConfiguration();
                 }
             }
         }
-
 
         #region Culture
 
@@ -494,7 +551,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 {
                     culture = value;
                     SetCulture();
-                    SaveConfiguration();
+                    if (autoSaveConfiguration) SaveConfiguration();
                 }
             }
         }

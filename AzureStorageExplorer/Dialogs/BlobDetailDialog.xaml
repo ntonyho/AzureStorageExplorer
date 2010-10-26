@@ -32,38 +32,37 @@
 
     <Grid>
         <TabControl Name="TabControl" SelectionChanged="TabControl_SelectionChanged">
-        
+
             <!-- Properties -->
         
             <TabItem Header="Properties">
-                <ScrollViewer Name="PropertyPane" 
-                              Grid.Row="0"
+                
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" 
+                            Margin="0,0,0,4" Padding="8,4,4,4" 
+                            Background="PowderBlue">
+                        <StackPanel Orientation="Horizontal" >
+                            <TextBlock x:Name="ViewInBrowser" 
+                                       Text="View in Browser" 
+                                       FontFamily="Calibri" FontWeight="8"
+                                       TextDecorations="Underline" Foreground="RoyalBlue"
+                                       MouseLeftButtonDown="ViewInBrowser_MouseLeftButtonDown" />
+                        </StackPanel>
+                    </Border>
+
+                    <ScrollViewer Name="PropertyPane" 
+                              Grid.Row="1"
+                              Margin="0,0,0,8"
                               VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" 
                               HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0">
-                    <Border BorderBrush="Black" BorderThickness="1">
+                    <Border BorderBrush="Black" BorderThickness="0">
                         <StackPanel>
-                            <Border Padding="4,2,4,2" Background="PowderBlue">
-                                <StackPanel Orientation="Horizontal" >
-                                    <TextBlock x:Name="PropertyAction" 
-                                           Text="Save" 
-                                           Margin="0,0,0,0" 
-                                           FontFamily="Calibri" FontWeight="8"
-                                           TextDecorations="Underline" Foreground="RoyalBlue"
-                                           MouseLeftButtonDown="SaveProperties_MouseLeftButtonDown" />
-                                    <TextBlock x:Name="ViewInBrowser" 
-                                           Text="View in Browser" 
-                                           Margin="16,0,0,0" 
-                                           FontFamily="Calibri" FontWeight="8"
-                                           TextDecorations="Underline" Foreground="RoyalBlue"
-                                           MouseLeftButtonDown="ViewInBrowser_MouseLeftButtonDown" />
-                                    <TextBlock x:Name="PropertyCancel" Visibility="Collapsed" 
-                                           Text="Cancel" 
-                                           Margin="16,0,0,0" 
-                                           FontFamily="Calibri" FontWeight="8"
-                                           TextDecorations="Underline" Foreground="RoyalBlue"
-                                           MouseLeftButtonDown="CancelProperties_MouseLeftButtonDown" />
-                                </StackPanel>
-                            </Border>
                             <DataGrid Name="PropertyGrid"
                                 AutoGenerateColumns="False"
                                 Background="Transparent"
@@ -83,6 +82,29 @@
                         </StackPanel>
                     </Border>
                 </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" 
+                                Margin="0,0,0,0"
+                                Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Name="SaveProperties"
+                                Content="Save Properties"
+                                IsDefault="True"
+                                Margin="0,0,4,0"
+                                Height="22"
+                                FontFamily="Calibri" FontSize="12"
+                                Template="{DynamicResource GlassButton}" Foreground="Black"
+                                Click="SaveProperties_Click"/>
+                        <Button Name="CloseProperties"
+                                Content="Close"
+                                IsCancel="True"
+                                Margin="0,0,8,0"
+                                Height="22"
+                                FontFamily="Calibri" FontSize="12"
+                                Template="{DynamicResource GlassButton}" Foreground="Black"
+                                Click="Close_Click"/>
+                    </StackPanel>
+                    
+                </Grid>
             </TabItem>
             
             <!-- Image Preview -->
@@ -201,15 +223,38 @@
             <!-- Text Tab -->
 
             <TabItem Header="Text" >
-                <ScrollViewer x:Name="TextTabContent" Grid.Row="1"
-                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" 
-                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0">
-                    <Border BorderBrush="Black" BorderThickness="1">
-                        <Grid>
-                            <TextBlock Name="TextPreviewMessage" Text=""
+
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" 
+                            Margin="0,0,0,4" Padding="8,4,4,4"
+                            Background="PowderBlue">
+                        <StackPanel Orientation="Horizontal" >
+                            <TextBlock x:Name="TextUpload"  
+                                           Text="Upload Text File" 
+                                           Margin="0,0,0,0" 
+                                           FontFamily="Calibri" FontWeight="8"
+                                           TextDecorations="Underline" Foreground="RoyalBlue"
+                                           MouseLeftButtonDown="UploadTextFile_MouseLeftButtonDown" />
+                        </StackPanel>
+                    </Border>
+
+                    <ScrollViewer x:Name="TextTabContent" Grid.Row="1"
+                                  Margin="0,0,0,8"
+                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" 
+                                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0">
+                        <Border>
+                            <Grid>
+                                <TextBlock Name="TextPreviewMessage" Text=""
                                        FontFamily="Calibri" FontSize="12"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            <Button Name="CancelTextPreview" 
+                                <Button Name="CancelTextPreview" 
                                     Content="Cancel"
                                     Margin="0,48,0,0" 
                                     Height="22"
@@ -219,46 +264,53 @@
                                     Visibility="Collapsed"
                                     Click="CancelTextPreview_Click" />
 
-                            <StackPanel>
-                                <Border Padding="4,2,4,2" Background="PowderBlue">
-                                    <StackPanel Orientation="Horizontal" >
-                                    <TextBlock x:Name="TextSaveChanges" 
-                                           Text="Save Editing Changes" 
-                                           Margin="0,0,0,0" 
-                                           FontFamily="Calibri" FontWeight="8"
-                                           TextDecorations="Underline" Foreground="RoyalBlue"
-                                           MouseLeftButtonDown="SaveText_MouseLeftButtonDown" />
-                                    <TextBlock x:Name="TextUpload"  
-                                           Text="Upload Text File" 
-                                           Margin="16,0,0,0" 
-                                           FontFamily="Calibri" FontWeight="8"
-                                           TextDecorations="Underline" Foreground="RoyalBlue"
-                                           MouseLeftButtonDown="UploadTextFile_MouseLeftButtonDown" />
-                                    </StackPanel>
-                                </Border>
+                                <StackPanel>
 
-                                <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
-                                    <Border VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="{Binding PreviewTextVisibility}">
-                                        <TextBox Name="TextEdit" 
+                                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
+                                        <Border VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="{Binding PreviewTextVisibility}">
+                                            <TextBox Name="TextEdit" 
                                                  Text="{Binding PreviewText,Mode=OneWay}"
                                                  AcceptsReturn="True" AcceptsTab="True" 
                                                  TextWrapping="Wrap" 
                                                  VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
-                                    </Border>
-                                </Grid>
-                            </StackPanel>
-                            <sharp:ContentSpinner x:Name="TextSpinner" 
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                                <sharp:ContentSpinner x:Name="TextSpinner" 
                                               Margin="10" Height="32" Width="32"
                                               IsEnabled="True"
                                               HorizontalAlignment="Center" VerticalAlignment="Center"
                                               Visibility="{Binding TextSpinnerVisibility}"
                                               >
-                                <Image Source="/Images/WinAzSquare.png" Width="32" 
+                                    <Image Source="/Images/WinAzSquare.png" Width="32" 
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </sharp:ContentSpinner>
-                        </Grid>
-                    </Border>
-                </ScrollViewer>
+                                </sharp:ContentSpinner>
+                            </Grid>
+                        </Border>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" 
+                                Margin="0,0,0,0"
+                                Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Name="SaveTextContent"
+                                Content="Save Content"
+                                IsDefault="True"
+                                Margin="0,0,4,0"
+                                Height="22"
+                                FontFamily="Calibri" FontSize="12"
+                                Template="{DynamicResource GlassButton}" Foreground="Black"
+                                Click="SaveTextContent_Click"/>
+                        <Button Name="CloseText"
+                                Content="Close"
+                                IsCancel="True"
+                                Margin="0,0,8,0"
+                                Height="22"
+                                FontFamily="Calibri" FontSize="12"
+                                Template="{DynamicResource GlassButton}" Foreground="Black"
+                                Click="Close_Click"/>
+                    </StackPanel>
+
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>

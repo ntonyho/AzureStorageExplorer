@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
+using System.Net;
+using System.Diagnostics;
+using System.Reflection;
 using System.Windows.Input;
 using Neudesic.AzureStorageExplorer;
 using Neudesic.AzureStorageExplorer.Data;
@@ -18,6 +21,11 @@ namespace Neudesic.AzureStorageExplorer
         public static MainWindow This { get; set; }
 
         public static List<Exception> Exceptions = new List<Exception>();
+
+        private bool NewVersionAvailable = false;
+        private string NewVersionNumber, NewVersionProductName, NewVersionReleaseName;
+        private string NewVersionReleaseDate, NewVersionRecommended, NewVersionDownloadUrl;
+        private string CurrentVersion;
 
         public MainWindowViewModel ViewModel
         {
@@ -47,10 +55,131 @@ namespace Neudesic.AzureStorageExplorer
                 StorageAccountsComboBox.SelectedIndex = 0;
             }
 
+            CheckNewVersionAvailable(false);
+
+            if (NewVersionAvailable)
+            {
+                OfferNewVersion();
+            }
+
             if (ViewModel.ShowWelcomeOnStartup)
             {
                 ShowWelcome();
             }
+        }
+
+        #endregion
+
+        #region Updated Version Check
+
+        private void CheckNewVersionAvailable(bool recheckEvenIfAlreadyOffered)
+        {
+            try
+            {
+                if (!ViewModel.CheckForNewerVersion) return;
+
+                WebClient webClient = new WebClient();
+                string latestVersionData = webClient.DownloadString("http://neudesic.blob.core.windows.net/versioning/azurestorageexplorer.version");
+                if (!String.IsNullOrEmpty(latestVersionData))
+                {
+                    string[] parts = latestVersionData.Split(',');
+
+                    if (parts.Length >= 5)
+                    {
+                        // <version>,<product-name>,<release-name>,<date>,<recommended>,<download-url>
+                        // 4.0.0.4,Azure Storage Explorer,Beta 1 Refresh 4 (4.0.0.4),10/26/2010,1,http://azurestorageexplorer.codeplex.com
+
+                        NewVersionNumber = parts[0];
+                        NewVersionProductName = parts[1];
+                        NewVersionReleaseName = parts[2];
+                        NewVersionReleaseDate = parts[3];
+                        NewVersionRecommended = parts[4];
+                        NewVersionDownloadUrl = parts[5];
+
+                        Assembly oAssembly = Assembly.GetExecutingAssembly();
+                        FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(oAssembly.Location);
+
+                        CurrentVersion = versionInfo.FileMajorPart.ToString() + "." +
+                                                 versionInfo.FileMinorPart.ToString() + "." +
+                                                 versionInfo.FileBuildPart.ToString() + "." + 
+                                                 versionInfo.FilePrivatePart.ToString();
+
+                        string currentVersion = versionInfo.FileMajorPart.ToString() +
+                                 versionInfo.FileMinorPart.ToString() +
+                                 versionInfo.FileBuildPart.ToString() +
+                                 versionInfo.FilePrivatePart.ToString();
+
+                        string newVersion = NewVersionNumber.Replace(".", String.Empty);
+
+                        if (Int32.Parse(currentVersion) < Int32.Parse(newVersion))
+                        {
+                            if (recheckEvenIfAlreadyOffered ||
+                                NewVersionNumber != ViewModel.LastVersionOffered)
+                            {
+                                NewVersionAvailable = true;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private bool OfferNewVersion()
+        {
+            if (NewVersionAvailable)
+            {
+                NewVersionDialog dlg = new NewVersionDialog();
+                dlg.Owner = MainWindow.Window;
+                dlg.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
+                dlg.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+                dlg.DownloadUrl = NewVersionDownloadUrl;
+                dlg.CheckForNewVersionCheckbox.IsChecked = ViewModel.CheckForNewerVersion;
+                dlg.CurrentVersion.Text = "Current version: " + CurrentVersion;
+                dlg.LatestVersion.Text = "Latest version: " + NewVersionNumber + " - " + NewVersionReleaseName;
+
+                switch (NewVersionRecommended)
+                {
+                    default:
+                    case "0":
+                        dlg.Recommended.Text = "This update is optional.";
+                        break;
+                    case "1":
+                        dlg.Recommended.Text = "This update is recommended.";
+                        break;
+                    case "2":
+                        dlg.Recommended.Text = "This update is strongly recommended.";
+                        break;
+                }
+
+                bool performedAction = dlg.ShowDialog().Value;
+                ViewModel.CheckForNewerVersion = dlg.CheckForNewVersionCheckbox.IsChecked.Value;
+
+                if (performedAction)
+                {
+                    // Download or No Thanks
+
+                    ViewModel.LastVersionOffered = NewVersionNumber;
+                    return true;
+                }
+                else
+                {
+                    // Ask me Later or Close
+
+                    if (dlg.CheckForNewVersionCheckbox.IsChecked.Value)
+                    {
+                        ViewModel.AutoSaveConfiguration = false;
+                        ViewModel.CheckForNewerVersion = true;
+                        ViewModel.LastVersionOffered = string.Empty;
+                        ViewModel.SaveConfiguration();
+                        ViewModel.AutoSaveConfiguration = true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         #endregion
@@ -249,6 +378,7 @@ namespace Neudesic.AzureStorageExplorer
             
             dlg.Culture = ViewModel.Culture;
             dlg.ShowWelcomeOnStartup = ViewModel.ShowWelcomeOnStartup;
+            dlg.CheckForNewerVersion = ViewModel.CheckForNewerVersion;
             dlg.PreserveWindowPosition = ViewModel.PreserveWindowPosition;
 
             dlg.SetContentTypeAutomtically = ViewModel.SetContentTypeAutomatically;
@@ -264,20 +394,44 @@ namespace Neudesic.AzureStorageExplorer
                 
                 Cursor = Cursors.Wait;
 
+                ViewModel.AutoSaveConfiguration = false;
+
                 ViewModel.Culture = dlg.Culture;
                 ViewModel.ShowWelcomeOnStartup = dlg.ShowWelcomeOnStartup;
                 ViewModel.PreserveWindowPosition = dlg.PreserveWindowPosition;
 
                 ViewModel.SetContentTypeAutomatically = dlg.SetContentTypeAutomtically;
+                ViewModel.CheckForNewerVersion = dlg.CheckForNewerVersion;
                 ViewModel.ContentTypes = dlg.ContentTypes;
                 
                 ViewModel.SaveConfiguration();
+
+                ViewModel.AutoSaveConfiguration = true;
 
                 Cursor = Cursors.Arrow;
             }
         }
 
         #endregion
+
+        #region Tools / Check For New Version
+
+        private void ToolsCheckForNewVersionCanExecute(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = true;
+        }
+
+        private void ToolsCheckForNewVersionExecuted(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            CheckNewVersionAvailable(true);
+            if (OfferNewVersion())
+            {
+                Environment.Exit(0);
+            }
+        }
+
+        #endregion
+
 
         #endregion
 
@@ -337,7 +491,7 @@ namespace Neudesic.AzureStorageExplorer
 
         private void HelpAboutExecuted(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
-            MessageBox.Show("Azure Storage Explorer version 4.0.0.3 Beta 1 Refresh 3 (10.25.2010).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            MessageBox.Show("Azure Storage Explorer version 4.0.0.4 Beta 1 Refresh 4 (10.26.2010).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
         }
 
         #endregion

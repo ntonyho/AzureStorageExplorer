@@ -41,6 +41,12 @@ namespace Neudesic.AzureStorageExplorer.Windows
           new RoutedCommand("ToolsOptions", typeof(MainWindow));
 
         /// <summary>
+        /// Command for Tools / Options.
+        /// </summary>
+        public static RoutedCommand ToolsCheckForNewVersion =
+          new RoutedCommand("ToolsCheckForNewVersion", typeof(MainWindow));
+
+        /// <summary>
         /// Command for Importing of a file.
         /// </summary>
         public static RoutedCommand ImportFile =
