@@ -61,13 +61,13 @@
         
         <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Left" >
             <Button Content="View / Download" IsDefault="True"
-                    Margin="0,0,8,0"
+                    Margin="0,0,4,0"
                     Height="22"
                     FontFamily="Calibri" FontSize="12"
                     Template="{DynamicResource GlassButton}" Foreground="Black"                     
                     Click="Download_Click" />
             <Button Content="No Thanks" 
-                    Margin="0,0,8,0"
+                    Margin="0,0,4,0"
                     Height="22"
                     FontFamily="Calibri" FontSize="12"
                     Template="{DynamicResource GlassButton}" Foreground="Black"                     

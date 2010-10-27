@@ -17,15 +17,17 @@ namespace Neudesic.AzureStorageExplorer.Data
 
         private string name;
         private string key;
+        private bool blobContainersUpgraded = false;
 
         #endregion // Fields
 
         #region Constructor
 
-        public StorageAccount(string name, string key)
+        public StorageAccount(string name, string key, bool blobContainersUpgraded)
         {
             Name = name;
             Key = key;
+            BlobContainersUpgraded = blobContainersUpgraded;
         }
 
         #endregion // Constructor
@@ -53,6 +55,18 @@ namespace Neudesic.AzureStorageExplorer.Data
             set
             {
                 name = value;
+            }
+        }
+
+        public bool BlobContainersUpgraded
+        {
+            get
+            {
+                return blobContainersUpgraded;
+            }
+            set
+            {
+                blobContainersUpgraded = value;
             }
         }
 

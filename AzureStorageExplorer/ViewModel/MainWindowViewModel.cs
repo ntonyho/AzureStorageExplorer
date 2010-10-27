@@ -93,28 +93,6 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
         }
 
-        List<AccountViewModel> CreateAccounts()
-        {
-            return new List<AccountViewModel>
-            {
-                new AccountViewModel(
-                    "-- Select a Storage Account --", String.Empty,
-                    new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount))),
-
-                new AccountViewModel(
-                    "neudesic", "rIruMtQv2WO3I0/tb5G9CeQ5zNhcsFMBebekiZ0nPnPElD7VMC+JvnLXMMoE+bK8uRHQQ+IDRVq1O4PnGO3AFQ==",
-                    new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount))),
-
-                new AccountViewModel(
-                    "neudesicteststorage", "uzYJTykLN3I1zfCzHXmlat6sbodpsUXt7dMUbeB8nigcfMGSi6yD2RfVrmhNAvleimFg1x+WtgcZ0GZAsZ0d1g==",
-                    new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount))),
-
-                new AccountViewModel(
-                    "perfectvacaystorage", "dyoAv4BJkHjWbIO0PO9KuU7+KTr+hbLMu04eBd+bXlB9VWGUYcO39ZgjAEUizGor6EMCDI3jX5SatlZh3k9A/Q==",
-                    new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount)))
-            };
-        }
-
         #endregion // Commands
 
         #region Workspaces
@@ -174,6 +152,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             // Add a new workspace tab for the selected storage account.
 
             StorageAccountViewModel workspace = new StorageAccountViewModel(account);
+
             this.Workspaces.Add(workspace);
 
             this.SetActiveWorkspace(workspace);
@@ -203,7 +182,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
             accounts.Add(
                 new AccountViewModel(
-                        "-- Select a Storage Account --", String.Empty,
+                        "-- Select a Storage Account --", String.Empty, false, 
                         new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount)))
                         );
 
@@ -229,7 +208,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                             {
                                 case "[Account]":
                                     item = line;
-                                    avm = new AccountViewModel(null, null, new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount)));
+                                    avm = new AccountViewModel(null, null, false, new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount)));
                                     break;
                                 case "[Options]":
                                     item = line;
@@ -317,6 +296,9 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                                             case "ConnectionString":
                                                 avm.Key = value;
                                                 break;
+                                            case "BlobContainersUpgraded":
+                                                avm.BlobContainersUpgraded = (value == "1");
+                                                break;
                                             case "AutoOpen":
                                                 //account.AutoOpen = Boolean.Parse(value);
                                                 break;
@@ -397,6 +379,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                             tw.WriteLine("[Account]");
                             tw.WriteLine("Name=" + avm.AccountName);
                             tw.WriteLine("ConnectionString=" + avm.Key);
+                            tw.WriteLine("BlobContainersUpgraded=" + BoolText(avm.BlobContainersUpgraded));
                         }
                     }
 
@@ -407,9 +390,9 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         #endregion
 
-        public AccountViewModel AddAccount(string name, string key)
+        public AccountViewModel AddAccount(string name, string key, bool blobContainersUpgraded)
         {
-            AccountViewModel avm = new AccountViewModel(name, key,
+            AccountViewModel avm = new AccountViewModel(name, key, blobContainersUpgraded,
                 new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount))
                 );
 

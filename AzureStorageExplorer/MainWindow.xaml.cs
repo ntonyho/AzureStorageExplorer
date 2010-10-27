@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Windows;
 using System.Net;
-using System.Diagnostics;
 using System.Reflection;
+using System.Windows;
 using System.Windows.Input;
 using Neudesic.AzureStorageExplorer;
 using Neudesic.AzureStorageExplorer.Data;
@@ -290,14 +289,31 @@ namespace Neudesic.AzureStorageExplorer
                 {
                     string name = dlg.AccountName.Text;
                     string key = dlg.AccountKey.Text;
+                    bool proceed = false;
 
-                    if (name == "DevStorage" && !DeveloperStorageRunning())
+                    if (name == "DevStorage")
                     {
-                        MessageBox.Show("Windows Azure Developer Storage is not running.\r\n\r\nThe process DSService.exe is not detected", "Developer Storage Not Detected", MessageBoxButton.OK, MessageBoxImage.Exclamation);
-                        return;
+                        if (!DeveloperStorageRunning())
+                        {
+                            MessageBox.Show("Windows Azure Developer Storage is not running.\r\n\r\nThe process DSService.exe is not detected", "Developer Storage Not Detected", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                            return;
+                        }
+                        proceed = true;
                     }
-                
-                    StorageAccountsComboBox.SelectedItem = ViewModel.AddAccount(name, key);
+                    else
+                    {
+                        if (MessageBox.Show("Please note, the first time your blob containers are scanned there may be a wait of several minutes if any old format containers are encountered. They will be automatically upgraded to current Azure standards.\r\n\r\nFor more information, see http://social.msdn.microsoft.com/Forums/en-US/windowsazure/thread/5926f6dc-2e46-4654-a3c9-b397d0598a16",
+                            "New Storage Account", MessageBoxButton.OKCancel, MessageBoxImage.Information)
+                            == MessageBoxResult.OK)
+                        {
+                            proceed = true;
+                        }
+                    }
+
+                    if (proceed)
+                    {
+                        StorageAccountsComboBox.SelectedItem = ViewModel.AddAccount(name, key, false);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -536,5 +552,22 @@ namespace Neudesic.AzureStorageExplorer
         #endregion
 
         #endregion
+
+        public static void SaveConfiguration()
+        {
+            This.ViewModel.SaveConfiguration();
+        }
+
+        public static AccountViewModel GetAccount(string name)
+        {
+            foreach (AccountViewModel avm in This.ViewModel.Accounts)
+            {
+                if (avm.AccountName == name)
+                {
+                    return avm;
+                }
+            }
+            return null;
+        }
     }
 }

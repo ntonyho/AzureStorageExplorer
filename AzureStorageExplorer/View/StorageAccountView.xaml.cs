@@ -138,8 +138,8 @@ namespace Neudesic.AzureStorageExplorer.View
                     new RelayCommand(param => this.DownloadMessageCommandExecute()));
 
             NewTableCommandView = new CommandViewModel(
-            Strings.MainWindowViewModel_Command_NewTable,
-            new RelayCommand(param => this.NewTableCommandExecute()));
+                    Strings.MainWindowViewModel_Command_NewTable,
+                    new RelayCommand(param => this.NewTableCommandExecute()));
 
             CopyTableCommandView = new CommandViewModel(
                     Strings.MainWindowViewModel_Command_CopyTable,
@@ -152,7 +152,6 @@ namespace Neudesic.AzureStorageExplorer.View
             DeleteTableCommandView = new CommandViewModel(
                     Strings.MainWindowViewModel_Command_DeleteTable,
                     new RelayCommand(param => this.DeleteTableCommandExecute()));
-
 
             NewEntityCommandView = new CommandViewModel(
                     Strings.MainWindowViewModel_Command_NewEntity,
@@ -169,9 +168,7 @@ namespace Neudesic.AzureStorageExplorer.View
             DownloadEntityCommandView = new CommandViewModel(
                     Strings.MainWindowViewModel_Command_DownloadEntity,
                     new RelayCommand(param => this.DownloadEntityCommandExecute()));
-
-        
-        }
+       }
 
         void StorageAccountView_Loaded(object sender, RoutedEventArgs e)
         {
@@ -201,17 +198,26 @@ namespace Neudesic.AzureStorageExplorer.View
 
         private void ViewBlobsCommandExecute()
         {
+            Cursor = Cursors.Wait;
+            ViewModel.ClearStatus();
             ViewModel.ViewBlobContainers();
+            Cursor = Cursors.Arrow;
         }
 
         private void ViewQueuesCommandExecute()
         {
+            Cursor = Cursors.Wait;
+            ViewModel.ClearStatus();
             ViewModel.ViewQueues();
+            Cursor = Cursors.Arrow;
         }
 
         private void ViewTablesCommandExecute()
         {
+            Cursor = Cursors.Wait;
+            ViewModel.ClearStatus();
             ViewModel.ViewTables();
+            Cursor = Cursors.Arrow;
         }
 
         #region Container commands execution
@@ -1157,7 +1163,10 @@ namespace Neudesic.AzureStorageExplorer.View
 
         private void RefreshCommandExecute()
         {
+            Cursor = Cursors.Wait;
+            ViewModel.ClearStatus();
             ViewModel.Refresh();
+            Cursor = Cursors.Arrow;
         }
 
         #region Toolbar Button Handlers

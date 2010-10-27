@@ -97,7 +97,7 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" >
             <Button Name="SaveEntity" 
                     Content="Update Entity" IsDefault="True"
-                    Margin="0,0,8,0"
+                    Margin="0,0,4,0"
                     Height="22"
                     FontFamily="Calibri" FontSize="12"
                     Template="{DynamicResource GlassButton}" Foreground="Black"                     

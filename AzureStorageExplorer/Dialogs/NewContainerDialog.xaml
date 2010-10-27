@@ -56,7 +56,7 @@
         
         <StackPanel Grid.Row="4" Orientation="Horizontal" >
             <Button Content="Create Container" IsDefault="True"
-                    Margin="0,0,8,0"
+                    Margin="0,0,4,0"
                     Height="22"
                     FontFamily="Calibri" FontSize="12"
                     Template="{DynamicResource GlassButton}" Foreground="Black"                     

@@ -9,11 +9,13 @@ using System.IO;
 using System.Linq;
 using System.Linq.Dynamic;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using Neudesic.AzureStorageExplorer.Controls;
 using Neudesic.AzureStorageExplorer.Data;
 using System.Windows;
+using System.Windows.Threading;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.WindowsAzure;
@@ -167,7 +169,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
         }
 
-        CloudStorageAccount CloudStorageAccount { get; set; }
+        private CloudStorageAccount CloudStorageAccount { get; set; }
+        public bool BlobContainersUpgraded { get; set; }
 
         #region Storage Type Selection & Visibility
 
@@ -395,13 +398,14 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             if (account == null)
                 throw new ArgumentNullException("account");
 
-            Account = account;
+            this.Account = account;
             base.DisplayName = account.Name;
+
+            this.BlobContainersUpgraded = account.BlobContainersUpgraded;
 
             if (OpenAccount())
             {
                 this.ViewBlobContainers();
-                ReportSuccess("Ready");
             }
         }
 
@@ -521,8 +525,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         #region View Blob Containers
 
+        private int ViewBlobErrors = 0;
+
         public void ViewBlobContainers()
         {
+            ViewBlobErrors = 0;
+
             QueuesSelected = false;
             TablesSelected = false;
             BlobsSelected = true;
@@ -538,6 +546,16 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             if (!BlobsLoaded)
             {
                 ListSpinnerVisible = Visibility.Visible;
+
+                if (!BlobContainersUpgraded)
+                {
+                    ReportWarning("Loading blob containers - may take some time if older containers need upgrading");
+                }
+                else
+                {
+                    ReportActive("Loading blob containers");
+                }
+
                 BackgroundWorker background = new BackgroundWorker();
                 background.DoWork += new DoWorkEventHandler(Background_LoadContainers);
                 background.RunWorkerCompleted += new RunWorkerCompletedEventHandler(Background_LoadContainersCompleted);
@@ -552,20 +570,75 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         void Background_LoadContainersCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            List<TreeItem> items = new List<TreeItem>();
+            int upgraded = 0;
             TreeItem tvi;
+            List<TreeItem> items = new List<TreeItem>();
+
             foreach (CloudBlobContainer container in Containers)
             {
                 tvi = new TreeItem();
                 tvi.Text = NormalizeContainerName(container.Uri.LocalPath.Substring(1));
-                tvi.Image = new BitmapImage(new Uri("/Images/Folder24.png", UriKind.Relative));
+
+                try
+                {
+                    System.Diagnostics.Debug.Print(container.Name);
+                    if (container.GetPermissions().PublicAccess != BlobContainerPublicAccessType.Off)
+                    {
+                        tvi.Image = new BitmapImage(new Uri("/Images/Folder24.png", UriKind.Relative));
+                    }
+                    else
+                    {
+                        tvi.Image = new BitmapImage(new Uri("/Images/LockedFolder24.png", UriKind.Relative));
+                    }
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // This means we encountered an old-style container with permissions
+                    // set the old way (true/false), prior to the breaking change
+                    // Reset the permissions so the problem goes away.
+
+                    BlobContainerPermissions perms = new BlobContainerPermissions();
+                    if (ex.Message.Contains("True"))
+                    {
+                        perms.PublicAccess = BlobContainerPublicAccessType.Blob;
+                        tvi.Image = new BitmapImage(new Uri("/Images/LockedFolder24.png", UriKind.Relative));
+                    }
+                    else
+                    {
+                        perms.PublicAccess = BlobContainerPublicAccessType.Off;
+                        tvi.Image = new BitmapImage(new Uri("/Images/Folder24.png", UriKind.Relative));
+                    }
+                    container.SetPermissions(perms);
+                }
                 
                 tvi.Tag = container;
 
                 items.Add(tvi);
             }
+
             ContainerNodes = items;
             base.OnPropertyChanged("Folders");
+
+            if (ViewBlobErrors == 0)
+            {
+                if (upgraded > 0)
+                {
+                    ReportWarning("Upgraded " + numberof(upgraded, "container", "containers") + " to current standards");
+                }
+                else
+                {
+                    ClearStatus();
+                }
+            }
+
+            if (!BlobContainersUpgraded)
+            {
+                BlobContainersUpgraded = true;
+                Account.BlobContainersUpgraded = true;
+                MainWindow.GetAccount(Account.Name).BlobContainersUpgraded = true;
+                MainWindow.SaveConfiguration();
+            }
+            
             ListSpinnerVisible = Visibility.Collapsed;
         }
 
@@ -573,8 +646,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         #region View Queues
 
+        private int ViewQueuesErrors = 0;
+
         public void ViewQueues()
         {
+            ViewQueuesErrors = 0;
+
             BlobsSelected = false;
             TablesSelected = false;
             QueuesSelected = true;
@@ -589,6 +666,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
             if (!QueuesLoaded)
             {
+                ReportActive("Loading queues");
+
                 BackgroundWorker background = new BackgroundWorker();
                 background.DoWork += new DoWorkEventHandler(Background_LoadQueues);
                 background.RunWorkerCompleted += new RunWorkerCompletedEventHandler(Background_LoadQueuesCompleted);
@@ -617,6 +696,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
             QueueNodes = items;
             base.OnPropertyChanged("Folders");
+
+            if (ViewQueuesErrors == 0)
+            {
+                ClearStatus();
+            }
+
             ListSpinnerVisible = Visibility.Collapsed;
         }
 
@@ -624,8 +709,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         #region View Tables
 
+        private int ViewTablesErrors = 0;
+
         public void ViewTables()
         {
+            ViewTablesErrors = 0;
+
             BlobsSelected = false;
             QueuesSelected = false;
             TablesSelected = true;
@@ -636,6 +725,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
             if (!TablesLoaded)
             {
+                ReportActive("Loading Tables");
                 TableNodes.Clear();
                 BackgroundWorker background = new BackgroundWorker();
                 background.DoWork += new DoWorkEventHandler(Background_LoadTables);
@@ -674,6 +764,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
             TableNodes = items;
             base.OnPropertyChanged("Folders");
+
+            if (ViewTablesErrors == 0)
+            {
+                ClearStatus();
+            }
+
             ListSpinnerVisible = Visibility.Collapsed;
         }
 
@@ -3023,11 +3119,14 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             try
             {
                 CloudBlobClient blobClient = CloudStorageAccount.CreateCloudBlobClient();
+                
                 Containers = new List<CloudBlobContainer>(blobClient.ListContainers());
+
                 BlobsLoaded = true;
             }
             catch (Exception ex)
             {
+                ViewBlobErrors++;
                 ReportException(ex);
             }
         }
@@ -3107,6 +3206,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
             catch (Exception ex)
             {
+                ViewQueuesErrors++;
                 ReportException(ex);
             }
         }
@@ -3178,6 +3278,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
             catch (Exception ex)
             {
+                ViewTablesErrors++;
                 ReportException(ex);
             }
         }
