@@ -169,7 +169,6 @@ namespace Neudesic.AzureStorageExplorer.Data
             }
         }
 
-
         // Convert an object to a desired type. 
 
         public static object ConvertToStandardType(string value, string type)
