@@ -18,9 +18,19 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
     /// </summary>
     public partial class AddAccountDialog : Window
     {
-        public AddAccountDialog()
+        public bool Editing;  // If true, we are editing not adding.
+
+        public AddAccountDialog(bool editing)
         {
             InitializeComponent();
+
+            this.Editing = editing;
+
+            if (editing)
+            {
+                this.Title = "Edit Storage Account";
+                this.Save.Content = "Update Storage Account";
+            }
 
             AccountName.Focus();
         }

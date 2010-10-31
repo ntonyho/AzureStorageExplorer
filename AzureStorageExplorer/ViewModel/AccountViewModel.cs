@@ -20,12 +20,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
         }
 
-        public AccountViewModel(string displayName, string key, bool blobContainersUpgraded, ICommand command)
+        public AccountViewModel(string displayName, string key, bool useHttps, bool blobContainersUpgraded, ICommand command)
         {
             if (command == null)
                 throw new ArgumentNullException("command");
 
-            _account = new StorageAccount(displayName, key, blobContainersUpgraded);
+            _account = new StorageAccount(displayName, key, useHttps, blobContainersUpgraded);
 
             base.DisplayName = displayName;
             this.Key = key;
@@ -56,6 +56,18 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             set
             {
                 _account.Key = value;
+            }
+        }
+
+        public bool UseHttps
+        {
+            get
+            {
+                return _account.UseHttps;
+            }
+            set
+            {
+                _account.UseHttps = value;
             }
         }
 

@@ -279,7 +279,7 @@ namespace Neudesic.AzureStorageExplorer
 
         private void AddStorageAccount_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            AddAccountDialog dlg = new AddAccountDialog();
+            AddAccountDialog dlg = new AddAccountDialog(false);
             dlg.Owner = MainWindow.Window;
             dlg.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
             dlg.VerticalAlignment = System.Windows.VerticalAlignment.Center;
@@ -289,6 +289,7 @@ namespace Neudesic.AzureStorageExplorer
                 {
                     string name = dlg.AccountName.Text;
                     string key = dlg.AccountKey.Text;
+                    bool useHttps = dlg.UseHttps.IsChecked.Value;
                     bool proceed = false;
 
                     if (name == "DevStorage")
@@ -312,7 +313,7 @@ namespace Neudesic.AzureStorageExplorer
 
                     if (proceed)
                     {
-                        StorageAccountsComboBox.SelectedItem = ViewModel.AddAccount(name, key, false);
+                        StorageAccountsComboBox.SelectedItem = ViewModel.AddAccount(name, key, useHttps, false);
                     }
                 }
                 catch (Exception ex)
@@ -507,7 +508,7 @@ namespace Neudesic.AzureStorageExplorer
 
         private void HelpAboutExecuted(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
-            MessageBox.Show("Azure Storage Explorer version 4.0.0.4 Beta 1 Refresh 4 (10.26.2010).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            MessageBox.Show("Azure Storage Explorer version 4.0.0.5 Beta 1 Refresh 5 (10.30.2010).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
         }
 
         #endregion
@@ -568,6 +569,71 @@ namespace Neudesic.AzureStorageExplorer
                 }
             }
             return null;
+        }
+
+        private void EditStorageAccount_Click(object sender, RoutedEventArgs e)
+        {
+            if (StorageAccountsComboBox.SelectedIndex <= 0 || StorageAccountsComboBox.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a storage account to edit.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return;
+            }
+
+            AccountViewModel avm = StorageAccountsComboBox.SelectedItem as AccountViewModel;
+
+            AddAccountDialog dlg = new AddAccountDialog(true);
+            dlg.Owner = MainWindow.Window;
+            dlg.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
+            dlg.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+
+            string oldName = avm.AccountName;
+
+            dlg.AccountName.Text = avm.AccountName;
+            dlg.AccountKey.Text = avm.Key;
+            dlg.UseHttps.IsChecked = avm.UseHttps;
+            if (avm.AccountName == "DevStorage")
+            {
+                dlg.DevStorage.IsChecked = true;
+            }
+
+            if (dlg.ShowDialog().Value)
+            {
+                try
+                {
+                    string name = dlg.AccountName.Text;
+                    string key = dlg.AccountKey.Text;
+                    bool useHttps = dlg.UseHttps.IsChecked.Value;
+                    bool proceed = false;
+
+                    if (name == "DevStorage")
+                    {
+                        if (!DeveloperStorageRunning())
+                        {
+                            MessageBox.Show("Windows Azure Developer Storage is not running.\r\n\r\nThe process DSService.exe is not detected", "Developer Storage Not Detected", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                            return;
+                        }
+                        proceed = true;
+                    }
+                    else
+                    {
+                        proceed = true;
+                    }
+
+                    if (proceed)
+                    {
+                        avm.AccountName = name;
+                        avm.Key = key;
+                        avm.UseHttps = useHttps;
+                        StorageAccountsComboBox.SelectedItem = ViewModel.UpdateAccount(avm);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("An error occurred saving the configuration.\r\n\r\n" + ex.ToString(),
+                        "Could Not Save Configuration", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
+            }
+
         }
     }
 }

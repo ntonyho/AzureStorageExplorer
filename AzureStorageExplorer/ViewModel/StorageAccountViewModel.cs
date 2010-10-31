@@ -170,6 +170,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
         }
 
         private CloudStorageAccount CloudStorageAccount { get; set; }
+        
         public bool BlobContainersUpgraded { get; set; }
 
         #region Storage Type Selection & Visibility
@@ -635,8 +636,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 BlobContainersUpgraded = true;
                 Account.BlobContainersUpgraded = true;
-                MainWindow.GetAccount(Account.Name).BlobContainersUpgraded = true;
-                MainWindow.SaveConfiguration();
+                AccountViewModel avm = MainWindow.GetAccount(Account.Name);
+                if (avm != null)
+                {
+                    avm.BlobContainersUpgraded = true;
+                    MainWindow.SaveConfiguration();
+                }
             }
             
             ListSpinnerVisible = Visibility.Collapsed;
@@ -950,6 +955,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             try
             {
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(name);
                 container.Create();
                 BlobContainerPermissions permissions = new BlobContainerPermissions();
@@ -991,6 +998,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
                 CloudBlob blob, destBlob;
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(name);
                 CloudBlobContainer destContainer = client.GetContainerReference(destName);
                 destContainer.CreateIfNotExist();
@@ -1049,6 +1058,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
                 CloudBlob blob, destBlob;
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(name);
                 CloudBlobContainer destContainer = client.GetContainerReference(destName);
 
@@ -1119,6 +1130,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 name = NormalizeContainerName(name);
 
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(name);
 
                 container.Delete();
@@ -1151,6 +1164,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 containerName = NormalizeContainerName(containerName);
 
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(containerName);
                 container.CreateIfNotExist();
                 CloudBlob blob = container.GetBlobReference(blobName);
@@ -1184,6 +1199,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 containerName = NormalizeContainerName(containerName);
 
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(containerName);
                 container.CreateIfNotExist();
                 CloudPageBlob blob = container.GetPageBlobReference(blobName);
@@ -1210,6 +1227,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 ClearStatus();
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(containerName);
                 if (container != null)
                 {
@@ -1239,6 +1258,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             {
                 ClearStatus();
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(containerName);
                 if (container != null)
                 {
@@ -1271,6 +1292,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 containerName = NormalizeContainerName(containerName);
 
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = client.GetContainerReference(containerName);
                 CloudBlob blob = container.GetBlobReference(blobName);
 
@@ -1304,7 +1327,15 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
             containerName = NormalizeContainerName(containerName);
 
-            ReportActive("Uploading Blobs...");
+
+            if (filenames != null && filenames.Count() == 1)
+            {
+                ReportActive("Uploading Blob...");
+            }
+            else
+            {
+                ReportActive("Uploading Blobs...");
+            }
 
             UploadInProgress = true;
 
@@ -1314,6 +1345,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
             UploadContainerName = containerName;
             CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+            client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
             UploadContainer = client.GetContainerReference(containerName);
 
             BackgroundWorker background = new BackgroundWorker();
@@ -1328,10 +1361,18 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             string blobName;
             int count = 0;
             int errors = 0;
+            CloudBlob blob;
 
             try
             {
                 CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.Timeout = new TimeSpan(1, 0, 0);
+                client.WriteBlockSizeInBytes = 4 * 1024 * 1024;
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
+                BlobRequestOptions options = new BlobRequestOptions();
+                options.Timeout = new TimeSpan(1, 0, 0);
+                options.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
                 
                 if (UploadContainer != null)
                 {
@@ -1346,8 +1387,12 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                             {
                                 blobName = blobName.Substring(pos + 1);
                             }
-                            CloudBlob blob = UploadContainer.GetBlobReference(blobName);
-                            blob.UploadByteArray(File.ReadAllBytes(filename));
+                            blob = UploadContainer.GetBlobReference(blobName);
+                            
+                            client.ResponseReceived += new EventHandler<ResponseReceivedEventArgs>(client_ResponseReceived);
+                            FileStream stream = File.OpenRead(filename);
+                            blob.UploadFromStream(stream, options);
+                            stream.Close();
 
                             if (ContentTypeMapping.SetContentTypeAutomatically)
                             {
@@ -1396,6 +1441,10 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
         }
 
+        void client_ResponseReceived(object sender, ResponseReceivedEventArgs e)
+        {
+        }
+
         void Background_UploadBlobsCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             UploadInProgress = false;
@@ -1409,19 +1458,26 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
         public bool DownloadInProgress { get; internal set; }
         private CloudBlob[] DownloadBlobList;
         private string[] DownloadFileList;
+        private string DownloadContainerName;
 
         public void DownloadBlobs(string containerName, CloudBlob[] blobs, string[] filenames)
         {
             if (CloudStorageAccount == null || blobs == null) return;
 
-            containerName = NormalizeContainerName(containerName);
-
+            DownloadContainerName = NormalizeContainerName(containerName);
             DownloadBlobList = blobs;
             DownloadFileList = filenames;
 
             DetailSpinnerVisible = Visibility.Visible;
-            
-            ReportActive("Downloading Blobs...");
+
+            if (blobs != null && blobs.Count() == 1)
+            {
+                ReportActive("Downloading Blob...");
+            }
+            else
+            {
+                ReportActive("Downloading Blobs...");
+            }
 
             DownloadInProgress = true;
 
@@ -1439,13 +1495,27 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 string filename;
                 int count = DownloadBlobList.Length;
 
+                CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+                client.Timeout = new TimeSpan(1, 0, 0);
+                client.WriteBlockSizeInBytes = 4 * 1024 * 1024;
+                client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
+                BlobRequestOptions options = new BlobRequestOptions();
+                options.Timeout = new TimeSpan(1, 0, 0);
+                options.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 for (int i = 0; i < count; i++)
                 {
                     blob = DownloadBlobList[i];
                     filename = DownloadFileList[i];
-                    blob.DownloadToFile(filename);
-                }
 
+                    blob = client.GetBlobReference(blob.Uri.AbsoluteUri);
+
+                    FileStream stream = File.OpenWrite(filename);
+                    blob.DownloadToStream(stream);
+                    stream.Close();
+                }
+                
                 ReportSuccess("Download Complete");
             }
             catch (Exception ex)
@@ -3088,7 +3158,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                     else
                     {
                         CloudStorageAccount = new CloudStorageAccount(
-                            new StorageCredentialsAccountAndKey(Account.Name, Account.Key), false /* TODO: Account.UseHttps */);
+                            new StorageCredentialsAccountAndKey(Account.Name, Account.Key), Account.UseHttps);
                     }
 
                     return true;
@@ -3119,6 +3189,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             try
             {
                 CloudBlobClient blobClient = CloudStorageAccount.CreateCloudBlobClient();
+                blobClient.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
                 
                 Containers = new List<CloudBlobContainer>(blobClient.ListContainers());
 
@@ -3146,6 +3217,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 containerName = NormalizeContainerName(containerName);
 
                 CloudBlobClient blobClient = CloudStorageAccount.CreateCloudBlobClient();
+                blobClient.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+
                 CloudBlobContainer container = blobClient.GetContainerReference(containerName);
 
                 BlobRequestOptions options = new BlobRequestOptions();

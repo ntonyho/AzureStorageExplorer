@@ -182,7 +182,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
             accounts.Add(
                 new AccountViewModel(
-                        "-- Select a Storage Account --", String.Empty, false, 
+                        "-- Select a Storage Account --", String.Empty, false, false, 
                         new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount)))
                         );
 
@@ -208,7 +208,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                             {
                                 case "[Account]":
                                     item = line;
-                                    avm = new AccountViewModel(null, null, false, new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount)));
+                                    avm = new AccountViewModel(null, null, false, false, new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount)));
                                     break;
                                 case "[Options]":
                                     item = line;
@@ -303,7 +303,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                                                 //account.AutoOpen = Boolean.Parse(value);
                                                 break;
                                             case "UseHttps":
-                                                //account.UseHttps = Boolean.Parse(value);
+                                                avm.UseHttps = (value == "1");
                                                 break;
                                         }
                                         break;
@@ -379,6 +379,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                             tw.WriteLine("[Account]");
                             tw.WriteLine("Name=" + avm.AccountName);
                             tw.WriteLine("ConnectionString=" + avm.Key);
+                            tw.WriteLine("UseHttps=" + BoolText(avm.UseHttps));
                             tw.WriteLine("BlobContainersUpgraded=" + BoolText(avm.BlobContainersUpgraded));
                         }
                     }
@@ -390,14 +391,27 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         #endregion
 
-        public AccountViewModel AddAccount(string name, string key, bool blobContainersUpgraded)
+        public AccountViewModel AddAccount(string name, string key, bool useHttps, bool blobContainersUpgraded)
         {
-            AccountViewModel avm = new AccountViewModel(name, key, blobContainersUpgraded,
+            AccountViewModel avm = new AccountViewModel(name, key, useHttps, blobContainersUpgraded,
                 new RelayCommand(param => this.ViewStorageAccount(param as StorageAccount))
                 );
 
             Accounts.Add(avm);
             
+            List<AccountViewModel> list = new List<AccountViewModel>(_accounts.ToArray());
+            list.Sort();
+            _accounts = new ObservableCollection<AccountViewModel>(list);
+
+            SaveConfiguration();
+
+            OnPropertyChanged("Accounts");
+
+            return avm;
+        }
+
+        public AccountViewModel UpdateAccount(AccountViewModel avm)
+        {
             List<AccountViewModel> list = new List<AccountViewModel>(_accounts.ToArray());
             list.Sort();
             _accounts = new ObservableCollection<AccountViewModel>(list);
