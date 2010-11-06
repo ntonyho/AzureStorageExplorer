@@ -62,6 +62,29 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
             }
         }
 
+        private void SaveMetadata_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("Are you SURE you want to update this blob's metadata?", "Confirm Update",
+                 MessageBoxButton.YesNo, MessageBoxImage.Exclamation) == MessageBoxResult.Yes)
+            {
+                Cursor = Cursors.Wait;
+
+                try
+                {
+                    ViewModel.SaveMetadata();
+                    DialogResult = true;
+                    Close();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("The blob update failed due to an error.\r\n\r\n" + ex.ToString(),
+                        "Update Failed", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
+
+                Cursor = Cursors.Arrow;
+            }
+        }
+
         private void CancelProperties_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
 

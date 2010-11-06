@@ -71,12 +71,12 @@
                                 FontFamily="Calibri" FontWeight="10" GridLinesVisibility="All"
                                 ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
                                 HorizontalGridLinesBrush="#22000000" VerticalGridLinesBrush="#22000000"
-                                HeadersVisibility="None" 
+                                HeadersVisibility="Column" 
                                 ItemsSource="{Binding Properties,Mode=TwoWay}"
                                 >
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn IsReadOnly="True" Header="Property" Width="Auto" Binding="{Binding PropertyName,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
-                                    <DataGridTextColumn Header="Value" Width="Auto" Binding="{Binding PropertyValue,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTextColumn IsReadOnly="True" Header="Property" MinWidth="100" Width="Auto" Binding="{Binding PropertyName,Mode=OneWay,UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTextColumn Header="Value" MinWidth="100" Width="Auto" Binding="{Binding PropertyValue,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </StackPanel>
@@ -106,7 +106,70 @@
                     
                 </Grid>
             </TabItem>
-            
+
+            <!-- Metadata -->
+
+            <TabItem Header="Metadata">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <ScrollViewer Name="MetadataPane" 
+                              Grid.Row="1"
+                              Margin="0,0,0,8"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" 
+                              HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="0">
+                        <Border BorderBrush="Black" BorderThickness="0">
+                            <StackPanel>
+                                <DataGrid Name="MetadataGrid"
+                                          AutoGenerateColumns="False"
+                                          Background="Transparent"
+                                          RowBackground="White"
+                                          Foreground="Black"
+                                          FontFamily="Calibri" FontWeight="10" GridLinesVisibility="All"
+                                          ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}"
+                                          HorizontalGridLinesBrush="#22000000" VerticalGridLinesBrush="#22000000"
+                                          HeadersVisibility="Column" 
+                                          ItemsSource="{Binding Metadata,Mode=TwoWay}"
+                                          >
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Name" MinWidth="100" Width="Auto" Binding="{Binding PropertyName,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTextColumn Header="Value" MinWidth="100" Width="Auto" Binding="{Binding PropertyValue,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </Border>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="2" 
+                                Margin="0,0,0,0"
+                                Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Name="SaveMetadata"
+                                Content="Save Metadata"
+                                IsDefault="True"
+                                Margin="0,0,4,0"
+                                Height="22"
+                                FontFamily="Calibri" FontSize="12"
+                                Template="{DynamicResource GlassButton}" Foreground="Black"
+                                Click="SaveMetadata_Click"/>
+                        <Button Name="CloseMetadata"
+                                Content="Close"
+                                IsCancel="True"
+                                Margin="0,0,8,0"
+                                Height="22"
+                                FontFamily="Calibri" FontSize="12"
+                                Template="{DynamicResource GlassButton}" Foreground="Black"
+                                Click="Close_Click"/>
+                    </StackPanel>
+
+                </Grid>
+            </TabItem>
+
+
             <!-- Image Preview -->
 
             <TabItem Header="Image" >

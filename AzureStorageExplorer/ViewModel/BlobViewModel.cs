@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
@@ -209,7 +210,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 if (properties == null)
                 {
                     properties = new List<Property>();
-                    properties.Add(new Property("(Name)", BlobDescriptor.BlobName(blob))); // was: .Uri.LocalPath));
+                    properties.Add(new Property("(Name)", BlobDescriptor.BlobName(blob)));
                     if (!editable) properties.Add(new Property("AbsoluteUri", blob.Attributes.Uri.AbsoluteUri));
                     if (!editable) properties.Add(new Property("Blob Type", blob.Properties.BlobType.ToString()));
                     properties.Add(new Property("CacheControl", blob.Properties.CacheControl));
@@ -229,8 +230,20 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             }
         }
 
+        public ObservableCollection<Property> Metadata { get; set; }
+
         public BlobViewModel(BlobDescriptor blob)
         {
+            Metadata = new ObservableCollection<Property>();
+
+            if (blob.CloudBlob.Metadata != null)
+            {
+                foreach(string key in blob.CloudBlob.Metadata.AllKeys)
+                {
+                    Metadata.Add(new Property(key, blob.CloudBlob.Metadata[key]));
+                }
+            }
+
             TextSpinnerVisibility = Visibility.Visible;
             PreviewTextVisibility = Visibility.Collapsed;
 
@@ -324,6 +337,23 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 }
             }
             blob.SetProperties();
+        }
+
+        public void SaveMetadata()
+        {
+            CloudBlob blob = Blob.CloudBlob;
+            blob.Metadata.Clear();
+            if (Metadata != null)
+            {
+                foreach (Property prop in Metadata)
+                {
+                    if (!String.IsNullOrEmpty(prop.PropertyName))
+                    {
+                        blob.Metadata[prop.PropertyName] = prop.PropertyValue;
+                    }
+                }
+            }
+            blob.SetMetadata();
         }
 
         #endregion

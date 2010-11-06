@@ -58,7 +58,10 @@ namespace Neudesic.AzureStorageExplorer
 
             if (NewVersionAvailable)
             {
-                OfferNewVersion();
+                if (OfferNewVersion())
+                {
+                    Environment.Exit(0);
+                }
             }
 
             if (ViewModel.ShowWelcomeOnStartup)
@@ -508,7 +511,7 @@ namespace Neudesic.AzureStorageExplorer
 
         private void HelpAboutExecuted(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
-            MessageBox.Show("Azure Storage Explorer version 4.0.0.5 Beta 1 Refresh 5 (10.30.2010).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            MessageBox.Show("Azure Storage Explorer version 4.0.0.6 Beta 1 Refresh 6 (11.16.2010).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
         }
 
         #endregion

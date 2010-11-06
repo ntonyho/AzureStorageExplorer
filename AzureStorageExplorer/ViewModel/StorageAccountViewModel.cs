@@ -3223,6 +3223,7 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
                 BlobRequestOptions options = new BlobRequestOptions();
                 options.UseFlatBlobListing = true;
+                options.BlobListingDetails = BlobListingDetails.All;
 
                 blobItemNodes.Clear();
                 foreach (IListBlobItem blob in container.ListBlobs(options))
@@ -3463,8 +3464,6 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 }
             }
         }
-
-
 
         void OnWritingEntity(object sender, System.Data.Services.Client.ReadingWritingEntityEventArgs e)
         {
