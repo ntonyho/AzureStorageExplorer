@@ -122,12 +122,14 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
                 case 0:
                     break;
                 case 1:
-                    ViewModel.ImageVisible = true;
                     break;
                 case 2:
-                    ViewModel.VideoVisible = true;
+                    ViewModel.ImageVisible = true;
                     break;
                 case 3:
+                    ViewModel.VideoVisible = true;
+                    break;
+                case 4:
                     ViewModel.TextVisible = true;
                     break;
             }
