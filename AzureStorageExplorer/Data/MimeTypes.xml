@@ -31,13 +31,21 @@
 	<type extension=".htm" mimetype="text/html" />
 	<type extension=".html" mimetype="text/html" />
 	<type extension=".php" mimetype="text/php " />
-	
+  <type extension=".js" mimetype="application/javascript" />
+  
 	<!-- Text types -->
 	<type extension=".txt" mimetype="text/plain" />
 	<type extension=".csv" mimetype="text/csv" />
 	<type extension=".xml" mimetype="text/xml" />
-	
+
+  <!-- PDF -->
+  <type extension=".pdf" mimetype="application/pdf" />
+  
 	<!-- Android specific -->
 	<type extension=".apk" mimetype="application/vnd.android.package-archive" />
-	
+
+  <!-- Silverlight types -->
+  <type extension=".xaml" mimetype="application/xaml+xm" />
+  <type extension=".xap" mimetype="application/x-silverlight-app" />
+
 </MimeTypes>

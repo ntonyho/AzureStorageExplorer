@@ -7,10 +7,10 @@
 "LanguageId" = "3:1033"
 "CodePage" = "3:1252"
 "UILanguageId" = "3:1033"
-"SccProjectName" = "8:"
-"SccLocalPath" = "8:"
-"SccAuxPath" = "8:"
-"SccProvider" = "8:"
+"SccProjectName" = "8:$/azurestorageexplorer/Setup"
+"SccLocalPath" = "8:."
+"SccAuxPath" = "8:https://tfs.codeplex.com/tfs/tfs09"
+"SccProvider" = "8:{4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}"
     "Hierarchy"
     {
         "Entry"
@@ -52,7 +52,7 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_B2C9923B6879E3923BE79006A43069A0"
+        "OwnerKey" = "8:_045DDE8080D4401C91044EE2AC6D910E"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -64,7 +64,7 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_045DDE8080D4401C91044EE2AC6D910E"
+        "OwnerKey" = "8:_B2C9923B6879E3923BE79006A43069A0"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -908,7 +908,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_21CE35907F354D6EAF040A32536A8BD4"
             {
-            "SourcePath" = "8:..\\AzureStorageExplorer\\obj\\Debug\\AzureStorageExplorer.exe"
+            "SourcePath" = "8:..\\AzureStorageExplorer\\obj\\Release\\AzureStorageExplorer.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_E5D59CBB059E41B1921FBF002E404F06"
