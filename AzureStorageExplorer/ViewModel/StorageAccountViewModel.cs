@@ -3551,6 +3551,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         public static bool ValidContainerName(string containerName)
         {
+            if (containerName.Equals("$root")) return true;
+
             // Container names are 3-63 characters in length and may contain lower-case alphanumeric characters 
             // and dashes. Dashes must be preceded and followed by an alphanumeric character. 
 
