@@ -15,25 +15,7 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_045DDE8080D4401C91044EE2AC6D910E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_17CA75918A214852896ABEDD4D45F3AE"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3446BDDC69A94F68A1DD7C4FD700A11C"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_67AC5746018B49DFA482159900A0AF4F"
+        "MsmKey" = "8:_02AF82D6B8E24AA48354FA51C7E02C69"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -41,6 +23,12 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_21CE35907F354D6EAF040A32536A8BD4"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_02AF82D6B8E24AA48354FA51C7E02C69"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -148,82 +136,21 @@
         }
         "File"
         {
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_045DDE8080D4401C91044EE2AC6D910E"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_02AF82D6B8E24AA48354FA51C7E02C69"
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Microsoft.WindowsAzure.ServiceRuntime, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Microsoft.WindowsAzure.StorageClient, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
+                    "_02AF82D6B8E24AA48354FA51C7E02C69"
+                    {
+                    "Name" = "8:Microsoft.WindowsAzure.StorageClient.dll"
+                    "Attributes" = "3:512"
+                    }
                 }
-            "SourcePath" = "8:C:\\Program Files\\Windows Azure SDK\\v1.2\\ref\\Microsoft.WindowsAzure.ServiceRuntime.dll"
+            "SourcePath" = "8:..\\AzureStorageExplorer\\bin\\Release\\Microsoft.WindowsAzure.StorageClient.dll"
             "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_E5D59CBB059E41B1921FBF002E404F06"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_17CA75918A214852896ABEDD4D45F3AE"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Microsoft.WindowsAzure.StorageClient, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                }
-            "SourcePath" = "8:C:\\Program Files\\Windows Azure SDK\\v1.2\\ref\\Microsoft.WindowsAzure.StorageClient.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_E5D59CBB059E41B1921FBF002E404F06"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3446BDDC69A94F68A1DD7C4FD700A11C"
-            {
-            "SourcePath" = "8:C:\\Program Files\\Windows Azure SDK\\v1.2\\ref\\Microsoft.WindowsAzure.ServiceRuntime.xml"
-            "TargetName" = "8:Microsoft.WindowsAzure.ServiceRuntime.xml"
-            "Tag" = "8:"
-            "Folder" = "8:_E5D59CBB059E41B1921FBF002E404F06"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_67AC5746018B49DFA482159900A0AF4F"
-            {
-            "SourcePath" = "8:C:\\Program Files\\Windows Azure SDK\\v1.2\\ref\\Microsoft.WindowsAzure.StorageClient.xml"
-            "TargetName" = "8:Microsoft.WindowsAzure.StorageClient.xml"
             "Tag" = "8:"
             "Folder" = "8:_E5D59CBB059E41B1921FBF002E404F06"
             "Condition" = "8:"
@@ -308,14 +235,14 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Azure Storage Explorer"
         "ProductCode" = "8:{3285EEA9-A860-47DB-840B-6FD3D72331B8}"
-        "PackageCode" = "8:{2E885323-2F68-49DB-903F-C4699E7E9831}"
+        "PackageCode" = "8:{E45254DF-C8D0-459B-A342-56B5DD00259D}"
         "UpgradeCode" = "8:{A4AADCDD-639D-4409-A6D4-3939EC2337E2}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:4.0.0.8"
+        "ProductVersion" = "8:4.0.8"
         "Manufacturer" = "8:Neudesic"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.neudesic.com/cloud"
