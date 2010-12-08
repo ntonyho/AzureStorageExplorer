@@ -37,9 +37,11 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 Properties.Add(new Property("Timestamp", Entity.Timestamp.ToShortDateString()));
                 if (entity.Properties != null)
                 {
+                    string propertyValue;
                     foreach(KeyValuePair<string, object> kvp in entity.Properties)
                     {
-                        Properties.Add(new Property(kvp.Key, Column.StandardType(kvp.Value), kvp.Value.ToString()));
+                        propertyValue = (kvp.Value == null) ? String.Empty : kvp.Value.ToString();
+                        Properties.Add(new Property(kvp.Key, Column.StandardType(kvp.Value), propertyValue));
                     }
 
                     if (ColumnNames != null)
