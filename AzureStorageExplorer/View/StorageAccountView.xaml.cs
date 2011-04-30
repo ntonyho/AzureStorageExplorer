@@ -1990,5 +1990,50 @@ namespace Neudesic.AzureStorageExplorer.View
                 ViewModel.DeleteEntities(tableName, query);
             }
         }
+
+        private void SecurityBlobButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (FolderTree.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a container to use.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                return;
+            }
+
+            string containerName = (FolderTree.SelectedItem as TreeItem).Text;
+
+            string blobName = null;
+
+            if (FolderTree.SelectedItem != null && BlobList.SelectedItems.Count > 0)
+            {
+                BlobDescriptor blob = BlobList.SelectedItems[0] as BlobDescriptor;
+                blobName = blob.Name;
+            }
+
+            ViewModel.ClearStatus();
+
+            BlobSecurityDialog dlg = new BlobSecurityDialog();
+            dlg.Owner = MainWindow.Window;
+            dlg.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
+            dlg.VerticalAlignment = System.Windows.VerticalAlignment.Center;
+            dlg.ContainerName = containerName;
+            dlg.BlobName = blobName;
+            dlg.ViewModel = ViewModel;
+            dlg.ShowDialog();
+
+            //if (dlg.ShowDialog().Value)
+            //{
+            //    //string name = dlg.ContainerName.Text;
+                //int access = 0;
+                //if (dlg.PublicBlob.IsChecked.Value)
+                //{
+                //    access = 1;
+                //}
+                //else if (dlg.PublicContainer.IsChecked.Value)
+                //{
+                //    access = 2;
+                //}
+                //ViewModel.NewContainer(name, access);
+            //}
+        }
     }
 }

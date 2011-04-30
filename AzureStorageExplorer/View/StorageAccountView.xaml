@@ -127,6 +127,7 @@
                             <controls:ToolbarButton Text="Delete" Image="/Images/DeleteItem.png" ButtonBase.Click="DeleteBlobButton_Click" />
                             <controls:ToolbarButton Text="Upload" Image="/Images/UploadItem.png" ButtonBase.Click="UploadBlobButton_Click" />
                             <controls:ToolbarButton Text="Download" Image="/Images/DownloadItem.png" ButtonBase.Click="DownloadBlobButton_Click" />
+                            <controls:ToolbarButton Text="Security" Image="/Images/LockedFolder24.png" ButtonBase.Click="SecurityBlobButton_Click" />
                         </StackPanel>
                     </StackPanel>
 

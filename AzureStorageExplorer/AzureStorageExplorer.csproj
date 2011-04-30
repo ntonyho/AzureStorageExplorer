@@ -108,6 +108,7 @@
     <Compile Include="Data\Blob Descriptor.cs" />
     <Compile Include="Data\Column.cs" />
     <Compile Include="Data\ContentTypeMapping.cs" />
+    <Compile Include="Data\PolicyView.cs" />
     <Compile Include="Data\GenericEntity.cs" />
     <Compile Include="Data\Property.cs" />
     <Compile Include="Data\StorageAccount.cs" />
@@ -116,6 +117,9 @@
     </Compile>
     <Compile Include="Dialogs\BlobDetailDialog.xaml.cs">
       <DependentUpon>BlobDetailDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\BlobSecurityDialog.xaml.cs">
+      <DependentUpon>BlobSecurityDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dialogs\NewVersionDialog.xaml.cs">
       <DependentUpon>NewVersionDialog.xaml</DependentUpon>
@@ -245,6 +249,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Dialogs\BlobDetailDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\BlobSecurityDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

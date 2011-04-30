@@ -9,7 +9,7 @@
   FontFamily="Verdana"
   MinWidth="650" MinHeight="420"
   Title="{Binding Path=DisplayName}"
-  Width="800" Height="580"
+  Width="810" Height="580"
   WindowStartupLocation="Manual"
   Closing="Window_Closing"
   >

@@ -1147,6 +1147,29 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         #endregion
 
+        #region Container Access Level
+
+        public BlobContainerPublicAccessType GetContainerAccessLevel(string containerName)
+        {
+            CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+            client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+            CloudBlobContainer container = client.GetContainerReference(containerName);
+            BlobContainerPermissions permissions = container.GetPermissions();
+            return permissions.PublicAccess;
+        }
+
+        public void SetContainerAccessLevel(string containerName, BlobContainerPublicAccessType accessType)
+        {
+            CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+            client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+            CloudBlobContainer container = client.GetContainerReference(containerName);
+            BlobContainerPermissions permissions = container.GetPermissions();
+            permissions.PublicAccess = accessType;
+            container.SetPermissions(permissions);
+        }
+
+        #endregion
+
         #endregion
 
         #region Blob Actions
@@ -1529,6 +1552,110 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
             DownloadInProgress = false;
             DetailSpinnerVisible = Visibility.Collapsed;
         }
+
+        #region Shared Access Signatures
+
+        public SharedAccessPolicies GetContainerAccessPolicies(string containerName)
+        {
+            SharedAccessPolicies policies = new SharedAccessPolicies();
+
+            CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+            client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+            CloudBlobContainer container = client.GetContainerReference(containerName);
+            BlobContainerPermissions permissions = container.GetPermissions();
+
+            if (permissions != null)
+            {
+                foreach (KeyValuePair<string, SharedAccessPolicy> policy in permissions.SharedAccessPolicies)
+                {
+                    policies.Add(policy.Key, policy.Value);
+                }
+            }
+
+            return policies;
+        }
+
+        public void SetContainerAccessPolicies(string containerName, SharedAccessPolicies policies)
+        {
+            CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+            client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+            CloudBlobContainer container = client.GetContainerReference(containerName);
+            BlobContainerPermissions permissions = container.GetPermissions();
+            permissions.SharedAccessPolicies.Clear();
+
+            if (policies != null)
+            {
+                foreach (KeyValuePair<string, SharedAccessPolicy> policy in policies)
+                {
+                    permissions.SharedAccessPolicies.Add(policy.Key, policy.Value);
+                }
+            }
+
+            container.SetPermissions(permissions);
+        }
+
+        public string GenerateSharedAccessSignature(string containerName, string blobName, 
+            bool read, bool write, bool delete, bool list, DateTime startTime, DateTime endTime)
+        {
+            CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+            client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+            CloudBlobContainer container = client.GetContainerReference(containerName);
+
+            string path;
+
+            if (string.IsNullOrEmpty(blobName))
+            {
+                path = container.Attributes.Uri.AbsoluteUri;
+            }
+            else
+            {
+                CloudBlob blob = container.GetBlobReference(blobName);
+                path = blob.Attributes.Uri.AbsoluteUri;
+            }
+
+            SharedAccessPermissions permissions = new SharedAccessPermissions();
+            if (read) permissions |= SharedAccessPermissions.Read;
+            if (write) permissions |= SharedAccessPermissions.Write;
+            if (delete) permissions |= SharedAccessPermissions.Delete;
+            if (list) permissions |= SharedAccessPermissions.List;
+
+            SharedAccessPolicy policy = new SharedAccessPolicy()
+            {
+                Permissions = permissions,
+                SharedAccessStartTime = startTime,
+                SharedAccessExpiryTime = endTime
+            };
+
+            string queryString = container.GetSharedAccessSignature(policy);
+
+            return path + queryString;
+        }
+
+        public string GenerateSharedAccessSignatureFromPolicy(
+            string containerName, string blobName, string policyName)
+        {
+            CloudBlobClient client = CloudStorageAccount.CreateCloudBlobClient();
+            client.RetryPolicy = RetryPolicies.Retry(20, TimeSpan.Zero);
+            CloudBlobContainer container = client.GetContainerReference(containerName);
+
+            string path;
+
+            if (string.IsNullOrEmpty(blobName))
+            {
+                path = container.Attributes.Uri.AbsoluteUri;
+            }
+            else
+            {
+                CloudBlob blob = container.GetBlobReference(blobName);
+                path = blob.Attributes.Uri.AbsoluteUri;
+            }
+
+            string queryString = container.GetSharedAccessSignature(new SharedAccessPolicy(), policyName);
+
+            return path + queryString;
+        }
+
+        #endregion
 
         #endregion
 

@@ -235,7 +235,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Azure Storage Explorer"
         "ProductCode" = "8:{3285EEA9-A860-47DB-840B-6FD3D72331B8}"
-        "PackageCode" = "8:{E45254DF-C8D0-459B-A342-56B5DD00259D}"
+        "PackageCode" = "8:{2F2E1D54-380B-4F4D-A4BA-DBEA698588A5}"
         "UpgradeCode" = "8:{A4AADCDD-639D-4409-A6D4-3939EC2337E2}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

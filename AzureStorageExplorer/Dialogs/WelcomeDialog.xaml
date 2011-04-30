@@ -27,7 +27,7 @@
                  TextWrapping="Wrap"
                  FontWeight="Bold"
                  IsReadOnly="True"
-                 Text="Welcome to the public beta of Azure Storage Explorer 4" />
+                 Text="Welcome to Azure Storage Explorer 4" />
         
         <TextBox Grid.Row="1" 
                  Margin="0,0,0,16"
@@ -48,7 +48,7 @@
                  BorderThickness="0"
                  IsReadOnly="True"
                  TextWrapping="Wrap"
-                 Text="This is a beta release, which means the software has not yet undergone extensive testing. So again, please exercise appropriate caution and keep safe copies of your data. You can submit feedback at AzureStorageExplorer.CodePlex.com." />
+                 Text="This is community software, which means the software has not yet undergone extensive testing. So please exercise appropriate caution and keep safe copies of your data. You can submit feedback at AzureStorageExplorer.CodePlex.com." />
 
         <TextBox Grid.Row="4" 
                  Margin="0,0,0,16"
