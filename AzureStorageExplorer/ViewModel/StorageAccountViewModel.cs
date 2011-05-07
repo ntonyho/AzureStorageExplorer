@@ -81,6 +81,8 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
         private List<TreeItem> QueueNodes = new List<TreeItem>();
         private List<TreeItem> TableNodes = new List<TreeItem>();
 
+        private string SourceTableName, DestTableName;
+
         private Visibility _blobListVisibility = Visibility.Collapsed;
         public System.Windows.Visibility BlobListVisibility
         {
@@ -2039,26 +2041,56 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         public void CopyTable(string name, string destName)
         {
+            DetailSpinnerVisible = Visibility.Visible;
+
+            SourceTableName = name;
+            DestTableName = destName;
+
+            ReportActive("Copying table " + name + " to " + destName + "...");
+
+            UploadInProgress = true;
+
+            BackgroundWorker background = new BackgroundWorker();
+
+            background.DoWork += new DoWorkEventHandler(Background_CopyEntities);
+
+            background.RunWorkerCompleted += new RunWorkerCompletedEventHandler(Background_CopyEntitiesCompleted);
+            background.RunWorkerAsync();
+        }
+
+        private void Background_CopyEntities(object sender, DoWorkEventArgs e)
+        {
             List<GenericEntity> entityList = new List<GenericEntity>();
+
+            if (!OpenAccount()) return;
 
             try
             {
-                ListSpinnerVisible = Visibility.Visible;
-                ClearStatus();
-
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-                tableClient.CreateTableIfNotExist(destName);
+                tableClient.CreateTableIfNotExist(DestTableName);
 
                 TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
 
-                IQueryable<GenericEntity> entities =
-                    (from entity in tableServiceContext.CreateQuery<GenericEntity>(name) select entity);
-                List<GenericEntity> entitiesList = entities.ToList<GenericEntity>();
+                CloudTableQuery<GenericEntity> cloudTableQuery = null;
+                if (!String.IsNullOrEmpty(TableQuery))
+                {
+                    cloudTableQuery =
+                    (from entity in tableServiceContext.CreateQuery<GenericEntity>(SourceTableName)
+                     .AddQueryOption("$filter", TableQuery)
+                     select entity).AsTableServiceQuery<GenericEntity>();
+                }
+                else
+                {
+                    cloudTableQuery =
+                    (from entity in tableServiceContext.CreateQuery<GenericEntity>(SourceTableName)
+                     select entity).AsTableServiceQuery<GenericEntity>();
+                }
+                IEnumerable<GenericEntity> entities = cloudTableQuery.Execute() as IEnumerable<GenericEntity>;
 
                 // Read entities from source table and add to destination table.
 
                 entityList.Clear();
-                foreach (GenericEntity entity in entitiesList)
+                foreach (GenericEntity entity in entities)
                 {
                     entityList.Add(entity);
                 }
@@ -2066,18 +2098,38 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 tableClient = CloudStorageAccount.CreateCloudTableClient();
                 tableServiceContext = CreateTableServiceContext(tableClient);
 
+                const int batchSize = 10;
+                int batchRecords = 0;
+                int entitiesCopiedCount = 0;
                 foreach (GenericEntity entity in entityList)
                 {
-                    tableServiceContext.AddObject(destName, new GenericEntity(entity));
-                    tableServiceContext.SaveChanges();
+                    tableServiceContext.AddObject(DestTableName, new GenericEntity(entity));
+                    entitiesCopiedCount++;
+                    batchRecords++;
+                    if (batchRecords >= batchSize)
+                    {
+                        tableServiceContext.SaveChanges(SaveChangesOptions.Batch);
+                        batchRecords = 0;
+                    }
+                }
+                if (batchRecords > 0)
+                {
+                    tableServiceContext.SaveChanges(SaveChangesOptions.Batch);
                 }
 
-                ReportSuccess("Table " + name + " copied to new table " + destName);
+                ReportSuccess("Table copy complete (" + DestTableName + ", " + entitiesCopiedCount.ToString() + " entities)");
             }
             catch (Exception ex)
             {
                 ReportException(ex);
             }
+
+        }
+
+        void Background_CopyEntitiesCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            UploadInProgress = false;
+            DetailSpinnerVisible = Visibility.Collapsed;
             Refresh();
         }
 
@@ -2087,56 +2139,30 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
 
         public void RenameTable(string name, string destName)
         {
-            List<GenericEntity> entityList = new List<GenericEntity>();
+            CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
 
-            try
+            if (tableClient.DoesTableExist(destName))
             {
-                ListSpinnerVisible = Visibility.Visible;
-                ClearStatus();
-
-                CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
-
-                if (tableClient.DoesTableExist(destName))
-                {
-                    ReportError("Cannot rename table - the destination table '" + destName + "' already exists");
-                    ListSpinnerVisible = Visibility.Collapsed;
-                    return;
-                }
-
-                tableClient.CreateTable(destName);
-
-                TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
-
-                IQueryable<GenericEntity> entities =
-                    (from entity in tableServiceContext.CreateQuery<GenericEntity>(name) select entity);
-                List<GenericEntity> entitiesList = entities.ToList<GenericEntity>();
-
-                // Read entities from source table and add to destination table.
-
-                entityList.Clear();
-                foreach (GenericEntity entity in entitiesList)
-                {
-                    entityList.Add(entity);
-                }
-
-                tableClient = CloudStorageAccount.CreateCloudTableClient();
-                tableServiceContext = CreateTableServiceContext(tableClient);
-
-                foreach (GenericEntity entity in entityList)
-                {
-                    tableServiceContext.AddObject(destName, new GenericEntity(entity));
-                    tableServiceContext.SaveChanges();
-                }
-
-                tableClient.DeleteTable(name);
-
-                ReportSuccess("Table " + name + " renamed to " + destName);
+                ReportError("Cannot rename table - the destination table '" + destName + "' already exists");
+                ListSpinnerVisible = Visibility.Collapsed;
+                return;
             }
-            catch (Exception ex)
-            {
-                ReportException(ex);
-            }
-            Refresh();
+                
+            DetailSpinnerVisible = Visibility.Visible;
+
+            SourceTableName = name;
+            DestTableName = destName;
+
+            ReportActive("Copying table " + name + " to " + destName + "...");
+
+            UploadInProgress = true;
+
+            BackgroundWorker background = new BackgroundWorker();
+
+            background.DoWork += new DoWorkEventHandler(Background_CopyEntities);
+
+            background.RunWorkerCompleted += new RunWorkerCompletedEventHandler(Background_CopyEntitiesCompleted);
+            background.RunWorkerAsync();
         }
 
         #endregion
@@ -3501,27 +3527,29 @@ namespace Neudesic.AzureStorageExplorer.ViewModel
                 CloudTableClient tableClient = CloudStorageAccount.CreateCloudTableClient();
                 TableServiceContext tableServiceContext = CreateTableServiceContext(tableClient);
                 tableServiceContext.IgnoreMissingProperties = true; 
-
-                IQueryable<GenericEntity> entities = null;
-                entities = (from entity in tableServiceContext.CreateQuery<GenericEntity>(tableName) select entity);
-
+                CloudTableQuery<GenericEntity> cloudTableQuery = null;
                 if (!String.IsNullOrEmpty(TableQuery))
                 {
-                    entities = (from entity in tableServiceContext.CreateQuery<GenericEntity>(tableName)
-                                    .AddQueryOption("$filter", TableQuery) select entity);
+                    cloudTableQuery =
+                    (from entity in tableServiceContext.CreateQuery<GenericEntity>(tableName)
+                     .AddQueryOption("$filter", TableQuery)
+                     select entity).AsTableServiceQuery<GenericEntity>();
                 }
-
-                if (TableMaxRecords > -1)
+                else
                 {
-                    entities = entities.Take(TableMaxRecords);
+                    cloudTableQuery =
+                    (from entity in tableServiceContext.CreateQuery<GenericEntity>(tableName)
+                     select entity).AsTableServiceQuery<GenericEntity>();
                 }
-                
-                List<GenericEntity> entitiesList = entities.ToList<GenericEntity>();
+                IEnumerable<GenericEntity> entities = cloudTableQuery.Execute() as IEnumerable<GenericEntity>;
 
+                int records = 0;
                 entityNodes.Clear();
-                foreach (GenericEntity entity in entitiesList)
+                foreach (GenericEntity entity in entities)
                 {
+                    if (TableMaxRecords > -1 && records >= TableMaxRecords) break;
                     entityNodes.Add(entity);
+                    records++;
                 }
 
                 if (entityNodes.Count == 1)

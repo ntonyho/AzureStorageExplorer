@@ -511,7 +511,7 @@ namespace Neudesic.AzureStorageExplorer
 
         private void HelpAboutExecuted(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
-            MessageBox.Show("Azure Storage Explorer version 4.0.0.9 (04.30.2011).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            MessageBox.Show("Azure Storage Explorer version 4.0.0.10 (05.07.2011).\r\n\r\nA community donation of Neudesic.", "About Azure Storage Explorer", MessageBoxButton.OK, MessageBoxImage.Asterisk);
         }
 
         #endregion

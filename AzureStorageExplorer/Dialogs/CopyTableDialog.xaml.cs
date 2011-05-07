@@ -63,7 +63,7 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
 
             if (!StorageAccountViewModel.ValidTableName(DestTableName.Text))
             {
-                MessageBox.Show("The source table name is invalid.\r\n\r\n" + rules, "Invalid Source Table Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                MessageBox.Show("The destination table name is invalid.\r\n\r\n" + rules, "Invalid Source Table Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return false;
             }
 

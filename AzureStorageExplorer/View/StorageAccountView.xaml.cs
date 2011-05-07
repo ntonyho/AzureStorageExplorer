@@ -955,9 +955,11 @@ namespace Neudesic.AzureStorageExplorer.View
             }
             if (dlg.ShowDialog().Value)
             {
+                Cursor = Cursors.Wait;
                 string name = dlg.SourceTableName.Text;
                 string destName = dlg.DestTableName.Text;
                 ViewModel.CopyTable(name, destName);
+                Cursor = Cursors.Arrow;
             }
         }
 
@@ -1576,8 +1578,12 @@ namespace Neudesic.AzureStorageExplorer.View
 
         private void RenameTableButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.ClearStatus();
-            RenameTableCommandView.Command.Execute(null);
+            if (MessageBox.Show("To 'rename' a table, it is copied and then the original is deleted. It is safest to not delete the original until the copy is confirmed.\r\n\r\nDo you want to proceed with the copy?",
+                "Rename Table Note", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                ViewModel.ClearStatus();
+                RenameTableCommandView.Command.Execute(null);
+            }
         }
 
         private void DeleteTableButton_Click(object sender, RoutedEventArgs e)

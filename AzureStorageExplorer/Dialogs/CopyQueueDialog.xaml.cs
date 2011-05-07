@@ -63,7 +63,7 @@ namespace Neudesic.AzureStorageExplorer.Dialogs
 
             if (!StorageAccountViewModel.ValidQueueName(DestQueueName.Text))
             {
-                MessageBox.Show("The source queue name is invalid.\r\n\r\n" + rules, "Invalid Source Queue Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                MessageBox.Show("The destination queue name is invalid.\r\n\r\n" + rules, "Invalid Source Queue Name", MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 return false;
             }
 
