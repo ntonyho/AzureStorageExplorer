@@ -1,0 +1,53 @@
+﻿<Window x:Class="AzureStorageExplorer.NewBlobDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:AzureStorageExplorer"
+        Title="Create New Blob" Height="310" Width="500" ResizeMode="NoResize" 
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Orientation="Vertical">
+        <StackPanel Margin="12" Orientation="Vertical">
+            <StackPanel Orientation="Horizontal"  Margin="0,0,0,12">
+                <TextBlock Margin="0,0,8,0" Text="Blob type:"></TextBlock>
+                <RadioButton x:Name="BlobTypeBlock" GroupName="BlobType" Content="Block Blob" Checked="BlobType_Checked" IsChecked="True" Margin="0,0,12,0"/>
+                <RadioButton x:Name="BlobTypePage" GroupName="BlobType" Content="Page Blob" Checked="BlobType_Checked" />
+            </StackPanel>
+            
+            <TextBlock x:Name="BlobNameLabel" Margin="0,0,0,0" Text="Blob name:"></TextBlock>
+
+            <AdornerDecorator>
+                <TextBox x:Name="BlobName" Background="LightYellow" Margin="0,2,0,0">
+                    <controls:WatermarkService.Watermark>
+                        <TextBlock>Specify a name for the new blob</TextBlock>
+                    </controls:WatermarkService.Watermark>
+                </TextBox>
+            </AdornerDecorator>
+
+            <TextBlock x:Name="BlobTextLabel" Margin="0,8,0,0" Text="Blob text content (optional):"></TextBlock>
+
+            <AdornerDecorator>
+                <TextBox x:Name="BlobText" Background="LightYellow" Margin="0,2,0,0" Height="100" 
+                         TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible">
+                    <controls:WatermarkService.Watermark>
+                        <TextBlock>Enter text content for the blob</TextBlock>
+                    </controls:WatermarkService.Watermark>
+                </TextBox>
+            </AdornerDecorator>
+
+            <TextBlock x:Name="BlobSizeLabel" Margin="0,8,0,0" Text="Blob size:" Visibility="Collapsed"></TextBlock>
+
+            <AdornerDecorator>
+                <TextBox x:Name="BlobSize" Background="LightYellow" Margin="0,2,0,0" Visibility="Collapsed">
+                    <controls:WatermarkService.Watermark>
+                        <TextBlock>nnn[K][M][G]</TextBlock>
+                    </controls:WatermarkService.Watermark>
+                </TextBox>
+            </AdornerDecorator>
+            <!--<CheckBox x:Name="UseHTTPS" Margin="0,12,0,0">Use HTTPS</CheckBox>-->
+            <StackPanel x:Name="ButtonPanel" Orientation="Horizontal"  Margin="0,12,0,0">
+                <Button x:Name="SaveAccount" Padding="4" Margin="0,0,8,0" Click="CreateBlob_Click">Create Blob</Button>
+                <Button x:Name="CancelAccount" Padding="4" IsCancel="true" Click="Cancel_Click">Cancel</Button>
+            </StackPanel>
+            <TextBlock x:Name="Message" Margin="0,12,0,0">Enter a name and options for the new blob</TextBlock>
+        </StackPanel>
+    </StackPanel>
+</Window>

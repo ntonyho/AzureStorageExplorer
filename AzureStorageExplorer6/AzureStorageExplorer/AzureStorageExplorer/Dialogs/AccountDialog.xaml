@@ -1,0 +1,42 @@
+﻿<Window x:Class="AzureStorageExplorer.AccountDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:AzureStorageExplorer"
+        Title="Edit Storage Account" Height="260" Width="500" ResizeMode="NoResize" 
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Orientation="Vertical">
+        <StackPanel Margin="12" Orientation="Vertical">
+            <StackPanel Orientation="Horizontal"  Margin="0,0,0,12">
+                <RadioButton x:Name="AccountTypeCloud" GroupName="AccountType" Content="Cloud Storage Account" Checked="AccountType_Checked" IsChecked="True" Margin="0,0,12,0"/>
+                <RadioButton x:Name="AccountTypeDev" GroupName="AccountType" Content="Local Developer Account" Checked="AccountType_Checked" />
+            </StackPanel>
+            <TextBlock x:Name="AccountNameLabel" Margin="0,0,0,0" Text="Storage account name:"></TextBlock>
+
+            <AdornerDecorator>
+                <TextBox x:Name="AccountName" Background="LightYellow" Margin="0,2,0,0">
+                    <controls:WatermarkService.Watermark>
+                        <TextBlock>Specify the storage account name</TextBlock>
+                    </controls:WatermarkService.Watermark>
+                </TextBox>
+            </AdornerDecorator>
+
+            <TextBlock x:Name="AccountKeyLabel" Margin="0,8,0,0" Text="Storage account key:"></TextBlock>
+
+            <AdornerDecorator>
+                <TextBox x:Name="AccountKey" Background="LightYellow" Margin="0,2,0,0">
+                    <controls:WatermarkService.Watermark>
+                        <TextBlock>Specify the storage account key</TextBlock>
+                    </controls:WatermarkService.Watermark>
+                </TextBox>
+            </AdornerDecorator>
+
+            <CheckBox x:Name="UseHTTPS" Margin="0,12,0,0">Use HTTPS</CheckBox>
+            <StackPanel x:Name="ButtonPanel" Orientation="Horizontal"  Margin="0,12,0,0">
+                <Button x:Name="TestAccount" Padding="4" Margin="0,0,8,0" Click="TestAccount_Click">Test Access</Button>
+                <Button x:Name="SaveAccount" Padding="4" Margin="0,0,8,0" Click="SaveAccount_Click">Save</Button>
+                <Button x:Name="CancelAccount" Padding="4" IsCancel="true" Click="CancelAccount_Click">Cancel</Button>
+            </StackPanel>
+            <TextBlock x:Name="Message" Margin="0,12,0,0">Enter the credentials for a Microsoft Azure Storage Account</TextBlock>
+        </StackPanel>
+    </StackPanel>
+</Window>

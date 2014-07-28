@@ -1,0 +1,70 @@
+﻿<Window x:Class="AzureStorageExplorer.BlobServiceCORSDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:AzureStorageExplorer"
+        Title="Configure Blob Service CORS Rules" Height="500" Width="800" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Orientation="Vertical">
+        <StackPanel Margin="12,12,11.6,12" Orientation="Vertical">
+
+            <TextBlock Margin="0,0,0,12" Text="Cross-Origin Resource Sharing rules allow clients to access blobs from any web domains you authorize."></TextBlock>
+
+            <TextBlock Margin="0,0,0,4" Text="Rules List"></TextBlock>
+            <ListBox x:Name="RulesList" Height="100"></ListBox>
+
+            <StackPanel x:Name="RuleButtonPanel" Orientation="Horizontal"  Margin="0,12,0,12">
+                <Button x:Name="cmdNewRule" Padding="4" Margin="0,0,8,0" Width="50" Click="CmdNewRule_Click">New</Button>
+                <Button x:Name="CmdEditRule" Padding="4" Margin="0,0,8,0" Width="50" Click="CmdEditRule_Click">Edit</Button>
+                <Button x:Name="CmdDeleteRule" Padding="4" Width="50" Click="CmdDeleteRule_Click">Delete</Button>
+            </StackPanel>
+
+            <TextBlock x:Name="EditRuleLabel" Visibility="Collapsed" Margin="0,12,0,0" FontWeight="Bold" Text="CORS Rule Details"></TextBlock>
+            <TextBlock x:Name="EditRuleLabel2" Visibility="Collapsed" Margin="0,4,0,12" Text="Separate multiple values with a comma"></TextBlock>
+
+            <!-- Rule Edit Panel -->
+            
+            <Border x:Name="EditRulePanel" Visibility="Collapsed" BorderBrush="Gray" BorderThickness="1" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Margin="0,0,0,8" Text="Allowed Origins:"></TextBlock>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Margin="0,0,0,8" Text="Allowed Methods:"></TextBlock>
+                    <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,0,0,8" Text="Allowed Headers:"></TextBlock>
+                    <TextBlock Grid.Row="3" Grid.Column="0" Margin="0,0,0,8" Text="Exposed Headers:"></TextBlock>
+                    <TextBlock Grid.Row="4" Grid.Column="0" Margin="0,0,0,8" Text="Max Age (seconds):"></TextBlock>
+
+
+                    <TextBox x:Name="AllowedOrigins" Grid.Row="0" Grid.Column="2" Margin="0,0,0,8" Width="600" Background="LightYellow" Text=""></TextBox>
+                    <TextBox x:Name="AllowedMethods" Grid.Row="1" Grid.Column="2" Margin="0,0,0,8" Width="600" Background="LightYellow" Text=""></TextBox>
+                    <TextBox x:Name="AllowedHeaders" Grid.Row="2" Grid.Column="2" Margin="0,0,0,8" Width="600" Background="LightYellow" Text=""></TextBox>
+                    <TextBox x:Name="ExposedHeaders" Grid.Row="3" Grid.Column="2" Margin="0,0,0,8" Width="600" Background="LightYellow" Text=""></TextBox>
+                    <TextBox x:Name="MaxAge" Grid.Row="4" Grid.Column="2" Margin="0,0,0,8" Width="40" Background="LightYellow" HorizontalAlignment="Left" Text=""></TextBox>
+
+                    <StackPanel Grid.Row="5" Orientation="Horizontal"  Margin="0,12,0,0">
+                        <Button x:Name="CmdSaveEdit" Padding="4" Margin="0,0,8,0" Click="CmdSaveEdit_Click">Save Rule</Button>
+                        <Button x:Name="CmdCancelEdit" Padding="4" Click="CmdCancelEdit_Click">Cancel Edit</Button>
+                    </StackPanel>
+
+                </Grid>
+
+            </Border>
+                
+                <StackPanel x:Name="DialogButtonPanel" Orientation="Horizontal"  Margin="0,12,0,0">
+                <Button x:Name="CmdApply" Padding="4" Margin="0,0,8,0" Click="CmdApply_Click">Apply Updated Rules</Button>
+                <Button x:Name="CmdCancel" Padding="4" IsCancel="true" Click="CmdCancel_Click">Cancel</Button>
+            </StackPanel>
+
+        </StackPanel>
+    </StackPanel>
+</Window>

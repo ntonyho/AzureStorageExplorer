@@ -1,0 +1,198 @@
+﻿<UserControl x:Class="AzureStorageExplorer.StorageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="1024" d:DesignWidth="768"
+             DataContext="{Binding RelativeSource={RelativeSource Self}}"
+             >
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Menu -->
+
+        <DockPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+            <Menu DockPanel.Dock="Top">
+                <MenuItem Header="_Storage Acccount">
+                    <MenuItem Header="View _Connection String" Click="MenuItem_StorageAccount_ViewConnectionString_Click" />
+                    <Separator />
+                    <MenuItem Header="Close Tab" Click="MenuItem_StorageAccount_CloseTab_Click" />
+                </MenuItem>
+            </Menu>
+        </DockPanel>
+
+        <!-- Left Pane -->
+        
+        <Grid Grid.Row="1" Grid.Column="0" Background="DarkGray">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                <TextBlock Grid.Row="0" x:Name="AccountTitle" 
+                           Margin="8" FontSize="14" FontWeight="Bold" Foreground="White">Account Title</TextBlock>
+            </StackPanel>
+
+            <!-- Left Pane Toolbar -->
+
+            <StackPanel Grid.Row="1" x:Name="ContainerToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
+                <ToolBarTray x:Name="ContainerToolbarTray" Background="White" ToolBarTray.IsLocked="True"  IsManipulationEnabled="False">
+                    <ToolBar Band="1" BandIndex="1">
+                        <Button x:Name="ContainerRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Blob List" Click="AccountRefresh_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\refresh.png" Height="16" />
+                                <TextBlock Text="Refresh"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ButtonNewContainer" Width="54" ToolBar.OverflowMode="Never" ToolTip="Create New Blob Container" Click="NewContainer_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\new_container.png" Height="16" />
+                                <TextBlock Text="New"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ButtonDeleteContainer" Width="54" ToolBar.OverflowMode="Never" ToolTip="Delete Selected Blob Container" Click="DeleteContainer_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\delete_container.png" Height="16" />
+                                <TextBlock Text="Delete"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ButtonContainerAccess" Width="54" ToolBar.OverflowMode="Never" ToolTip="Set Container Access" Click="ContainerAccess_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image x:Name="ButtonContainerAccessIcon" Source="Images\private.png" Height="16" />
+                                <TextBlock x:Name="ButtonContainerAccessLabel" Text="Access"/>
+                            </StackPanel>
+                        </Button>
+                        <ToggleButton x:Name="ButtonBlobServiceCORS" Width="54" ToolBar.OverflowMode="Never" ToolTip="Enable/Disable Container CORS Access" Click="BlobServiceCORS_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image x:Name="ButtonBlobServiceCORSIcon" Source="Images\unchecked.png" Height="16" />
+                                <TextBlock x:Name="ButtonBlobServiceCORSLabel" Text="CORS-"/>
+                            </StackPanel>
+                        </ToggleButton>
+                    </ToolBar>
+                </ToolBarTray>
+            </StackPanel>
+
+            <TreeView Grid.Row="2"  x:Name="AccountTreeView" SelectedItemChanged="AccountTreeView_SelectedItemChanged" >
+                <TreeView.Resources>
+                    <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
+                </TreeView.Resources>
+            </TreeView>
+        </Grid>
+        
+
+        <!-- Main Pane -->
+
+        <Grid Grid.Row="2" Grid.Column="1" Background="LightGray">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" x:Name="ContainerPanel" Orientation="Horizontal" Background="White">
+                <Image x:Name="ContainerImage" Height="32" Width="32" Margin="12,0,0,0"></Image>
+                <TextBlock x:Name="ContainerTitle" Padding="8" FontSize="14" FontWeight="Bold" Foreground="Black"></TextBlock>
+                <TextBlock x:Name="ContainerType" Padding="0,8,8,8" FontSize="14" FontWeight="Normal" Foreground="Black"></TextBlock>
+                <TextBlock x:Name="ContainerDetails" Padding="0,8,8,8" FontSize="14" FontWeight="Normal" Foreground="Black"></TextBlock>
+            </StackPanel>
+            
+            <!-- Main Pane Toolbar -->
+            
+            <StackPanel Grid.Row="1" x:Name="BlobToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
+                <ToolBarTray x:Name="BlobToolbarTray" Background="White" ToolBarTray.IsLocked="True"  IsManipulationEnabled="False">
+                    <ToolBar Band="1" BandIndex="1">
+                        <Button x:Name="BlobRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Blob List" Click="BlobRefresh_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\refresh.png" Height="16" />
+                                <TextBlock Text="Refresh"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobSelectAll" Width="54" ToolBar.OverflowMode="Never" ToolTip="Select All Blobs" Click="BlobSelectAll_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\list.png" Height="16" />
+                                <TextBlock Text="Select All"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobClearSelection" Width="54" ToolBar.OverflowMode="Never" ToolTip="Clear Selection" Click="BlobClearSelection_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\clear.png" Height="16" />
+                                <TextBlock Text="Clear All"/>
+                            </StackPanel>
+                        </Button>
+                    </ToolBar>
+                    <ToolBar Band="1" BandIndex="2">
+                        <Button x:Name="BlobUploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Files" Click="BlobUploadButton_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\upload-blob.png" Height="16" />
+                                <TextBlock Text="Upload"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobDownloadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Download Selected Blobs"  Click="BlobDownloadButton_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\download-blob.png" Height="16" />
+                                <TextBlock Text="Downld"/>
+                            </StackPanel>
+                        </Button>
+                    </ToolBar>
+                    <ToolBar Band="1" BandIndex="3">
+                        <Button x:Name="BlobView" Width="54" ToolTip="View Blob Properties" ToolBar.OverflowMode="Never" Click="BlobViewProperties_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\properties.png" Height="16" />
+                                <TextBlock Text="View"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobNew" Width="54" ToolTip="Create New Blob" ToolBar.OverflowMode="Never" Click="BlobNew_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\new_blob.png" Height="16" />
+                                <TextBlock Text="New"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobCopy" Width="54" ToolTip="Copy Selected Blob" ToolBar.OverflowMode="Never" Click="BlobCopy_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\copy.png" Height="16" />
+                                <TextBlock Text="Copy"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobDelete" Width="54" ToolBar.OverflowMode="Never" ToolTip="Delete Selected Blobs" Click="BlobDelete_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\delete.png" Height="16" />
+                                <TextBlock Text="Delete"/>
+                            </StackPanel>
+                        </Button>
+
+                    </ToolBar>
+                </ToolBarTray>
+            </StackPanel>
+            <ListView Grid.Row="2" x:Name="ContainerListView" 
+                      GridViewColumnHeader.Click="ContainerListView_ColumnHeaderClicked" 
+                      MouseDoubleClick="ContainerListView_MouseDoubleClick"
+                      Visibility="Visible" ItemsSource="{Binding BlobCollection}">
+                <ListView.Resources>
+                    <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
+                </ListView.Resources>
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Width="140" Header="Name" DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Width="40" Header="Type" DisplayMemberBinding="{Binding BlobType}" />
+                        <GridViewColumn Width="170" Header="Last Modified" DisplayMemberBinding="{Binding LastModifiedText}" />
+                        <GridViewColumn Width="70" Header="Length" DisplayMemberBinding="{Binding LengthText}" />
+                        <GridViewColumn Width="140" Header="Content Type" DisplayMemberBinding="{Binding ContentType}" />
+                        <GridViewColumn Width="140" Header="Encoding"  DisplayMemberBinding="{Binding Encoding}" />
+                        <GridViewColumn Width="140" Header="ETag"  DisplayMemberBinding="{Binding ETag}" />
+                        <GridViewColumn Width="140" Header="Copy State"  DisplayMemberBinding="{Binding CopyState}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <TextBlock x:Name="StatusMessage" Grid.Row="3" Padding="4" LineHeight="12" Background="AliceBlue" Visibility="Collapsed" ></TextBlock>
+        </Grid>
+    </Grid>
+</UserControl>

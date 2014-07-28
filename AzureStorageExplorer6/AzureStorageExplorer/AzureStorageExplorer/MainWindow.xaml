@@ -1,0 +1,48 @@
+﻿<Window x:Class="AzureStorageExplorer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="/images/app.ico"
+        Title="Azure Storage Explorer" Height="768" Width="1024" WindowState="Normal" Background="#666666">
+
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        
+        <!-- Row 1: Account Selection Grid -->
+        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Background="#4CA6C6" Orientation="Horizontal">
+            <StackPanel x:Name="AccountSelector" Margin="8" Orientation="Horizontal">
+                <ComboBox x:Name="AccountList" Width="200" Margin="0,0,8,0" Padding="4,4,4,4"  SelectionChanged="AccountList_SelectionChanged">
+                    <ComboBoxItem>--- Select a Storage Account ---</ComboBoxItem>
+                </ComboBox>
+                <Button x:Name="AddAccount" Padding="4" Margin="0,0,8,0" Click="AddAccount_Click">
+                    <TextBlock Padding="8,0,8,0">Add Account</TextBlock></Button>
+                <Button x:Name="RemoveAccount" Padding="4" Margin="0,0,8,0" Click="RemoveAccount_Click" >Remove</Button>
+            </StackPanel>
+            <StackPanel x:Name="AccountAction" Height="32">
+                <TextBlock x:Name="AccountMessage" Padding="8,8,8,8" Foreground="White" />
+            </StackPanel>
+        </StackPanel>
+
+        <Image x:Name="SettingsIcon" Grid.Row="1" Grid.Column="2" Source="/images/gear.png" Margin="8" Height="24" Cursor="Hand" MouseDown="SettingsIcon_Click" >
+            <Image.ContextMenu>
+                <ContextMenu x:Name="MainContextMenu">
+                    <MenuItem Header="Microsoft Azure Management Portal" Click="MainMenu_Portal" />
+                    <Separator />
+                    <MenuItem Header="About Azure Storage Explorer" Click="MainMenu_About" />
+                </ContextMenu>
+            </Image.ContextMenu>
+        </Image>
+
+        <!-- Row 2: Storage Account Tab Control -->
+        <TabControl x:Name="StorageViews" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"></TabControl>
+    </Grid>
+</Window>
