@@ -2,16 +2,17 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:AzureStorageExplorer"
-        Title="Blob Properties" Height="560" Width="1000" ResizeMode="NoResize" 
+        Title="Blob Properties" Height="570" Width="1000" ResizeMode="NoResize" 
         WindowStartupLocation="CenterOwner">
     <StackPanel Orientation="Vertical">
         
-        <!-- Properties -->
-        
-        <TabControl x:Name="PropertyTabControl" Height="Auto">
+        <TabControl x:Name="PropertyTabControl" Height="Auto" Padding="12">
+            
+            <!-- Properties Tab -->
+            
             <TabItem x:Name="PropertiesTag" Header="Properties">
                 <StackPanel Orientation="Vertical">
-                    <TextBlock Margin="0,8,0,12" Text="Blob Properties"/>
+                    <TextBlock Margin="0,8,0,8" Text="This blob has the following properties:"/>
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -72,16 +73,17 @@
                         <TextBlock Grid.Row="24" Grid.Column="0">Uri</TextBlock>
                         <TextBox Grid.Row="24" Grid.Column="2" x:Name="PropUri" IsReadOnly="True" Background="LightYellow"></TextBox>
                     </Grid>
-                    <StackPanel x:Name="PropertiesButtonPanel" Orientation="Horizontal"  Margin="0,12,0,12">                        
+                    <StackPanel x:Name="PropertiesButtonPanel" Orientation="Horizontal"  Margin="0,12,0,8">                        
                         <Button x:Name="PropertiesApply" Padding="4" Margin="0,0,8,0" Click="PropertiesApply_Click" Visibility="Collapsed">Update Properties</Button>
                         <Button x:Name="PropertiesCancel" Padding="4" IsCancel="true" Click="PropertiesCancel_Click">Close</Button>
                     </StackPanel>
                 </StackPanel>
             </TabItem>
 
-            <TabItem x:Name="ContentTag" Header="Content">
+            <!-- Content Tab (block blobs only) -->
+            
+            <TabItem x:Name="ContentTab" Header="Content">
                 <StackPanel Orientation="Vertical">
-                    <TextBlock Margin="0,8,0,12" Text="On this tab, blob content may be viewed or edited"/>
                     <StackPanel Margin="8" Orientation="Horizontal">
                         <ComboBox x:Name="ContentViewType" Width="200" Margin="0,0,8,0" Padding="4,4,4,4" SelectionChanged="ContentViewType_SelectionChanged" >
                             <ComboBoxItem IsSelected="True">--- Select a Content View ---</ComboBoxItem>
@@ -90,24 +92,25 @@
                             <ComboBoxItem>Video</ComboBoxItem>
                             <ComboBoxItem>Web</ComboBoxItem>
                         </ComboBox>
-                        <Button x:Name="ViewContent" Padding="4" Margin="0,0,8,0" Click="ViewContent_Click">
+                        <Button x:Name="ViewContent" Padding="4" Margin="0,0,8,0" Visibility="Hidden" Click="ViewContent_Click">
                             <TextBlock x:Name="ViewContentCaption" Padding="8,0,8,0">View</TextBlock>
                         </Button>
+                        <TextBlock Margin="16,8,0,0" Text="Select a content viewer to view or edit the content of this blob."/>
                     </StackPanel>
-                    <Grid Width="Auto" Height="370" MaxHeight="370">
+                    <Grid Width="Auto" Height="400" MaxHeight="400">
                         <Image x:Name="ImageContent" Margin="0,2,0,0" 
-                               Height="Auto" MaxHeight="370" Width="Auto" MaxWidth="1000" 
+                               Height="Auto" MaxHeight="400" Width="Auto" MaxWidth="1000" 
                                VerticalAlignment="Top" HorizontalAlignment="Center" 
                                Visibility="Collapsed" Stretch="Uniform" />
-                        <TextBox x:Name="TextContent" Background="LightYellow" Margin="0,2,0,0" Height="370" Visibility="Collapsed"
+                        <TextBox x:Name="TextContent" Background="LightYellow" Margin="0,2,0,0" Height="400" Visibility="Collapsed"
                                  TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible" />
-                        <MediaElement x:Name="VideoContent" Width="Auto" Height="370" MaxWidth="1000" 
+                        <MediaElement x:Name="VideoContent" Width="Auto" Height="400" MaxWidth="1000" 
                                       VerticalAlignment="Top" HorizontalAlignment="Center" 
                                       LoadedBehavior="Play" UnloadedBehavior="Manual" 
                                       Visibility="Collapsed"></MediaElement>
-                        <WebBrowser x:Name="WebContent" Width="Auto" Height="370" MaxWidth="1000" />
+                        <WebBrowser x:Name="WebContent" Width="Auto" Height="400" MaxWidth="1000" />
                     </Grid>
-                    <StackPanel x:Name="ContentButtonPanel" Orientation="Horizontal"  Margin="0,12,0,12" Visibility="Hidden">
+                    <StackPanel x:Name="ContentButtonPanel" Orientation="Horizontal"  Margin="0,12,0,8" Visibility="Hidden">
                         <Button x:Name="ContentSave" Padding="4" Margin="0,0,8,0" Click="ContentSave_Click">Save Content</Button>
                         <Button x:Name="ContentCancel" Padding="4" IsCancel="true" Click="PropertiesCancel_Click">Close</Button>
                     </StackPanel>
@@ -116,13 +119,37 @@
 
             <!-- Pages Tab (page blobs only) -->
             
-            <TabItem x:Name="PagesTab" Header="Pages In Use" Visibility="Collapsed">
+            <TabItem x:Name="PagesTab" Header="Pages" Visibility="Collapsed">
                 <StackPanel Orientation="Vertical">
-                    <TextBlock Margin="0,8,0,8" Text="The following pages are allocated for this blob."/>
-                    <ListBox x:Name="PageRanges" Height="200" />
-                    <StackPanel x:Name="PagesButtonPanel" Orientation="Horizontal"  Margin="0,12,0,0">
-                        <!--<Button x:Name="ApplyPages" Padding="4" Margin="0,0,8,0" Click="CreateBlob_Click">Apply</Button>
-                        <Button x:Name="CancelPages" Padding="4" IsCancel="true" Click="Cancel_Click">Cancel</Button>-->
+                    <TextBlock Margin="0,8,0,8" Text="You can read or write pages."/>
+                    <Grid Height="400">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="300" />
+                            <ColumnDefinition Width="24" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ListBox x:Name="PageRanges" Grid.Row="0" Grid.RowSpan="5" Grid.Column="0" Height="344" VerticalAlignment="Top" SelectionChanged="PageRanges_SelectionChanged" />
+                        <TextBlock Grid.Row="0" Grid.Column="2">Page Number:</TextBlock>
+                        <TextBox Grid.Row="0" Grid.Column="4" x:Name="PageNumber" Background="LightYellow"></TextBox>
+                        <TextBlock Grid.Row="2" Grid.Column="2" >Hex bytes:</TextBlock>
+                        <TextBox Grid.Row="2" Grid.Column="4" x:Name="PageHexData" FontFamily="Consolas" Width="340" Height="320" Background="LightYellow"
+                                 TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible"></TextBox>
+                        <StackPanel Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,12,0,8">
+                            <Button x:Name="PageRead" Padding="4" Margin="0,0,8,0" Click="PageRead_Click">Read Page</Button>
+                            <Button x:Name="PageWrite" Padding="4" Click="PageWrite_Click">Write Page</Button>
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel x:Name="PagesButtonPanel" Orientation="Horizontal"  Margin="0,12,0,8">
+                        <Button x:Name="PagesCancel" Padding="4" IsCancel="true" Click="PropertiesCancel_Click">Close</Button>
                     </StackPanel>
                 </StackPanel>
             </TabItem>

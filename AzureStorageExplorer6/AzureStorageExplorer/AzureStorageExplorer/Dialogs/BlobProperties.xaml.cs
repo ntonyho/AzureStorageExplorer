@@ -21,7 +21,7 @@ namespace AzureStorageExplorer
     /// </summary>
     public partial class BlobProperties : Window
     {
-        private bool Initialized = false;
+        private bool DialogInitialized = false;
         private CloudBlockBlob BlockBlob = null;
         private CloudPageBlob PageBlob = null;
         public bool IsBlobChanged = false;
@@ -32,7 +32,7 @@ namespace AzureStorageExplorer
         {
             InitializeComponent();
             CenterWindowOnScreen();
-            Initialized = true;
+            DialogInitialized = true;
         }
 
         //**************************
@@ -64,6 +64,7 @@ namespace AzureStorageExplorer
             Cursor = Cursors.Wait;
             try
             { 
+                ContentTab.Visibility = System.Windows.Visibility.Visible;
                 PagesTab.Visibility = System.Windows.Visibility.Collapsed;
 
                 BlockBlob = blob;
@@ -111,6 +112,7 @@ namespace AzureStorageExplorer
             try
             { 
                 PagesTab.Visibility = System.Windows.Visibility.Visible;
+                ContentTab.Visibility = System.Windows.Visibility.Collapsed;
 
                 PageBlob = blob;
                 IsBlobChanged = false;
@@ -135,20 +137,31 @@ namespace AzureStorageExplorer
                 PropStreamWriteSizeInBytes.Text = blob.StreamWriteSizeInBytes.ToString();
                 PropUri.Text = blob.Uri.ToString().Replace("; ", ";\n");
 
+                // Read page ranges in use and display in Pages tab.
+
                 IEnumerable<Microsoft.WindowsAzure.Storage.Blob.PageRange> ranges = PageBlob.GetPageRanges();
 
                 PageRanges.Items.Clear();
 
+                long startPage, endPage;
                 int rangeCount = 0;
                 if (ranges != null)
                 {
                     long pages = PageBlob.Properties.Length / 512;
-                    long page = 0;
                     foreach(Microsoft.WindowsAzure.Storage.Blob.PageRange range in ranges)
                     {
-                        page = (range.EndOffset) / 512;
-                        PageRanges.Items.Add("Page " + page.ToString() + "/" + pages.ToString() + ": (" + range.StartOffset.ToString() + " - " + range.EndOffset.ToString());
-                        rangeCount++;
+                        startPage = (range.StartOffset) / 512;
+                        endPage = (range.EndOffset) / 512;
+                        long offset = range.StartOffset;
+                        long endOffset = offset + 512;
+                        int index = 0;
+                        for (long page = startPage; page <= endPage; page++)
+                        {
+                            index = PageRanges.Items.Add("Page " + page.ToString() + ": (" + offset.ToString() + " - " + endOffset.ToString() + ")");
+                            rangeCount++;
+                            offset += 512;
+                            endOffset += 512;
+                        }
                     }
                 }
                 if (rangeCount == 0)
@@ -179,6 +192,8 @@ namespace AzureStorageExplorer
         }
 
         #endregion
+
+        #region Content Tab button handlers
 
         private void ViewContent_Click(object sender, RoutedEventArgs e)
         {
@@ -257,11 +272,6 @@ namespace AzureStorageExplorer
             }
         }
 
-        private void callback()
-        {
-
-        }
-
         private void ContentSave_Click(object sender, RoutedEventArgs e)
         {
             if (MessageBox.Show("Are you sure you want to update the content of this blob?", "Confirm Content Update", MessageBoxButton.YesNo)==MessageBoxResult.Yes)
@@ -273,21 +283,151 @@ namespace AzureStorageExplorer
 
         private void ContentViewType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!Initialized) return;
+            if (!DialogInitialized) return;
 
             switch ((ContentViewType.SelectedItem as ComboBoxItem).Content as String)
             {
                 case "Image":
                 case "Video":
+                case "Web":
                     ViewContentCaption.Text = "View";
+                    ViewContent.Visibility = Visibility.Visible;
                     break;
                 case "Text":
                     ViewContentCaption.Text = "Edit";
+                    ViewContent.Visibility = Visibility.Visible;
                     break;
                 default:
-                    ViewContentCaption.Text = "View";
+                    ViewContent.Visibility = Visibility.Hidden;
                     break;
             }
         }
+
+        #endregion
+
+        //********************
+        //*                  *
+        //*  PageRead_Click  *
+        //*                  *
+        //********************
+        // Read a page.
+
+        private void PageRead_Click(object sender, RoutedEventArgs e)
+        {
+            int pageNumber = 0;
+            byte[] bytes = new byte[512];
+            int offset = 0;
+
+            try
+            {
+                int maxPageNumber = 100;     // TODO: look up max page of blob
+
+                pageNumber = Convert.ToInt32(PageNumber.Text);
+                if (pageNumber < 0 || pageNumber > maxPageNumber)
+                {
+                    MessageBox.Show("Cannot write page - page number is out of range.\n\nEnter a value from 0 to " + maxPageNumber.ToString(), "Invalid Page Number");
+                    return;
+                }
+
+                Cursor = Cursors.Wait;
+
+                byte[] data = new byte[512];
+
+                PageBlob.DownloadRangeToByteArray(data, 0, pageNumber * 512, 512);
+
+                PageHexData.Text = BitConverter.ToString(data).Replace("-", " ");
+
+                Cursor = Cursors.Arrow;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("The following error occurred attempting to read the page:\n\n" + ex.Message, "Error reading page");
+            }
+
+        }
+
+        //*********************
+        //*                   *
+        //*  PageWrite_Click  *
+        //*                   *
+        //*********************
+        // Wrote a page.
+
+        private void PageWrite_Click(object sender, RoutedEventArgs e)
+        {
+            int pageNumber = 0;
+            byte[] bytes = new byte[512];
+            int offset = 0;
+
+            try
+            {
+                int maxPageNumber = 100;     // TODO: look up max page of blob
+
+                pageNumber = Convert.ToInt32(PageNumber.Text);
+                if (pageNumber < 0 || pageNumber > maxPageNumber)
+                {
+                    MessageBox.Show("Cannot write page - page number is out of range.\n\nEnter a value from 0 to " + maxPageNumber.ToString(), "Invalid Page Number");
+                    return;
+                }
+
+                string hexValues = PageHexData.Text;
+                string[] hexValuesSplit = hexValues.Split(' ');
+                foreach (String hex in hexValuesSplit)
+                {
+                    bytes[offset++] = (byte)Convert.ToInt32(hex, 16);
+                    if (offset == 512) break;
+                }
+                if (bytes.Length == 0)
+                {
+                    MessageBox.Show("Cannot write page - no values were provided", "Data Required");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error parsing data. Please enter one or more hex pairs, separated by spaces.\n\nExample: 01 02 03 0C 0D 0E 0F\n\nIf you enter less than 512 bytes, the data will be repeated to fill a 512-byte page.", "Invalid data");
+            }
+
+            try
+            {
+                Cursor = Cursors.Wait;
+
+                byte[] data = new byte[512];
+                int dataLength = offset;
+                int off = 0;
+                while(off < 512)
+                {
+                    for (int i = 0; i < dataLength; i++)
+                    {
+                        if (off + i < 512)
+                        {
+                            data[off + i] = bytes[i];
+                        }
+                    }
+                    off += dataLength;
+                }
+
+                PageHexData.Text = BitConverter.ToString(data).Replace("-", " ");
+
+                PageBlob.WritePages(new MemoryStream(data), pageNumber*512);
+
+                Cursor = Cursors.Arrow;
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("The following error occurred attempting to write to page " + pageNumber.ToString() + ":\n\n" + ex.Message, "Error Writing to Page");
+            }
+        }
+
+        private void PageRanges_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            String item = PageRanges.SelectedItem as string;
+            if (item == null) return;
+            long pageNumber = Convert.ToInt32(item.Split(':')[0].Substring(5));
+            PageNumber.Text = pageNumber.ToString();
+            PageRead_Click(sender, null);
+        }
     }
+
 }
