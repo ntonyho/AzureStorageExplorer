@@ -127,8 +127,6 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="8" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="8" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="300" />
@@ -137,16 +135,22 @@
                             <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <ListBox x:Name="PageRanges" Grid.Row="0" Grid.RowSpan="5" Grid.Column="0" Height="344" VerticalAlignment="Top" SelectionChanged="PageRanges_SelectionChanged" />
+                        <ListBox x:Name="PageRanges" Grid.Row="0" Grid.RowSpan="3" Grid.Column="0" Height="384" 
+                                 VerticalAlignment="Top" SelectionChanged="PageRanges_SelectionChanged" />
+
                         <TextBlock Grid.Row="0" Grid.Column="2">Page Number:</TextBlock>
-                        <TextBox Grid.Row="0" Grid.Column="4" x:Name="PageNumber" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="2" Grid.Column="2" >Hex bytes:</TextBlock>
-                        <TextBox Grid.Row="2" Grid.Column="4" x:Name="PageHexData" FontFamily="Consolas" Width="340" Height="320" Background="LightYellow"
-                                 TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible"></TextBox>
-                        <StackPanel Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,12,0,8">
+
+                        <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="4">
+                            <TextBox x:Name="PageNumber" Width="40" Background="LightYellow" Margin="0,0,8,0">0</TextBox>
+                            <Button x:Name="PagePrev" Padding="4,1,4,1" Margin="0,0,8,0" Click="PagePrev_Click">◀ Prev</Button>
                             <Button x:Name="PageRead" Padding="4" Margin="0,0,8,0" Click="PageRead_Click">Read Page</Button>
+                            <Button x:Name="PageNext" Padding="4,1,4,1" Margin="0,0,16,0" Click="PageNext_Click">▶ Next</Button>
                             <Button x:Name="PageWrite" Padding="4" Click="PageWrite_Click">Write Page</Button>
                         </StackPanel>
+
+                        <TextBlock Grid.Row="2" Grid.Column="2" >Hex bytes:</TextBlock>
+                        <TextBox Grid.Row="2" Grid.Column="4" x:Name="PageHexData" FontFamily="Consolas" Width="360" Height="340" Background="LightYellow"
+                                 TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Visible"></TextBox>
                     </Grid>
                     <StackPanel x:Name="PagesButtonPanel" Orientation="Horizontal"  Margin="0,12,0,8">
                         <Button x:Name="PagesCancel" Padding="4" IsCancel="true" Click="PropertiesCancel_Click">Close</Button>

@@ -22,8 +22,12 @@ namespace AzureStorageExplorer
     public partial class BlobProperties : Window
     {
         private bool DialogInitialized = false;
+        
         private CloudBlockBlob BlockBlob = null;
+
         private CloudPageBlob PageBlob = null;
+        private long MaxPageNumber = 0;
+
         public bool IsBlobChanged = false;
 
         #region Initialization
@@ -137,6 +141,8 @@ namespace AzureStorageExplorer
                 PropStreamWriteSizeInBytes.Text = blob.StreamWriteSizeInBytes.ToString();
                 PropUri.Text = blob.Uri.ToString().Replace("; ", ";\n");
 
+                MaxPageNumber = (blob.Properties.Length / 512) - 1;
+
                 // Read page ranges in use and display in Pages tab.
 
                 IEnumerable<Microsoft.WindowsAzure.Storage.Blob.PageRange> ranges = PageBlob.GetPageRanges();
@@ -153,7 +159,7 @@ namespace AzureStorageExplorer
                         startPage = (range.StartOffset) / 512;
                         endPage = (range.EndOffset) / 512;
                         long offset = range.StartOffset;
-                        long endOffset = offset + 512;
+                        long endOffset = offset + 512 - 1;
                         int index = 0;
                         for (long page = startPage; page <= endPage; page++)
                         {
@@ -305,6 +311,8 @@ namespace AzureStorageExplorer
 
         #endregion
 
+        #region Pages Tab button handlers
+
         //********************
         //*                  *
         //*  PageRead_Click  *
@@ -316,16 +324,13 @@ namespace AzureStorageExplorer
         {
             int pageNumber = 0;
             byte[] bytes = new byte[512];
-            int offset = 0;
 
             try
             {
-                int maxPageNumber = 100;     // TODO: look up max page of blob
-
                 pageNumber = Convert.ToInt32(PageNumber.Text);
-                if (pageNumber < 0 || pageNumber > maxPageNumber)
+                if (pageNumber < 0 || pageNumber > MaxPageNumber)
                 {
-                    MessageBox.Show("Cannot write page - page number is out of range.\n\nEnter a value from 0 to " + maxPageNumber.ToString(), "Invalid Page Number");
+                    MessageBox.Show("Cannot write page - page number is out of range.\n\nEnter a value from 0 to " + MaxPageNumber.ToString(), "Invalid Page Number");
                     return;
                 }
 
@@ -351,7 +356,7 @@ namespace AzureStorageExplorer
         //*  PageWrite_Click  *
         //*                   *
         //*********************
-        // Wrote a page.
+        // Write a page.
 
         private void PageWrite_Click(object sender, RoutedEventArgs e)
         {
@@ -361,12 +366,10 @@ namespace AzureStorageExplorer
 
             try
             {
-                int maxPageNumber = 100;     // TODO: look up max page of blob
-
                 pageNumber = Convert.ToInt32(PageNumber.Text);
-                if (pageNumber < 0 || pageNumber > maxPageNumber)
+                if (pageNumber < 0 || pageNumber > MaxPageNumber)
                 {
-                    MessageBox.Show("Cannot write page - page number is out of range.\n\nEnter a value from 0 to " + maxPageNumber.ToString(), "Invalid Page Number");
+                    MessageBox.Show("Cannot write page - page number is out of range.\n\nEnter a value from 0 to " + MaxPageNumber.ToString(), "Invalid Page Number");
                     return;
                 }
 
@@ -420,6 +423,13 @@ namespace AzureStorageExplorer
             }
         }
 
+        //*********************************
+        //*                               *
+        //*  PageRanges_SelectionChanged  *
+        //*                               *
+        //*********************************
+        // Display the selected page.
+
         private void PageRanges_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             String item = PageRanges.SelectedItem as string;
@@ -428,6 +438,64 @@ namespace AzureStorageExplorer
             PageNumber.Text = pageNumber.ToString();
             PageRead_Click(sender, null);
         }
+
+        //********************
+        //*                  *
+        //*  PagePrev_Click  *
+        //*                  *
+        //********************
+        // Back up to read the prior page.
+
+        private void PagePrev_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                long pageNo = Convert.ToInt32(PageNumber.Text);
+                if (pageNo > 0)
+                {
+                    pageNo--;
+                }
+                else
+                {
+                    pageNo = MaxPageNumber;
+                }
+                PageNumber.Text = pageNo.ToString();
+                PageRead_Click(sender, null);
+            }
+            catch(Exception)
+            {
+            }
+        }
+
+        //********************
+        //*                  *
+        //*  PageNext_Click  *
+        //*                  *
+        //********************
+        // Advance to read the next page.
+
+        private void PageNext_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                long pageNo = Convert.ToInt32(PageNumber.Text);
+                if (pageNo < MaxPageNumber)
+                {
+                    pageNo++;
+                }
+                else
+                {
+                    pageNo = 0;
+                }
+                PageNumber.Text = pageNo.ToString();
+                PageRead_Click(sender, null);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        #endregion
     }
 
 }
