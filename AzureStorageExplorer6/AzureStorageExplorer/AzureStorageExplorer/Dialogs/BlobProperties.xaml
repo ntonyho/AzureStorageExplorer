@@ -12,9 +12,11 @@
             
             <TabItem x:Name="PropertiesTag" Header="Properties">
                 <StackPanel Orientation="Vertical">
-                    <TextBlock Margin="0,8,0,8" Text="This blob has the following properties:"/>
+                    <TextBlock Margin="0,8,0,8" Text="Properties marked with an asterisk may be modified."/>
                     <Grid>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="8" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="8" />
                             <RowDefinition Height="Auto" />
@@ -45,37 +47,95 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="16" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
+
+                        <!-- Column 1 -->
+
                         <TextBlock Grid.Row="0" Grid.Column="0">Blob Type</TextBlock>
                         <TextBox x:Name="PropBlobType" Grid.Row="0" Grid.Column="2" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="2" Grid.Column="0">Container</TextBlock>
-                        <TextBox Grid.Row="2" Grid.Column="2" x:Name="PropContainer" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="4" Grid.Column="0">Copy State</TextBlock>
-                        <TextBox Grid.Row="4" Grid.Column="2" x:Name="PropCopyState" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="6" Grid.Column="0">Is Snapshot</TextBlock>
-                        <TextBox Grid.Row="6" Grid.Column="2" x:Name="PropIsSnapshot" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="8" Grid.Column="0">Name</TextBlock>
-                        <TextBox Grid.Row="8" Grid.Column="2" x:Name="PropName" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="10" Grid.Column="0">Parent</TextBlock>
-                        <TextBox Grid.Row="10" Grid.Column="2" x:Name="PropParent" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="12" Grid.Column="0">Snapshot Qualified Storage Uri</TextBlock>
-                        <TextBox Grid.Row="12" Grid.Column="2" x:Name="PropSnapshotQualifiedStorageUri" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="14" Grid.Column="0">Snapshot Qualified Uri</TextBlock>
-                        <TextBox Grid.Row="14" Grid.Column="2" x:Name="PropSnapshotQualifiedUri" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="16" Grid.Column="0">Snapshot Time</TextBlock>
-                        <TextBox Grid.Row="16" Grid.Column="2" x:Name="PropSnapshotTime" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="18" Grid.Column="0">Storage Uri</TextBlock>
-                        <TextBox Grid.Row="18" Grid.Column="2" x:Name="PropStorageUri" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="20" Grid.Column="0">Stream Minimum Read Size In Bytes</TextBlock>
-                        <TextBox Grid.Row="20" Grid.Column="2" x:Name="PropStreamMinimumReadSizeInBytes" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="22" Grid.Column="0">StreamWriteSizeInBytes</TextBlock>
-                        <TextBox Grid.Row="22" Grid.Column="2" x:Name="PropStreamWriteSizeInBytes" IsReadOnly="True" Background="LightYellow"></TextBox>
-                        <TextBlock Grid.Row="24" Grid.Column="0">Uri</TextBlock>
-                        <TextBox Grid.Row="24" Grid.Column="2" x:Name="PropUri" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0">Cache Control*</TextBlock>
+                        <TextBox Grid.Row="2" Grid.Column="2" x:Name="PropCacheControl" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0">Container</TextBlock>
+                        <TextBox Grid.Row="4" Grid.Column="2" x:Name="PropContainer" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="6" Grid.Column="0">Content Disposition*</TextBlock>
+                        <TextBox Grid.Row="6" Grid.Column="2" x:Name="PropContentDisposition" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="8" Grid.Column="0">Content Encoding*</TextBlock>
+                        <TextBox Grid.Row="8" Grid.Column="2" x:Name="PropContentEncoding" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="10" Grid.Column="0">Content Language*</TextBlock>
+                        <TextBox Grid.Row="10" Grid.Column="2" x:Name="PropContentLanguage" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="12" Grid.Column="0">Content MD5*</TextBlock>
+                        <TextBox Grid.Row="12" Grid.Column="2" x:Name="PropContentMD5" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="14" Grid.Column="0">Content Type*</TextBlock>
+                        <TextBox Grid.Row="14" Grid.Column="2" x:Name="PropContentType" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="16" Grid.Column="0">Copy State</TextBlock>
+                        <TextBox Grid.Row="16" Grid.Column="2" x:Name="PropCopyState" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="18" Grid.Column="0">ETag</TextBlock>
+                        <TextBox Grid.Row="18" Grid.Column="2" x:Name="PropETag" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="20" Grid.Column="0">Is Snapshot</TextBlock>
+                        <TextBox Grid.Row="20" Grid.Column="2" x:Name="PropIsSnapshot" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="22" Grid.Column="0">Lease Duration</TextBlock>
+                        <TextBox Grid.Row="22" Grid.Column="2" x:Name="PropLeaseDuration" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="24" Grid.Column="0">Lease State</TextBlock>
+                        <TextBox Grid.Row="24" Grid.Column="2" x:Name="PropLeaseState" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="26" Grid.Column="0">Lease Status</TextBlock>
+                        <TextBox Grid.Row="26" Grid.Column="2" x:Name="PropLeaseStatus" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <!-- Column 2 -->
+
+                        <TextBlock Grid.Row="0" Grid.Column="0">Last Modified</TextBlock>
+                        <TextBox Grid.Row="0" Grid.Column="2" x:Name="PropLastModified" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="2" Grid.Column="4">Length</TextBlock>
+                        <TextBox Grid.Row="2" Grid.Column="6" x:Name="PropLength" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="4" Grid.Column="4">Name</TextBlock>
+                        <TextBox Grid.Row="4" Grid.Column="6" x:Name="PropName" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="6" Grid.Column="4">Parent</TextBlock>
+                        <TextBox Grid.Row="6" Grid.Column="6" x:Name="PropParent" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="8" Grid.RowSpan="3" Grid.Column="4">Snapshot Qualified Storage Uri</TextBlock>
+                        <TextBox Grid.Row="8" Grid.RowSpan="3" Grid.Column="6" x:Name="PropSnapshotQualifiedStorageUri" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="12" Grid.RowSpan="3" Grid.Column="4">Snapshot Qualified Uri</TextBlock>
+                        <TextBox Grid.Row="12" Grid.RowSpan="3" Grid.Column="6" x:Name="PropSnapshotQualifiedUri" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="16" Grid.Column="4">Snapshot Time</TextBlock>
+                        <TextBox Grid.Row="16" Grid.Column="6" x:Name="PropSnapshotTime" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="18" Grid.Column="4">Stream Minimum Read Size In Bytes</TextBlock>
+                        <TextBox Grid.Row="18" Grid.Column="6" x:Name="PropStreamMinimumReadSizeInBytes" IsReadOnly="True" Background="LightYellow"></TextBox>
+                        
+                        <TextBlock Grid.Row="20" Grid.Column="4">StreamWriteSizeInBytes</TextBlock>
+                        <TextBox Grid.Row="20" Grid.Column="6" x:Name="PropStreamWriteSizeInBytes" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="22" Grid.RowSpan="3" Grid.Column="4">Storage Uri</TextBlock>
+                        <TextBox Grid.Row="22" Grid.RowSpan="3" Grid.Column="6" x:Name="PropStorageUri" IsReadOnly="True" Background="LightYellow"></TextBox>
+
+                        <TextBlock Grid.Row="26" Grid.Column="4">Uri</TextBlock>
+                        <TextBox Grid.Row="26" Grid.Column="6" x:Name="PropUri" IsReadOnly="True" Background="LightYellow"></TextBox>
                     </Grid>
-                    <StackPanel x:Name="PropertiesButtonPanel" Orientation="Horizontal"  Margin="0,12,0,8">                        
-                        <Button x:Name="PropertiesApply" Padding="4" Margin="0,0,8,0" Click="PropertiesApply_Click" Visibility="Collapsed">Update Properties</Button>
-                        <Button x:Name="PropertiesCancel" Padding="4" IsCancel="true" Click="PropertiesCancel_Click">Close</Button>
+                    <StackPanel x:Name="PropertiesButtonPanel" Orientation="Horizontal"  Margin="0,12,0,12">                        
+                        <Button x:Name="PropertiesApply" Padding="4" Margin="0,0,8,0" Click="PropertiesApply_Click">Update Properties</Button>
+                        <Button x:Name="PropertiesCancel" Padding="4" Margin="0,0,16,0" IsCancel="true" Click="PropertiesCancel_Click">Close</Button>
+                        <TextBlock x:Name="Status" />
                     </StackPanel>
                 </StackPanel>
             </TabItem>

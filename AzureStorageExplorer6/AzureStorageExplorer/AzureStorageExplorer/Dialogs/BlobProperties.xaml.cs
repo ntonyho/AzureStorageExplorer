@@ -75,23 +75,72 @@ namespace AzureStorageExplorer
                 this.Title = "View Blob - " + blob.Name;
                 IsBlobChanged = false;
 
+                // Display blob properties.
+
                 PropBlobType.Text = "Block";
+
+                PropCacheControl.Text = blob.Properties.CacheControl;
+
                 PropContainer.Text = blob.Container.Name;
+
+                PropContentDisposition.Text = blob.Properties.ContentDisposition;
+
+                PropContentEncoding.Text = blob.Properties.ContentEncoding;
+
+                PropContentLanguage.Text = blob.Properties.ContentLanguage;
+
+                PropContentMD5.Text = blob.Properties.ContentMD5;
+                
+                PropContentType.Text = blob.Properties.ContentType;
+                
                 if (blob.CopyState != null)
-                { 
+                {
                     PropCopyState.Text = blob.CopyState.ToString();
                 }
+
+                if (blob.Properties.ETag != null)
+                {
+                    PropETag.Text = blob.Properties.ETag.Replace("\"", String.Empty).Replace("0x", String.Empty);
+                }
+
+                if (blob.IsSnapshot)
+                {
+                    PropIsSnapshot.Text = "True";
+                }
+                else
+                {
+                    PropIsSnapshot.Text = "False";
+                }
+
+                PropLastModified.Text = blob.Properties.LastModified.ToString();
+
+                PropLeaseDuration.Text = blob.Properties.LeaseDuration.ToString();
+
+                PropLeaseState.Text = blob.Properties.LeaseState.ToString();
+
+                PropLeaseStatus.Text = blob.Properties.LeaseStatus.ToString();
+
+                PropLength.Text = blob.Properties.Length.ToString();
+
                 PropName.Text = blob.Name;
+
                 PropParent.Text = blob.Parent.Container.Name;
+                
                 PropSnapshotQualifiedStorageUri.Text = blob.SnapshotQualifiedStorageUri.ToString().Replace("; ", ";\n");
+                
                 PropSnapshotQualifiedUri.Text = blob.SnapshotQualifiedUri.ToString().Replace("; ", ";\n");
+                
                 if (blob.SnapshotTime.HasValue)
                 {
                     PropSnapshotTime.Text = blob.SnapshotTime.ToString();
                 }
+
                 PropStorageUri.Text = blob.StorageUri.ToString().Replace("; ", ";\n");
+                
                 PropStreamMinimumReadSizeInBytes.Text = blob.StreamMinimumReadSizeInBytes.ToString();
+                
                 PropStreamWriteSizeInBytes.Text = blob.StreamWriteSizeInBytes.ToString();
+                
                 PropUri.Text = blob.Uri.ToString().Replace("; ", ";\n");
             }
             catch(Exception ex)
@@ -122,28 +171,77 @@ namespace AzureStorageExplorer
                 IsBlobChanged = false;
                 this.Title = "View Blob - " + blob.Name;
 
+                // Display blob properties.
+
                 PropBlobType.Text = "Page";
+
+                PropCacheControl.Text = blob.Properties.CacheControl;
+
                 PropContainer.Text = blob.Container.Name;
+
+                PropContentDisposition.Text = blob.Properties.ContentDisposition;
+
+                PropContentEncoding.Text = blob.Properties.ContentEncoding;
+
+                PropContentLanguage.Text = blob.Properties.ContentLanguage;
+
+                PropContentMD5.Text = blob.Properties.ContentMD5;
+
+                PropContentType.Text = blob.Properties.ContentType;
+
                 if (blob.CopyState != null)
                 {
                     PropCopyState.Text = blob.CopyState.ToString();
                 }
+
+                if (blob.Properties.ETag != null)
+                {
+                    PropETag.Text = blob.Properties.ETag.Replace("\"", String.Empty).Replace("0x", String.Empty);
+                }
+
+                if (blob.IsSnapshot)
+                {
+                    PropIsSnapshot.Text = "True";
+                }
+                else
+                {
+                    PropIsSnapshot.Text = "False";
+                }
+
+                PropLastModified.Text = blob.Properties.LastModified.ToString();
+
+                PropLeaseDuration.Text = blob.Properties.LeaseDuration.ToString();
+
+                PropLeaseState.Text = blob.Properties.LeaseState.ToString();
+
+                PropLeaseStatus.Text = blob.Properties.LeaseStatus.ToString();
+
+                PropLength.Text = blob.Properties.Length.ToString();
+
                 PropName.Text = blob.Name;
+
                 PropParent.Text = blob.Parent.Container.Name;
+
                 PropSnapshotQualifiedStorageUri.Text = blob.SnapshotQualifiedStorageUri.ToString().Replace("; ", ";\n");
+
                 PropSnapshotQualifiedUri.Text = blob.SnapshotQualifiedUri.ToString().Replace("; ", ";\n");
+
                 if (blob.SnapshotTime.HasValue)
                 {
                     PropSnapshotTime.Text = blob.SnapshotTime.ToString();
                 }
+
                 PropStorageUri.Text = blob.StorageUri.ToString().Replace("; ", ";\n");
+
                 PropStreamMinimumReadSizeInBytes.Text = blob.StreamMinimumReadSizeInBytes.ToString();
+
                 PropStreamWriteSizeInBytes.Text = blob.StreamWriteSizeInBytes.ToString();
+
                 PropUri.Text = blob.Uri.ToString().Replace("; ", ";\n");
 
-                MaxPageNumber = (blob.Properties.Length / 512) - 1;
-
                 // Read page ranges in use and display in Pages tab.
+
+                MaxPageNumber = (blob.Properties.Length / 512) - 1;
 
                 IEnumerable<Microsoft.WindowsAzure.Storage.Blob.PageRange> ranges = PageBlob.GetPageRanges();
 
@@ -189,7 +287,48 @@ namespace AzureStorageExplorer
 
         private void PropertiesApply_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: implement
+            Cursor = Cursors.Wait;
+
+            Status.Text = "Saving updated properties...";
+
+            try
+            {
+                if (BlockBlob != null)
+                {
+                    BlockBlob.Properties.CacheControl = PropCacheControl.Text;
+                    BlockBlob.Properties.ContentDisposition = PropContentDisposition.Text;
+                    BlockBlob.Properties.ContentEncoding = PropContentEncoding.Text;
+                    BlockBlob.Properties.ContentLanguage = PropContentLanguage.Text;
+                    BlockBlob.Properties.ContentMD5 = PropContentMD5.Text;
+                    BlockBlob.Properties.ContentType = PropContentType.Text;
+
+                    BlockBlob.SetProperties();
+                    IsBlobChanged = true;
+                }
+                else if (PageBlob != null)
+                {
+                    PageBlob.Properties.CacheControl = PropCacheControl.Text;
+                    PageBlob.Properties.ContentDisposition = PropContentDisposition.Text;
+                    PageBlob.Properties.ContentEncoding = PropContentEncoding.Text;
+                    PageBlob.Properties.ContentLanguage = PropContentLanguage.Text;
+                    PageBlob.Properties.ContentMD5 = PropContentMD5.Text;
+                    PageBlob.Properties.ContentType = PropContentType.Text;
+
+                    PageBlob.SetProperties();
+                    IsBlobChanged = true;
+                }
+
+                Status.Text = "✔ Properties successfully updated";
+
+                Cursor = Cursors.Arrow;
+            }
+            catch(Exception ex)
+            {
+                Cursor = Cursors.Arrow;
+                Status.Text = "Error updating properties";
+                MessageBox.Show("An error occurred saving the update blob properties. Please check your input for validity.\n\n" + ex.Message, "Error Updating Properties");
+                return;
+            }
         }
 
         private void PropertiesCancel_Click(object sender, RoutedEventArgs e)
@@ -489,6 +628,7 @@ namespace AzureStorageExplorer
                 }
                 PageNumber.Text = pageNo.ToString();
                 PageRead_Click(sender, null);
+
             }
             catch (Exception)
             {
