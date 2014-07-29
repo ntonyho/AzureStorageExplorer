@@ -19,19 +19,41 @@ using Microsoft.WindowsAzure.Storage.Auth;
 
 namespace AzureStorageExplorer
 {
-
     /// <summary>
     /// Interaction logic for Account.xaml
     /// </summary>
     public partial class AccountDialog : Window
     {
+        private bool DialogInitialized = false;
+        
         public bool UseSSL = false;
         public bool IsEdit = false;
+
+        public const String DefaultEndpoint = "core.windows.net";
+        public const String ChinaEndpoint = "core.chinacloud.cn";
 
         public AccountDialog()
         {
             InitializeComponent();
             this.Owner = Application.Current.MainWindow;
+            DialogInitialized = true;
+        }
+
+        public void SetEndpoint(String endpoint)
+        {
+            if (endpoint == DefaultEndpoint || endpoint == String.Empty)
+            {
+                EndpointDefault.IsChecked = true;
+            }
+            else if (endpoint == ChinaEndpoint)
+            {
+                EndpointChina.IsChecked = true;
+            }
+            else
+            {
+                EndpointOther.IsChecked = true;
+                EndpointDomain.Text = endpoint;
+            }
         }
 
         // Test access to the account.
@@ -169,7 +191,7 @@ namespace AzureStorageExplorer
             }
             else
             {
-                account = new CloudStorageAccount(new StorageCredentials(accountName, accountKey), UseSSL);
+                account = new CloudStorageAccount(new StorageCredentials(accountName, accountKey), EndpointDomain.Text, UseSSL);
             }
 
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
@@ -209,7 +231,29 @@ namespace AzureStorageExplorer
             }
         }
 
+        private void EndpointDefault_Click(object sender, RoutedEventArgs e)
+        {
+            //if (!DialogInitialized) return;
+            EndpointDomain.Focus();
+            EndpointDomain.Text = DefaultEndpoint;
+        }
 
+        private void EndpointChina_Click(object sender, RoutedEventArgs e)
+        {
+            //if (!DialogInitialized) return;
+            EndpointDomain.Focus();
+            EndpointDomain.Text = ChinaEndpoint;
+        }
 
+        private void EndpointOther_Click(object sender, RoutedEventArgs e)
+        {
+            //if (!DialogInitialized) return;
+
+            if (EndpointDomain.Text == DefaultEndpoint || EndpointDomain.Text == ChinaEndpoint)
+            {
+                EndpointDomain.Text = String.Empty;
+            }
+            EndpointDomain.Focus();
+        }
     }
 }

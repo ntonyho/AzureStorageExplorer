@@ -12,5 +12,6 @@ namespace AzureStorageExplorer
         public String Name;
         public String Key;
         public bool UseSSL;
+        public String EndpointDomain;
     }
 }

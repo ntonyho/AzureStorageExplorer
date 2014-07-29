@@ -82,8 +82,14 @@ namespace AzureStorageExplorer
                     IsDeveloperAccount = dlg.AccountTypeDev.IsChecked.Value,
                     Name = dlg.AccountName.Text,
                     Key = dlg.AccountKey.Text,
-                    UseSSL = dlg.UseSSL
+                    UseSSL = dlg.UseSSL,
+                    EndpointDomain = dlg.EndpointDomain.Text.Trim()
                 };
+
+                if (String.IsNullOrEmpty(account.EndpointDomain))
+                {
+                    account.EndpointDomain = "core.windows.net";
+                }
 
                 if (account.IsDeveloperAccount)
                 {
@@ -314,6 +320,14 @@ namespace AzureStorageExplorer
                                     IsDeveloperAccount = (items[2] == "1"),
                                     UseSSL = (items[3] == "1")
                                 };
+                                if (items.Length >= 5)
+                                {
+                                    account.EndpointDomain = items[4];
+                                }
+                                else
+                                {
+                                    account.EndpointDomain = "core.windows.net";
+                                }
                                 Accounts.Add(account);
                             }
                         }
@@ -368,6 +382,8 @@ namespace AzureStorageExplorer
                     {
                         line = line + "0|";
                     }
+
+                    line = line + account.EndpointDomain + "|";
 
                     line = StringCipher.Encrypt(line, cipherKey);
 

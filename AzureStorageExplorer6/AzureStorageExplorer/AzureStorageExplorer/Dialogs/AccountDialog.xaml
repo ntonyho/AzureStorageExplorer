@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:AzureStorageExplorer"
-        Title="Edit Storage Account" Height="260" Width="500" ResizeMode="NoResize" 
+        Title="Edit Storage Account" Height="340" Width="500" ResizeMode="NoResize" 
         WindowStartupLocation="CenterOwner">
     <StackPanel Orientation="Vertical">
         <StackPanel Margin="12" Orientation="Vertical">
@@ -27,6 +27,23 @@
                     <controls:WatermarkService.Watermark>
                         <TextBlock>Specify the storage account key</TextBlock>
                     </controls:WatermarkService.Watermark>
+                </TextBox>
+            </AdornerDecorator>
+
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <RadioButton x:Name="EndpointDefault" Margin="0,0,12,0" IsChecked="True" Click="EndpointDefault_Click">Microsoft Azure Default</RadioButton>
+                <RadioButton x:Name="EndpointChina" Margin="0,0,12,0" Click="EndpointChina_Click">Microsoft Azure China</RadioButton>
+                <RadioButton x:Name="EndpointOther" Margin="0,0,12,0" Click="EndpointOther_Click">Other (specify below)</RadioButton>
+            </StackPanel>
+            
+            <TextBlock x:Name="StorageEndpointLabel" Margin="0,8,0,0" Text="Storage endpoints domain:"></TextBlock>
+
+            <AdornerDecorator>
+                <TextBox x:Name="EndpointDomain" Background="LightYellow" Margin="0,2,0,0">
+                    <controls:WatermarkService.Watermark>
+                        <TextBlock>Specify the domain for blob, queue, and table endpoints (leave blank for default)</TextBlock>
+                    </controls:WatermarkService.Watermark>
+                    core.windows.net
                 </TextBox>
             </AdornerDecorator>
 

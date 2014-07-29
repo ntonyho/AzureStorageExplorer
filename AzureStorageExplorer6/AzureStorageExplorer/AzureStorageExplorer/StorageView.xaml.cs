@@ -264,7 +264,7 @@ namespace AzureStorageExplorer
             }
             else
             {
-                account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.UseSSL);
+                account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.EndpointDomain, Account.UseSSL);
             }
 
             return account;
@@ -598,7 +598,6 @@ namespace AzureStorageExplorer
                         if (blobClient == null)
                         {
                             CloudStorageAccount account = OpenStorageAccount();
-                            //CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.UseSSL);
                             blobClient = account.CreateCloudBlobClient();
                         }
                         CloudBlobContainer container = blobClient.GetContainerReference(containerName);
@@ -694,7 +693,6 @@ namespace AzureStorageExplorer
                         if (blobClient == null)
                         {
                             CloudStorageAccount account = OpenStorageAccount();
-                            //CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.UseSSL);
                             blobClient = account.CreateCloudBlobClient();
                         }
                         CloudBlobContainer container = blobClient.GetContainerReference(containerName);
@@ -1036,7 +1034,7 @@ namespace AzureStorageExplorer
                                     }
                                     else
                                     {
-                                        destAccount = new CloudStorageAccount(new StorageCredentials(account.Name, account.Key), account.UseSSL);
+                                        destAccount = new CloudStorageAccount(new StorageCredentials(account.Name, account.Key), account.EndpointDomain, account.UseSSL);
                                     }
                                 }
                             }
@@ -1220,7 +1218,7 @@ namespace AzureStorageExplorer
                     {
                         if (blobClient == null)
                         {
-                            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.UseSSL);
+                            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.EndpointDomain, Account.UseSSL);
                             blobClient = account.CreateCloudBlobClient();
                         }
                         CloudBlobContainer container = blobClient.GetContainerReference(containerName);
