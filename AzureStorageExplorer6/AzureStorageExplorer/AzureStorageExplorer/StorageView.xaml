@@ -68,7 +68,7 @@
                         <Button x:Name="ButtonContainerAccess" Width="54" ToolBar.OverflowMode="Never" ToolTip="Set Container Access" Click="ContainerAccess_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image x:Name="ButtonContainerAccessIcon" Source="Images\private.png" Height="16" />
-                                <TextBlock x:Name="ButtonContainerAccessLabel" Text="Access"/>
+                                <TextBlock x:Name="ButtonContainerAccessLabel" Text="Security"/>
                             </StackPanel>
                         </Button>
                         <ToggleButton x:Name="ButtonBlobServiceCORS" Width="54" ToolBar.OverflowMode="Never" ToolTip="Enable/Disable Container CORS Access" Click="BlobServiceCORS_Click" >

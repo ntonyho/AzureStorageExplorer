@@ -102,6 +102,9 @@
     <Compile Include="Dialogs\ContainerAccessLevelDialog.xaml.cs">
       <DependentUpon>ContainerAccessLevelDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\ContainerSecurity.xaml.cs">
+      <DependentUpon>ContainerSecurity.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\NewBlobDialog.xaml.cs">
       <DependentUpon>NewBlobDialog.xaml</DependentUpon>
     </Compile>
@@ -134,6 +137,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Dialogs\ContainerAccessLevelDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dialogs\ContainerSecurity.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

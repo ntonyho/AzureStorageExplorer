@@ -478,7 +478,7 @@ namespace AzureStorageExplorer
 
         private void MainMenu_About(object sender, System.Windows.RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("Azure Storage Explorer 6.0.1.0 (Preview 1)", "About");
+            System.Windows.MessageBox.Show("Azure Storage Explorer 6 Preview 1 (6.0.1.0)", "About");
         }
 
 
@@ -514,6 +514,23 @@ namespace AzureStorageExplorer
             }
         }
 
+        //***************************
+        //*                         *
+        //*  MainMenu_CodeplexPage  *
+        //*                         *
+        //***************************
+        // Launch the Azure Storage Explorer codeplex page.
+
+        private void MainMenu_CodeplexPage(object sender, System.Windows.RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start("http://azurestorageexplorer.codeplex.com");
+            }
+            catch (Exception)
+            {
+            }
+        }
         #endregion
     }
 }

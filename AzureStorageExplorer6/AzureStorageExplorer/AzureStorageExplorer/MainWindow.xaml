@@ -37,6 +37,7 @@
                 <ContextMenu x:Name="MainContextMenu">
                     <MenuItem Header="Microsoft Azure Management Portal" Click="MainMenu_Portal" />
                     <Separator />
+                    <MenuItem Header="Azure Storage Explorer Site" Click="MainMenu_CodeplexPage" />
                     <MenuItem Header="About Azure Storage Explorer" Click="MainMenu_About" />
                 </ContextMenu>
             </Image.ContextMenu>

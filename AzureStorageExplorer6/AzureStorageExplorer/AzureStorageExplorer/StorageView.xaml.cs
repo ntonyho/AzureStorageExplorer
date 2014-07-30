@@ -328,17 +328,14 @@ namespace AzureStorageExplorer
                     if (outlineItem.Permissions.PublicAccess ==  BlobContainerPublicAccessType.Container)
                     {
                         ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
-                        ButtonContainerAccessLabel.Text = "Public+";
                     }
                     else if (outlineItem.Permissions.PublicAccess ==  BlobContainerPublicAccessType.Blob)
                     {
                         ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
-                        ButtonContainerAccessLabel.Text = "Public";
                     }
                     else
                     {
                         ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/private.png"));
-                        ButtonContainerAccessLabel.Text = "Private";
                     }
 
                     ShowBlobContainer(SelectedBlobContainer);
@@ -1162,18 +1159,21 @@ namespace AzureStorageExplorer
 
         private void ContainerAccess_Click(object sender, RoutedEventArgs e)
         {
-            ContainerAccessLevelDialog dlg = new ContainerAccessLevelDialog();
-            dlg.Container.Text = SelectedBlobContainer;
+            ContainerSecurity dlg = new ContainerSecurity();
+
+            // Set up Access Level tab
+
+            dlg.ContainerName.Text = SelectedBlobContainer;
 
             TreeViewItem tvi = AccountTreeView.SelectedItem as TreeViewItem;
             if (tvi == null) return;
-            
+
             OutlineItem item = tvi.Tag as OutlineItem;
             if (item == null) return;
 
             if (item.Permissions == null) return;
 
-            switch(item.Permissions.PublicAccess)
+            switch (item.Permissions.PublicAccess)
             {
                 case BlobContainerPublicAccessType.Container:
                     dlg.AccessContainer.IsChecked = true;
@@ -1186,100 +1186,123 @@ namespace AzureStorageExplorer
                     break;
             }
 
+            // Set up Shared Access Signatures tab
+
+            if (blobClient == null)
+            {
+                CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.EndpointDomain, Account.UseSSL);
+                blobClient = account.CreateCloudBlobClient();
+            }
+
+            CloudBlobContainer container = blobClient.GetContainerReference(SelectedBlobContainer);
+
+            String blobName = null;
+            if (ContainerListView.SelectedItem != null)
+            {
+                BlobItem blobItem = ContainerListView.SelectedItem as BlobItem;
+                if (blobItem != null)
+                {
+                    blobName = blobItem.Name;
+                }
+            }
+
+            dlg.SetContainer(blobClient, container, blobName);
+
             if (dlg.ShowDialog().Value)
             {
-                bool isError = false;
-                String errorMessage = null;
-
-                int accessLevel = 0;
-
-                if (dlg.AccessContainer.IsChecked.Value) accessLevel = 1;
-                if (dlg.AccessBlob.IsChecked.Value) accessLevel = 2;
-                if (dlg.AccessNone.IsChecked.Value) accessLevel = 3;
-
-                String containerName = dlg.Container.Text;
-
-                Action action = new Action()
+                if (dlg.AccessLevelModified)
                 {
-                    Id = NextAction++,
-                    ActionType = Action.ACTION_CONTAINER_ACCESS_LEVEL,
-                    IsCompleted = false,
-                    Message = "Setting container " + containerName + " access level"
-                };
-                Actions.Add(action.Id, action);
+                    bool isError = false;
+                    String errorMessage = null;
 
-                UpdateStatus();
+                    int accessLevel = 0;
 
-                // Execute background task to create the container.
+                    if (dlg.AccessContainer.IsChecked.Value) accessLevel = 1;
+                    if (dlg.AccessBlob.IsChecked.Value) accessLevel = 2;
+                    if (dlg.AccessNone.IsChecked.Value) accessLevel = 3;
 
-                Task task = Task.Factory.StartNew(() =>
-                {
-                    try
+                    String containerName = dlg.ContainerName.Text;
+
+                    Action action = new Action()
                     {
-                        if (blobClient == null)
-                        {
-                            CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.EndpointDomain, Account.UseSSL);
-                            blobClient = account.CreateCloudBlobClient();
-                        }
-                        CloudBlobContainer container = blobClient.GetContainerReference(containerName);
-                        BlobContainerPermissions permissions = container.GetPermissions();
-                        switch(accessLevel)
-                        {
-                            case 1:
-                                permissions.PublicAccess = BlobContainerPublicAccessType.Container;
-                                break;
-                            case 2:
-                                permissions.PublicAccess = BlobContainerPublicAccessType.Blob;
-                                break;
-                            case 3:
-                                permissions.PublicAccess = BlobContainerPublicAccessType.Off;
-                                break;
-                        }
-                        item.Permissions = permissions;
-                        container.SetPermissions(permissions);
-                        
-                    }
-                    catch (Exception ex)
-                    {
-                        isError = true;
-                        errorMessage = ex.Message;
-                    }
-                    Actions[action.Id].IsCompleted = true;
-                });
-
-                // Task complete - update UI.
-
-                task.ContinueWith((t) =>
-                {
-                    switch (accessLevel)
-                    {
-                        case 1:
-                            ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
-                            ButtonContainerAccessLabel.Text = "Public+";
-                            break;
-                        case 2:
-                            ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
-                            ButtonContainerAccessLabel.Text = "Public";
-                            break;
-                        case 3:
-                            ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/private.png"));
-                            ButtonContainerAccessLabel.Text = "Private";
-                            break;
-                    }
+                        Id = NextAction++,
+                        ActionType = Action.ACTION_CONTAINER_ACCESS_LEVEL,
+                        IsCompleted = false,
+                        Message = "Setting container " + containerName + " access level"
+                    };
+                    Actions.Add(action.Id, action);
 
                     UpdateStatus();
 
-                    if (isError)
-                    {
-                        MessageBox.Show(errorMessage, "Exception Setting Blob Container Permissions");
-                    }
-                    //else
-                    //{
-                    //    SelectContainer(containerName);
-                    //}
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+                    // Execute background task to create the container.
 
+                    Task task = Task.Factory.StartNew(() =>
+                    {
+                        try
+                        {
+                            if (blobClient == null)
+                            {
+                                CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.EndpointDomain, Account.UseSSL);
+                                blobClient = account.CreateCloudBlobClient();
+                            }
+                            //CloudBlobContainer container = blobClient.GetContainerReference(containerName);
+                            BlobContainerPermissions permissions = container.GetPermissions();
+                            switch (accessLevel)
+                            {
+                                case 1:
+                                    permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+                                    break;
+                                case 2:
+                                    permissions.PublicAccess = BlobContainerPublicAccessType.Blob;
+                                    break;
+                                case 3:
+                                    permissions.PublicAccess = BlobContainerPublicAccessType.Off;
+                                    break;
+                            }
+                            item.Permissions = permissions;
+                            container.SetPermissions(permissions);
+
+                        }
+                        catch (Exception ex)
+                        {
+                            isError = true;
+                            errorMessage = ex.Message;
+                        }
+                        Actions[action.Id].IsCompleted = true;
+                    });
+
+                    // Task complete - update UI.
+
+                    task.ContinueWith((t) =>
+                    {
+                        switch (accessLevel)
+                        {
+                            case 1:
+                                ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
+                                break;
+                            case 2:
+                                ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
+                                break;
+                            case 3:
+                                ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/private.png"));
+                                break;
+                        }
+
+                        UpdateStatus();
+
+                        if (isError)
+                        {
+                            MessageBox.Show(errorMessage, "Exception Setting Blob Container Permissions");
+                        }
+                        //else
+                        //{
+                        //    SelectContainer(containerName);
+                        //}
+                    }, TaskScheduler.FromCurrentSynchronizationContext());
+                }
             }
+
+            return;
         }
 
 

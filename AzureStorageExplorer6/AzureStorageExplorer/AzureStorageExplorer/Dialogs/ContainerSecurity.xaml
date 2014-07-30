@@ -1,0 +1,71 @@
+﻿<Window x:Class="AzureStorageExplorer.ContainerSecurity"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:controls="clr-namespace:AzureStorageExplorer"
+        Title="Blob Container Security" Height="420" Width="560" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
+    <TabControl>
+        <TabItem x:Name="AccessLevelTab" Header="Access Level">
+            <StackPanel Orientation="Vertical">
+                <StackPanel Margin="12" Orientation="Vertical">
+                    <TextBlock Margin="0,0,0,12">Change the blob container's access level here.</TextBlock>
+                    <TextBlock Margin="0,0,0,0">Blob Container Name:</TextBlock>
+                    <TextBox x:Name="ContainerName" IsReadOnly="True" Margin="0,2,0,0" Background="LightYellow"></TextBox>
+
+                    <TextBlock Margin="0,12,0,0" Text="Access Level:"></TextBlock>
+                    <StackPanel Orientation="Vertical"  Margin="0,12,0,0">
+                        <RadioButton x:Name="AccessContainer" GroupName="AccessLevel" Content="Public Container: Anonymous clients can read blob and container content/metadata." Margin="0,0,12,0"/>
+                        <RadioButton x:Name="AccessBlob" GroupName="AccessLevel" Content="Public Blob: Anonymous clients can read blob content/metadata, but not container metadata." />
+                        <RadioButton x:Name="AccessNone" GroupName="AccessLevel" Content="Off: No anonymous access. Only the account owner can access resources in this container." />
+                    </StackPanel>
+
+                    <StackPanel x:Name="ButtonPanel" Orientation="Horizontal"  Margin="0,12,0,0">
+                        <Button x:Name="CmdApply" Padding="4" Margin="0,0,8,0" Click="CmdApply_Click">Update Access Level</Button>
+                        <Button x:Name="CmdCancel" Padding="4" IsCancel="true" Click="CmdCancel_Click">Close</Button>
+                    </StackPanel>
+                    <TextBlock x:Name="Message" Margin="0,12,0,0" />
+                </StackPanel>
+            </StackPanel>
+        </TabItem>
+        <TabItem x:Name="SASTab" Header="Shared Access Signatures">
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Vertical" Margin="12">
+                    <TextBlock Margin="0,0,0,12">Generate ad-hoc shared access signatures here.</TextBlock>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
+                        <TextBlock VerticalAlignment="Center" Margin="0,0,8,0">Access permitted from</TextBlock>
+                        <DatePicker x:Name="SASStartDate"></DatePicker>
+                        <TextBlock VerticalAlignment="Center" Margin="8,0,8,0">to</TextBlock>
+                        <DatePicker x:Name="SASEndDate"></DatePicker>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
+                        <TextBlock VerticalAlignment="Center" Margin="0,0,8,0">Actions permitted:</TextBlock>
+                        <CheckBox x:Name="SASActionList" Margin="0,0,8,0">List</CheckBox>
+                        <CheckBox x:Name="SASActionDelete" Margin="0,0,8,0">Delete</CheckBox>
+                        <CheckBox x:Name="SASActionRead" Margin="0,0,8,0" IsChecked="True">Read</CheckBox>
+                        <CheckBox x:Name="SASActionWrite" Margin="0,0,8,0">Write</CheckBox>
+                    </StackPanel>
+
+                    <TextBlock Margin="0,8,0,0" Text="Blob name to access (optional):"></TextBlock>
+                    <TextBox x:Name="SASBlobName" Margin="0,0,0,8" Background="LightYellow"></TextBox>
+
+                    <StackPanel x:Name="SASButtonPanel" Orientation="Horizontal"  Margin="0,8,0,0">
+                        <Button x:Name="CmdSASGenerate" Padding="4" Margin="0,0,8,0" Click="CmdSASGenerate_Click">Generate Signature</Button>
+                        <Button x:Name="CmdSASCancel" Padding="4" IsCancel="true" Click="CmdSASCancel_Click">Close</Button>
+                    </StackPanel>
+
+                    <TextBlock x:Name="SASInitialPanel" Margin="0,12,0,4">Set date range and permitted actions, then click Generate Signature.</TextBlock>
+
+                    <StackPanel x:Name="SASResultsPanel" Orientation="Vertical" Visibility="Collapsed">
+                        <TextBlock Margin="0,12,0,4">Generated Shared Access Signature URI of this container (copied to clipboard):</TextBlock>
+                        <TextBox x:Name="SASGeneratedUri" Margin="0,0,0,8" Height="Auto" TextWrapping="Wrap" Background="LightYellow"></TextBox>
+                        <Button x:Name="CmdSASTest" Padding="4" Width="100" Margin="0,0,8,0" Click="CmdSASTest_Click">Test in Browser</Button>
+                    </StackPanel>
+
+                </StackPanel>
+            </StackPanel>
+        </TabItem>
+
+    </TabControl>
+</Window>
