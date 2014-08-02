@@ -39,19 +39,46 @@ namespace AzureStorageExplorer
 
         public AzureAccount Account = null;
         public String SelectedBlobContainer = null;
+        public String SelectedTableContainer = null;
         public CloudBlobClient blobClient = null;
+        public CloudTableClient tableClient = null;
         public ObservableCollection<BlobItem> _BlobCollection = new ObservableCollection<BlobItem>();
         public ObservableCollection<BlobItem> BlobCollection { get { return _BlobCollection; } }
+
+        public Dictionary<String, bool> TableColumnNames = new Dictionary<string, bool>();
+        public ObservableCollection<EntityItem> _EntityCollection = new ObservableCollection<EntityItem>();
+        public ObservableCollection<EntityItem> EntityCollection { get { return _EntityCollection; } }
 
         private int NextAction = 1;
         private Dictionary<int, Action> Actions = new Dictionary<int, Action>();
 
         private String BlobSortHeader;
-        private ListSortDirection BlobSortDirection;
+        private ListSortDirection BlobSortDirection = ListSortDirection.Ascending;
         
         private GridViewColumnHeader _lastHeaderClicked = null;
         private ListSortDirection _lastDirection = ListSortDirection.Ascending;
 
+        private String EntitySortHeader;
+        private ListSortDirection EntitySortDirection = ListSortDirection.Ascending;
+
+        // Blob filters
+
+        private int MaxBlobCountFilter = -1;    // Max number of blobs to return, or -1 for filter off
+        private String BlobNameFilter = null;   // Name to wildcard match, or null for filter off
+        private long MinBlobSize = -1;           // Min blob size, -1 for filter off
+        private long MaxBlobSize = -1;           // Min blob size, -1 for filter off
+        private int BlobTypeFilter = 0;         // 0 = All blobs, 1 = Only block blobs, 2 = Only page blobs
+
+        // Entity filters
+
+        private int MaxEntityCountFilter = -1;  // Max number of entities to return, or -1 for filter off
+        private String EntityTextFilter = null; // Text to wildcard match across entity columns, or null for filter off
+
+        private bool EntityQueryEnabled = false;
+        private String[] EntityQueryColumnName = null;
+        private String[] EntityQueryCondition = null;
+        private String[] EntityQueryValue = null;
+        
         #endregion
 
         #region Initialization
@@ -59,6 +86,8 @@ namespace AzureStorageExplorer
         public StorageView()
         {
             InitializeComponent();
+            LoadDefaultBlobFilter();
+            LoadDefaultEntityFilter();
         }
 
         //******************
@@ -81,15 +110,13 @@ namespace AzureStorageExplorer
                 Header = "Blob Containers",
                 Tag = new OutlineItem()
                 {
-                    ItemType = 100,
+                    ItemType = ItemType.BLOB_SERVICE /* 100 */,
                     Container = null
                 }
             };
 
-
-            //TreeViewItem blobSection = new TreeViewItem() { Header = "Blob Containers", Tag = 100 };
-            TreeViewItem queueSection = new TreeViewItem() { Header = "Queues", Tag = 200 };
-            TreeViewItem tableSection = new TreeViewItem() { Header = "Tables", Tag = 300 };
+            TreeViewItem queueSection = new TreeViewItem() { Header = "Queues", Tag = ItemType.QUEUE_SERVICE /* 200 */ };
+            TreeViewItem tableSection = new TreeViewItem() { Header = "Tables", Tag = ItemType.TABLE_SERVICE /* 300 */ };
 
             AccountTreeView.Items.Clear();
 
@@ -99,20 +126,8 @@ namespace AzureStorageExplorer
 
             CloudStorageAccount account = OpenStorageAccount();
 
-
-            //serviceProperties.Cors.CorsRules.Clear(); // this will delete any existing CORS rules
-            //var corsRule = new CorsRule()
-            //{
-            //    AllowedOrigins = new List<string> { "http://test.local" },
-            //    AllowedMethods = CorsHttpMethods.Put,
-            //    AllowedHeaders = new List<string> { "x-ms-*", "content-type", "accept" },
-            //    ExposedHeaders = new List<string> { "x-ms-*" },
-            //    MaxAgeInSeconds = 60 * 60 // for an hour
-            //};
-
-
-
             blobClient = account.CreateCloudBlobClient();
+            tableClient = account.CreateCloudTableClient();
 
             try
             { 
@@ -161,7 +176,7 @@ namespace AzureStorageExplorer
                                 Header = stack,
                                 Tag = new OutlineItem()
                                 {
-                                    ItemType = 101,
+                                    ItemType = ItemType.BLOB_CONTAINER,
                                     Container = container.Name,
                                     Permissions = container.GetPermissions()
                                 }
@@ -173,7 +188,14 @@ namespace AzureStorageExplorer
                 blobSection.Header = "Blob Containers (" + containers.Count().ToString() + ")";
 
                 blobSection.IsExpanded = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An error occurred enumerating the blob containers in the storage account:\n\n" + ex.Message, "Error Loading Storage Account");
+            }
 
+            try
+            { 
                 CloudQueueClient queueClient = account.CreateCloudQueueClient();
                 IEnumerable<CloudQueue> queues = queueClient.ListQueues();
 
@@ -199,18 +221,24 @@ namespace AzureStorageExplorer
                             Header = stack,
                             Tag = new OutlineItem()
                             {
-                                ItemType = 201,
+                                ItemType = ItemType.QUEUE_CONTAINER,
                                 Container = queue.Name
                             }
                         });
                     }
                 }
                 queueSection.Header = "Queues (" + queues.Count().ToString() + ")";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An error occurred enumerating the queues in the storage account:\n\n" + ex.Message, "Error Loading Storage Account");
+            }
 
-                // OData version number occurs here:
-                // Could not load file or assembly 'Microsoft.Data.OData, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' or one of its dependencies. The system cannot find the file specified.
+            // OData version number occurs here:
+            // Could not load file or assembly 'Microsoft.Data.OData, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' or one of its dependencies. The system cannot find the file specified.
 
-                CloudTableClient tableClient = account.CreateCloudTableClient();
+            try
+            {
                 IEnumerable<CloudTable> tables = tableClient.ListTables();
                 if (tables != null)
                 {
@@ -234,7 +262,7 @@ namespace AzureStorageExplorer
                             Header = stack,
                             Tag = new OutlineItem()
                             {
-                                ItemType = 301,
+                                ItemType = ItemType.TABLE_CONTAINER,
                                 Container = table.Name
                             }
                         });
@@ -244,12 +272,11 @@ namespace AzureStorageExplorer
             }
             catch(Exception ex)
             {
-
+                MessageBox.Show("An error occurred enumerating the tables in the storage account:\n\n" + ex.Message, "Error Loading Storage Account");
             }
 
             Cursor = Cursors.Arrow;
         }
-        
 
 
         // Open and return cloud storage account.
@@ -285,6 +312,7 @@ namespace AzureStorageExplorer
         {
             ContainerToolbarPanel.Visibility = Visibility.Collapsed;
             BlobToolbarPanel.Visibility = Visibility.Collapsed;
+            EntityToolbarPanel.Visibility = Visibility.Collapsed;
             ContainerPanel.Visibility = Visibility.Collapsed;
             ContainerListView.Visibility = Visibility.Collapsed;
             ButtonContainerAccess.Visibility = Visibility.Collapsed;
@@ -309,14 +337,13 @@ namespace AzureStorageExplorer
 
             switch (outlineItem.ItemType)
             {
-                case 100:   // Blob Containers section
+                case ItemType.BLOB_SERVICE:   // Blob Containers section
                     ContainerToolbarPanel.Visibility = Visibility.Visible;
                     ButtonBlobServiceCORS.Visibility = Visibility.Visible;
                     break;
-                case 101:   // Blob container
+                case ItemType.BLOB_CONTAINER:   // Blob container
                     ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_folder.png"));
                     ContainerPanel.Visibility = Visibility.Visible;
-                    //ContainerPanel.Background = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FFD966"));
                     ContainerTitle.Text = outlineItem.Container;
                     ContainerType.Text = "blob container";
                     ContainerDetails.Text = String.Empty;
@@ -340,7 +367,7 @@ namespace AzureStorageExplorer
 
                     ShowBlobContainer(SelectedBlobContainer);
                     break;
-                case 200:   // Queues section
+                case ItemType.QUEUE_SERVICE:   // Queues section
                     break;
                 case 201:   // Queue
                     ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_queue.png"));
@@ -348,13 +375,25 @@ namespace AzureStorageExplorer
                     ContainerTitle.Text = outlineItem.Container;
                     ContainerType.Text = "queue";
                     break;
-                case 300:   // Tables section
+                case ItemType.TABLE_SERVICE:   // Tables section
                     break;
-                case 301:   // Table
+                case ItemType.TABLE_CONTAINER:   // Table
+
+                    // TODO: COMPLETE IMPLEMENTATION (ADAPTING FROM BLOB CONTAINER)
+
                     ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_table.png"));
-                    //ContainerPanel.Background = (SolidColorBrush)(new BrushConverter().ConvertFrom("#9FCFFA"));
+                    ContainerPanel.Visibility = Visibility.Visible;
                     ContainerTitle.Text = outlineItem.Container;
                     ContainerType.Text = "table";
+                    ContainerDetails.Text = String.Empty;
+                    SelectedTableContainer = outlineItem.Container;
+
+                    //ButtonDeleteContainer.Visibility = Visibility.Visible;
+                    //ButtonContainerAccess.Visibility = Visibility.Visible;
+
+                    TableColumnNames.Clear();
+
+                    ShowTableContainer(SelectedTableContainer);
                     break;
                 default:
                     break;
@@ -656,7 +695,7 @@ namespace AzureStorageExplorer
 
             OutlineItem item = tvi.Tag as OutlineItem;
 
-            if (item.ItemType != 101)
+            if (item.ItemType != ItemType.BLOB_CONTAINER)
             {
                 MessageBox.Show(message, "Container Selection Required");
                 return;
@@ -719,25 +758,147 @@ namespace AzureStorageExplorer
             }
         }
 
-        //private void SelectContainer(String containerName)
-        //{
-        //    ClearMainPane();
-        //    if (AccountTreeView.Items != null && (AccountTreeView.Items[0] as TreeViewItem).Items != null && (AccountTreeView.Items[0] as TreeViewItem).Items.Count > 0)
-        //    {
-        //        foreach(TreeViewItem tvi in (AccountTreeView.Items[0] as TreeViewItem).Items)
-        //        {
-        //            if (tvi.Tag is OutlineItem)
-        //            {
-        //                OutlineItem item = tvi.Tag as OutlineItem;
-        //                if (/* item.ItemType==101 && */ item.ItemName == containerName)
-        //                {
-        //                    tvi.IsSelected = true;
-        //                    break;
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
+        private void ContainerListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            BlobViewProperties_Click(this, null);
+        }
+
+        //**********************
+        //*                    *
+        //*  BlobFilter_Click  *
+        //*                    *
+        //**********************
+        // Display the blob filter dialog.
+
+        private void BlobFilter_Click(object sender, RoutedEventArgs e)
+        {
+            // Initialize the dialog.
+
+            BlobFilter dlg = new BlobFilter();
+
+            dlg.BlobSortHeader = BlobSortHeader;
+            dlg.BlobSortDirection = BlobSortDirection;
+
+            if (MaxBlobCountFilter != -1)
+            {
+                dlg.MaxBlobCount.Text = MaxBlobCountFilter.ToString();
+            }
+            else
+            {
+                dlg.MaxBlobCount.Text = String.Empty;
+            }
+
+            switch (BlobTypeFilter)
+            {
+                case 0:
+                    dlg.TypeAllBlobs.IsChecked = true;
+                    break;
+                case 1:
+                    dlg.TypeBlockBlobs.IsChecked = true;
+                    break;
+                case 2:
+                    dlg.TypePageBlobs.IsChecked = true;
+                    break;
+            }
+
+            if (BlobNameFilter != null)
+            {
+                dlg.NameText.Text = BlobNameFilter;
+            }
+
+            if (MinBlobSize != -1)
+            {
+                dlg.MinSize.Text = LengthText(MinBlobSize, false);
+            }
+
+            if (MaxBlobSize != -1)
+            {
+                dlg.MaxSize.Text = LengthText(MaxBlobSize, false);
+            }
+
+            // Display dialog.
+
+            if (dlg.ShowDialog().Value)
+            {
+                // Capture updated filter settings.
+
+                BlobSortHeader = dlg.BlobSortHeader;
+                BlobSortDirection = dlg.BlobSortDirection;
+
+                MaxBlobCountFilter = -1;
+                if (!String.IsNullOrEmpty(dlg.MaxBlobCount.Text) && Int32.TryParse(dlg.MaxBlobCount.Text, out MaxBlobCountFilter))
+                {
+                    if (MaxBlobCountFilter <= 0)
+                    {
+                        MaxBlobCountFilter = -1;
+                    }
+                }
+
+                BlobTypeFilter = 0;
+                if (dlg.TypeAllBlobs.IsChecked.Value)
+                {
+                    BlobTypeFilter = 0;
+                }
+                else if (dlg.TypeBlockBlobs.IsChecked.Value)
+                {
+                    BlobTypeFilter = 1;
+                }
+                else if (dlg.TypePageBlobs.IsChecked.Value)
+                {
+                    BlobTypeFilter = 2;
+                }
+
+                BlobNameFilter = null;
+                if (!String.IsNullOrEmpty(dlg.NameText.Text))
+                {
+                    BlobNameFilter = dlg.NameText.Text;
+                }
+
+                MinBlobSize = -1;
+                if (!String.IsNullOrEmpty(dlg.MinSize.Text) /* && Int64.TryParse(dlg.MinSize.Text, out MinBlobSize) */)
+                {
+                    MinBlobSize = GetLength(dlg.MinSize.Text);
+
+                    if (MinBlobSize <= 0)
+                    {
+                        MinBlobSize = -1;
+                    }
+                }
+
+                MaxBlobSize = -1;
+                if (!String.IsNullOrEmpty(dlg.MaxSize.Text) /* && Int64.TryParse(dlg.MaxSize.Text, out MaxBlobSize) */)
+                {
+                    MaxBlobSize = GetLength(dlg.MaxSize.Text);
+
+                    if (MaxBlobSize <= 0 || (MinBlobSize != -1 && MaxBlobSize < MinBlobSize))
+                    {
+                        MaxBlobSize = -1;
+                    }
+                }
+
+                if (MaxBlobCountFilter != -1 ||
+                    BlobNameFilter != null ||
+                    MinBlobSize != -1 ||
+                    MaxBlobSize != -1 ||
+                    BlobTypeFilter != 0)
+                {
+                    BlobFilter.IsChecked = true;
+                }
+                else
+                {
+                    BlobFilter.IsChecked = false;
+                }
+
+                if (dlg.SaveAsDefaultFilter.IsChecked.Value)
+                {
+                    SaveDefaultBlobFilter();
+                }
+
+                // Refresh the blob list display with the new filter settings.
+
+                ShowBlobContainer(SelectedBlobContainer);
+            }
+        }
 
         //****************************
         //*                          *
@@ -1446,6 +1607,271 @@ namespace AzureStorageExplorer
             }
         }
 
+        #endregion
+
+        #region Table Entity Toolbar handlers
+
+        //*************************
+        //*                       *
+        //*  EntityRefresh_Click  *
+        //*                       *
+        //*************************
+        // Refresh the list of entities.
+
+        private void EntityRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            TableListView.ItemsSource = null;
+            ShowTableContainer(SelectedTableContainer);
+        }
+
+        //***************************
+        //*                         *
+        //*  EntitySelectAll_Click  *
+        //*                         *
+        //***************************
+        // Select all entities in the container.
+
+        private void EntitySelectAll_Click(object sender, RoutedEventArgs e)
+        {
+            TableListView.SelectAll();
+        }
+
+        //********************************
+        //*                              *
+        //*  EntityClearSelection_Click  *
+        //*                              *
+        //********************************
+        // Clear entity selection.
+
+        private void EntityClearSelection_Click(object sender, RoutedEventArgs e)
+        {
+            TableListView.SelectedIndex = -1;
+        }
+
+        //***********************
+        //*                     *
+        //*  EntityQuery_Click  *
+        //*                     *
+        //***********************
+        // Display the entity query dialog.
+
+        private void EntityQuery_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Initialize the diaog.
+
+                EntityQuery dlg = new EntityQuery();
+
+                // Load table columns.
+
+                int columnId = 0;
+                List<CheckedListItem> entityColumns = new List<CheckedListItem>();
+
+                foreach (KeyValuePair<String, bool> column in TableColumnNames)
+                {
+                    entityColumns.Add(new CheckedListItem()
+                    {
+                        Id = columnId++,
+                        IsChecked = column.Value,
+                        Name = column.Key
+                    });
+                }
+                dlg.SetEntityColumns(entityColumns);
+
+                // Load query parameters
+
+                if (!EntityQueryEnabled)
+                {
+                    dlg.AllEntities.IsChecked = true;
+                }
+                else
+                {
+                    dlg.QueryEntities.IsChecked = true;
+                    if (EntityQueryColumnName.Length > 0)
+                    {
+                        dlg.SetConditions(EntityQueryColumnName, EntityQueryCondition, EntityQueryValue);
+                    }
+                }
+
+                // Display dialog.
+
+                if (dlg.ShowDialog().Value)
+                {
+                    // Capture updated query parameters
+
+                    if (dlg.AllEntities.IsChecked.Value)
+                    {
+                        EntityQueryEnabled = false;
+                    }
+                    else
+                    {
+                        EntityQueryEnabled = true;
+
+                        int count = 0;
+                        if (dlg.Column1.SelectedIndex > 0) count++;
+                        if (dlg.Column2.SelectedIndex > 0) count++;
+                        if (dlg.Column3.SelectedIndex > 0) count++;
+
+                        EntityQueryColumnName = new String[count];
+                        EntityQueryCondition = new String[count];
+                        EntityQueryValue = new String[count];
+
+                        int col = 0;
+
+                        if (dlg.Column1.SelectedIndex > 0)
+                        {
+                            EntityQueryColumnName[col] = (dlg.Column1.SelectedItem as ComboBoxItem).Content as String;
+                            EntityQueryCondition[col] = (dlg.Condition1.SelectedItem as ComboBoxItem).Content as String;
+                            EntityQueryValue[col] = dlg.Value1.Text;
+                            col++;
+                        }
+
+                        if (dlg.Column2.SelectedIndex > 0)
+                        {
+                            EntityQueryColumnName[col] = (dlg.Column2.SelectedItem as ComboBoxItem).Content as String;
+                            EntityQueryCondition[col] = (dlg.Condition2.SelectedItem as ComboBoxItem).Content as String;
+                            EntityQueryValue[col] = dlg.Value2.Text;
+                            col++;
+                        }
+
+                        if (dlg.Column3.SelectedIndex > 0)
+                        {
+                            EntityQueryColumnName[col] = (dlg.Column3.SelectedItem as ComboBoxItem).Content as String;
+                            EntityQueryCondition[col] = (dlg.Condition3.SelectedItem as ComboBoxItem).Content as String;
+                            EntityQueryValue[col] = dlg.Value3.Text;
+                            col++;
+                        }
+                    }
+                    ShowTableContainer(SelectedTableContainer);
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("An error occurred processing the query:\n\n" + ex.Message, "Error Processing Query");
+            }
+        }
+
+        //************************
+        //*                      *
+        //*  EntityFilter_Click  *
+        //*                      *
+        //************************
+        // Display the entity filter dialog.
+
+        private void EntityFilter_Click(object sender, RoutedEventArgs e)
+        {
+            // Initialize the dialog.
+
+            EntityFilter dlg = new EntityFilter();
+
+            dlg.EntitySortHeader = EntitySortHeader;
+            dlg.EntitySortDirection = EntitySortDirection;
+
+            if (MaxEntityCountFilter != -1)
+            {
+                dlg.MaxEntityCount.Text = MaxEntityCountFilter.ToString();
+            }
+            else
+            {
+                dlg.MaxEntityCount.Text = String.Empty;
+            }
+
+            if (EntityTextFilter != null)
+            {
+                dlg.EntityText.Text = EntityTextFilter;
+            }
+
+            // Load table columns.
+
+            int columnId = 0;
+            List<CheckedListItem> entityColumns = new List<CheckedListItem>();
+
+            foreach (KeyValuePair<String, bool> column in TableColumnNames)
+            {
+                entityColumns.Add(new CheckedListItem()
+                {
+                    Id = columnId++,
+                    IsChecked = column.Value,
+                    Name = column.Key
+                });
+            }
+            dlg.SetEntityColumns(entityColumns);
+
+            // Display dialog.
+
+            if (dlg.ShowDialog().Value)
+            {
+                // Capture updated filter settings.
+
+                EntitySortHeader = dlg.EntitySortHeader;
+                EntitySortDirection = dlg.EntitySortDirection;
+
+                MaxEntityCountFilter = -1;
+                if (!String.IsNullOrEmpty(dlg.MaxEntityCount.Text) && Int32.TryParse(dlg.MaxEntityCount.Text, out MaxEntityCountFilter))
+                {
+                    if (MaxEntityCountFilter <= 0)
+                    {
+                        MaxEntityCountFilter = -1;
+                    }
+                }
+
+                EntityTextFilter = null;
+                if (!String.IsNullOrEmpty(dlg.EntityText.Text))
+                {
+                    EntityTextFilter = dlg.EntityText.Text;
+                }
+
+                if (dlg.EntityColumns != null)
+                {
+                    foreach (CheckedListItem item in dlg.EntityColumns)
+                    {
+                        TableColumnNames[item.Name] = item.IsChecked;
+                    }
+                }
+
+                if (MaxEntityCountFilter != -1 ||
+                    EntityTextFilter != null ||
+                    !AllTableColumnNamesChecked())
+                {
+                    EntityFilter.IsChecked = true;
+                }
+                else
+                {
+                    EntityFilter.IsChecked = false;
+                }
+
+                if (dlg.SaveAsDefaultFilter.IsChecked.Value)
+                {
+                    SaveDefaultEntityFilter();
+                }
+
+                // Refresh the blob list display with the new filter settings.
+
+                ShowTableContainer(SelectedTableContainer);
+            }
+        }
+
+        // Return true if all table column names are checked.
+
+        private bool AllTableColumnNamesChecked()
+        {
+            bool result = true;
+
+            if (TableColumnNames != null)
+            {
+                foreach (KeyValuePair<String, bool> col in TableColumnNames)
+                {
+                    if (!col.Value)
+                    {
+                        result = false;
+                        break;
+                    }
+                }
+            }
+
+            return result;
+        }
 
         #endregion
 
@@ -1514,47 +1940,72 @@ namespace AzureStorageExplorer
             {
                 foreach (IListBlobItem item in blobs)
                 {
+                    if (MaxBlobCountFilter != -1 && containerCount >= MaxBlobCountFilter) break;
+                    
                     if (item.GetType() == typeof(CloudBlobDirectory))
                     {
                     }
                     else if (item.GetType() == typeof(CloudBlockBlob))
                     {
-                        containerCount++;
                         CloudBlockBlob blockBlob = item as CloudBlockBlob;
-                        _BlobCollection.Add(new BlobItem()
+
+                        if (BlobTypeFilter != 2)
                         {
-                            Name = blockBlob.Name,
-                            BlobType = "Block",
-                            ContentType = blockBlob.Properties.ContentType,
-                            Encoding = blockBlob.Properties.ContentEncoding,
-                            Length = blockBlob.Properties.Length,
-                            LengthText = LengthText(blockBlob.Properties.Length),
-                            ETag = blockBlob.Properties.ETag,
-                            LastModified = blockBlob.Properties.LastModified.Value.DateTime,
-                            LastModifiedText = blockBlob.Properties.LastModified.Value.ToString(),
-                            CopyState = CopyStateText(blockBlob.CopyState)
-                        });
-                        containerSize += blockBlob.Properties.Length;
+                            if (BlobNameFilter == null || blockBlob.Name.Contains(BlobNameFilter))
+                            {
+                                if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
+                                    (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
+                                {
+                                    _BlobCollection.Add(new BlobItem()
+                                    {
+                                        Name = blockBlob.Name,
+                                        BlobType = "Block",
+                                        ContentType = blockBlob.Properties.ContentType,
+                                        Encoding = blockBlob.Properties.ContentEncoding,
+                                        Length = blockBlob.Properties.Length,
+                                        LengthText = LengthText(blockBlob.Properties.Length),
+                                        ETag = blockBlob.Properties.ETag,
+                                        LastModified = blockBlob.Properties.LastModified.Value.DateTime,
+                                        LastModifiedText = blockBlob.Properties.LastModified.Value.ToString(),
+                                        CopyState = CopyStateText(blockBlob.CopyState)
+                                    });
+                                    containerCount++;
+                                    containerSize += blockBlob.Properties.Length;
+                                }
+                            }
+                        }
                     }
                     else if (item.GetType() == typeof(CloudPageBlob))
                     {
-                        containerCount++;
                         CloudPageBlob pageBlob = item as CloudPageBlob;
-                        _BlobCollection.Add(new BlobItem()
+
+                        if (BlobTypeFilter != 1)
                         {
-                            Name = pageBlob.Name,
-                            BlobType = "Page",
-                            ContentType = pageBlob.Properties.ContentType,
-                            Encoding = pageBlob.Properties.ContentEncoding,
-                            Length = pageBlob.Properties.Length,
-                            LengthText = LengthText(pageBlob.Properties.Length),
-                            ETag = pageBlob.Properties.ETag,
-                            LastModified = pageBlob.Properties.LastModified.Value.DateTime,
-                            LastModifiedText = pageBlob.Properties.LastModified.Value.ToString(),
-                            CopyState = CopyStateText(pageBlob.CopyState)
-                        });
-                        containerSize += pageBlob.Properties.Length;
+                            if (BlobNameFilter == null || pageBlob.Name.Contains(BlobNameFilter))
+                            {
+                                if ((MinBlobSize == -1 || pageBlob.Properties.Length >= MinBlobSize) &&
+                                    (MaxBlobSize == -1 || pageBlob.Properties.Length <= MaxBlobSize))
+                                {
+                                    _BlobCollection.Add(new BlobItem()
+                                    {
+                                        Name = pageBlob.Name,
+                                        BlobType = "Page",
+                                        ContentType = pageBlob.Properties.ContentType,
+                                        Encoding = pageBlob.Properties.ContentEncoding,
+                                        Length = pageBlob.Properties.Length,
+                                        LengthText = LengthText(pageBlob.Properties.Length),
+                                        ETag = pageBlob.Properties.ETag,
+                                        LastModified = pageBlob.Properties.LastModified.Value.DateTime,
+                                        LastModifiedText = pageBlob.Properties.LastModified.Value.ToString(),
+                                        CopyState = CopyStateText(pageBlob.CopyState)
+                                    });
+                                    containerCount++;
+                                    containerSize += pageBlob.Properties.Length;
+                                }
+                            }
+                        }
                     }
+
                 } // end foreach
 
                 SortBlobList();
@@ -1616,9 +2067,424 @@ namespace AzureStorageExplorer
         }
 
 
+        //************************
+        //*                      *
+        //*  ShowTableContainer  *
+        //*                      *
+        //************************
+        // Get and show entities in selected table container. Call from UI thread.
+
+        public void ShowTableContainer(String tableName)
+        {
+            try
+            {
+                Cursor = Cursors.Wait;
+                TableListView.ItemsSource = null;
+
+                // Create a temporary copy of the TableColumnNames table and add columns as we encounter them.
+                // This is done to prume away previously saved colum names that are no longer present in the data.
+
+                Dictionary<String, bool> tempTableColumnNames = new Dictionary<string, bool>();
+
+                TableListViewGridView.Columns.Clear();
+
+                AddTableListViewColumn("RowKey");
+                AddTableListViewColumn("PartitionKey");
+
+                tempTableColumnNames.Add("RowKey", TableColumnNames["RowKey"]);
+                tempTableColumnNames.Add("PartitionKey", TableColumnNames["PartitionKey"]);
+
+                int containerCount = 0;
+                long containerSize = 0;
+                _EntityCollection.Clear();
+                TableListView.Visibility = Visibility.Visible;
+                EntityToolbarPanel.Visibility = Visibility.Visible;
+
+                CloudTable table = tableClient.GetTableReference(tableName);
+
+                // Query the table and retrieve a collection of entities.
+
+                //var query = new TableQuery<ElasticTableEntity>();
+
+                var query = new TableQuery<ElasticTableEntity>();
+
+                //where entity.PartitionKey == "MyPartitionKey"
+
+                //IEnumerable<ElasticTableEntity> entities = table.ExecuteQuery(query).ToList();
+
+                IEnumerable<ElasticTableEntity> entities = null;
+
+                if (EntityQueryEnabled)
+                {
+                    EntityQuery.IsChecked = true;
+
+                    //var q = table.ExecuteQuery(query).ToList().Where(e => e.Value(EntityQueryColumnName[0]) == EntityQueryValue[0]).Select(e => e);  // from c in dc.Customers select c;
+
+                    IEnumerable<ElasticTableEntity> q = null;
+
+                    switch (EntityQueryCondition[0])
+                    {
+                        case "equals":
+                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]) == EntityQueryValue[0]).Select(e => e);
+                            break;
+                        case "does not equal":
+                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]) != EntityQueryValue[0]).Select(e => e);
+                            break;
+                        case "contains":
+                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]).Contains(EntityQueryValue[0])).Select(e => e);
+                            break;
+                        case "starts with":
+                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]).StartsWith(EntityQueryValue[0])).Select(e => e);
+                            break;
+                        case "ends with":
+                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]).EndsWith(EntityQueryValue[0])).Select(e => e);
+                            break;
+                    }
+
+                    if (EntityQueryColumnName.Length > 1)
+                    {
+                        switch (EntityQueryCondition[1])
+                        {
+                            case "equals":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[1]) == EntityQueryValue[1]);
+                                break;
+                            case "does not equal":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[1]) != EntityQueryValue[1]);
+                                break;
+                            case "contains":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[1]).Contains(EntityQueryValue[1]));
+                                break;
+                            case "starts with":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[1]).StartsWith(EntityQueryValue[1]));
+                                break;
+                            case "ends with":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[1]).EndsWith(EntityQueryValue[1]));
+                                break;
+                        }
+                    }
+
+                    if (EntityQueryColumnName.Length > 2)
+                    {
+                        //q = q.Where(e => e.Value(EntityQueryColumnName[2]) == EntityQueryValue[2]);
+                        switch (EntityQueryCondition[2])
+                        {
+                            case "equals":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[2]) == EntityQueryValue[2]);
+                                break;
+                            case "does not equal":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[2]) != EntityQueryValue[2]);
+                                break;
+                            case "contains":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[2]).Contains(EntityQueryValue[2]));
+                                break;
+                            case "starts with":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[2]).StartsWith(EntityQueryValue[2]));
+                                break;
+                            case "ends with":
+                                q = q.Where(e => e.Value(EntityQueryColumnName[2]).EndsWith(EntityQueryValue[2]));
+                                break;
+                        }
+                    }
+
+                    entities = q.ToList();
+                }
+                else
+                {
+                    EntityQuery.IsChecked = false;
+                    entities = table.ExecuteQuery(query).ToList();
+                }
+
+                if (entities != null)
+                {
+                    // Iterate through the list of entities.
+                    // Ensure a bound column exists in the list view for each.
+                    // Add a representation of each entity to the items source for the list view.
+
+                    bool match = false;
+
+                    foreach (ElasticTableEntity entity in entities)
+                    {
+                        match = false;
+
+                        if (EntityTextFilter == null) match = true;
+
+                        if (MaxEntityCountFilter != -1 && containerCount >= MaxEntityCountFilter) break;
+
+                        foreach (KeyValuePair<String, EntityProperty> prop in entity.Properties)
+                        {
+                            AddTableListViewColumn(prop.Key);
+
+                            if (!tempTableColumnNames.ContainsKey(prop.Key))
+                            {
+                                tempTableColumnNames.Add(prop.Key, TableColumnNames[prop.Key]);
+                            }
+                        }
+
+                        EntityItem item = new EntityItem(entity);
+
+                        if (EntityTextFilter != null)
+                        {
+                            if (entity.RowKey.Contains(EntityTextFilter) ||
+                                entity.PartitionKey.Contains(EntityTextFilter))
+                            {
+                                match = true;
+                            }
+                            else
+                            {
+                                foreach (String value in item.Values)
+                                {
+                                    if (value.Contains(EntityTextFilter))
+                                    {
+                                        match = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (match)
+                        {
+                            _EntityCollection.Add(item);
+                            containerCount++;
+                        }
+
+                        TableColumnNames = tempTableColumnNames;
+
+                        //containerSize += record.Length; // TODO:
+                    }
+                }
+
+                //TODO: SortEntityList();
+
+                ContainerDetails.Text = "(" + containerCount.ToString() + " entities) as of " + DateTime.Now.ToString();
+
+                TableListView.ItemsSource = EntityCollection;
+
+                Cursor = Cursors.Arrow;
+            }
+            catch(Exception ex)
+            {
+                Cursor = Cursors.Arrow;
+                MessageBox.Show("An error occurred querying the table:\n\n" + ex.Message, "Table Query Error");
+            }
+        }
+
+
+        //****************************
+        //*                          *
+        //*  AddTableListViewColumn  *
+        //*                          *
+        //****************************
+        // Add a column to the internal list of table columns (if not already present) and add a databound column to the entity list view (if not already present).
+
+        private void AddTableListViewColumn(String columnName)
+        {
+            // If the column is not in the internal list of table column names, add it now and default to visible.
+
+            if (!TableColumnNames.ContainsKey(columnName))
+            {
+                TableColumnNames.Add(columnName, true);
+            }
+
+            // Check to see if the column is already in the entity list view.
+
+            if (TableColumnNames[columnName])
+            {
+
+                bool colExists = false;
+                foreach (GridViewColumn col in TableListViewGridView.Columns)
+                {
+                    if (col.Header.ToString() == columnName)
+                    {
+                        colExists = true;
+                        break;
+                    }
+                }
+
+                // If the column is not in the entity list view, and 
+
+                if (!colExists)
+                {
+                    GridViewColumn column = new GridViewColumn();
+                    column.Header = columnName;
+                    column.DisplayMemberBinding = new Binding("Fields[" + columnName + "]");
+
+                    TableListViewGridView.Columns.Add(column);
+                }
+            }
+        }
+
+
         #endregion
 
         #region Blob Operations
+
+        //***************************
+        //*                         *
+        //*  LoadDefaultBlobFilter  *
+        //*                         *
+        //***************************
+        // If a default blob filter configuration has been saved for this user, load it now.
+
+        private void LoadDefaultBlobFilter()
+        {
+            try
+            {
+                String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-DefaultBlobFilter.dt1";
+                String line, name, value;
+
+                if (File.Exists(filename))
+                {
+                    using (TextReader reader = File.OpenText(filename))
+                    {
+                        string[] items = null;
+                        while((line = reader.ReadLine()) != null)
+                        {
+                            items = line.Split('|');
+                            if (items.Length >= 2)
+                            {
+                                name = items[0];
+                                value = items[1];
+                                switch(name)
+                                {
+                                    case "MaxBlobCount":
+                                        MaxBlobCountFilter = Convert.ToInt32(value);
+                                        if (MaxBlobCountFilter <= 0)
+                                        {
+                                            MaxBlobCountFilter = -1;
+                                        }
+                                        break;
+                                    case "BlobName":
+                                        BlobNameFilter = value;
+                                        if (String.IsNullOrEmpty(value))
+                                        {
+                                            BlobNameFilter = null;
+                                        }
+                                        break;
+                                    case "MinBlobSize":
+                                        MinBlobSize = Convert.ToInt32(value);
+                                        if (MinBlobSize <= 0)
+                                        {
+                                            MinBlobSize = -1;
+                                        }
+                                        break;
+                                    case "MaxBlobSize":
+                                        MaxBlobSize = Convert.ToInt32(value);
+                                        if (MaxBlobSize <= 0)
+                                        {
+                                            MaxBlobSize = -1;
+                                        }
+                                        break;
+                                    case "BlobType":
+                                        BlobTypeFilter = Convert.ToInt32(value);
+                                        switch(BlobTypeFilter)
+                                        {
+                                            case 0:
+                                            case 1:
+                                            case 2:
+                                                break;
+                                            default:
+                                                BlobTypeFilter = 0;
+                                                break;
+                                        }
+                                        break;
+                                    case "BlobSortHeader":
+                                        BlobSortHeader = value;
+                                        break;
+                                    case "BlobSortDirection":
+                                        switch (value)
+                                        {
+                                            case "D":
+                                                BlobSortDirection = ListSortDirection.Descending;
+                                                break;
+                                            case "A":
+                                            default:
+                                                BlobSortDirection = ListSortDirection.Ascending;
+                                                break;
+                                        }
+                                        break;
+                                } // end switch
+                            } // end if items.Length >= 2
+                        } // end while
+                    } // end using TextReader
+
+                    // Set Filter toolbar button state
+
+                    if (MaxBlobCountFilter != -1 ||
+                        BlobNameFilter != null ||
+                        MinBlobSize != -1 ||
+                        MaxBlobSize != -1 ||
+                        BlobTypeFilter != 0)
+                    {
+                        BlobFilter.IsChecked = true;
+                    }
+                    else
+                    {
+                        BlobFilter.IsChecked = false;
+                    }
+
+                } // end if
+            } // end try
+            catch(Exception ex)
+            {
+                //Console.WriteLine(ex.Message);
+            }
+        }
+
+
+        //***************************
+        //*                         *
+        //*  SaveDefaultBlobFilter  *
+        //*                         *
+        //***************************
+        // Save default blob filter configuration.
+
+        private void SaveDefaultBlobFilter()
+        {
+            String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-DefaultBlobFilter.dt1";
+
+            try
+            {
+                using (TextWriter writer = File.CreateText(filename))
+                {
+                    if (MaxBlobCountFilter != -1)
+                    {
+                        writer.WriteLine("MaxBlobCount|" + MaxBlobCountFilter.ToString());
+                    }
+
+                    if (BlobNameFilter != null)
+                    {
+                        writer.WriteLine("BlobName|" + BlobNameFilter);
+                    }
+
+                    if (MinBlobSize != -1)
+                    {
+                        writer.WriteLine("MinBlobSize|" + MinBlobSize.ToString());
+                    }
+
+                    if (MaxBlobSize != -1)
+                    {
+                        writer.WriteLine("MaxBlobSize|" + MaxBlobSize.ToString());
+                    }
+
+                    writer.WriteLine("BlobType|" + BlobTypeFilter.ToString());
+
+                    writer.WriteLine("BlobSortHeader|" + BlobSortHeader);
+
+                    if (BlobSortDirection == ListSortDirection.Ascending)
+                    {
+                        writer.WriteLine("BlobSortDirection|A");
+                    }
+                    else
+                    {
+                        writer.WriteLine("BlobSortDirection|D");
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show("An error occurred saving blob filter settings to file " + filename + ":\n\n" + ex.Message, "Error Saving Blob Filter");
+            }
+        }
 
         //*****************
         //*               *
@@ -1775,7 +2641,179 @@ namespace AzureStorageExplorer
 
         #endregion
 
+        #region Entity Operations
+
+        //*****************************
+        //*                           *
+        //*  LoadDefaultEntityFilter  *
+        //*                           *
+        //*****************************
+        // If a default entity filter configuration has been saved for this user, load it now.
+
+        private void LoadDefaultEntityFilter()
+        {
+            try
+            {
+                String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-DefaultEntityFilter.dt1";
+                String line, name, value;
+
+                if (File.Exists(filename))
+                {
+                    using (TextReader reader = File.OpenText(filename))
+                    {
+                        string[] items = null;
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            items = line.Split('|');
+                            if (items.Length >= 2)
+                            {
+                                name = items[0];
+                                value = items[1];
+                                switch (name)
+                                {
+                                    case "MaxEntityCount":
+                                        MaxEntityCountFilter = Convert.ToInt32(value);
+                                        if (MaxEntityCountFilter <= 0)
+                                        {
+                                            MaxEntityCountFilter = -1;
+                                        }
+                                        break;
+                                    case "EntityText":
+                                        EntityTextFilter = value;
+                                        if (String.IsNullOrEmpty(value))
+                                        {
+                                            EntityTextFilter = null;
+                                        }
+                                        break;
+                                    case "EntitySortHeader":
+                                        EntitySortHeader = value;
+                                        break;
+                                    case "EntitySortDirection":
+                                        switch (value)
+                                        {
+                                            case "D":
+                                                EntitySortDirection = ListSortDirection.Descending;
+                                                break;
+                                            case "A":
+                                            default:
+                                                EntitySortDirection = ListSortDirection.Ascending;
+                                                break;
+                                        }
+                                        break;
+                                } // end switch
+                            } // end if items.Length >= 2
+                        } // end while
+                    } // end using TextReader
+
+                    // Set Filter toolbar button state
+
+                    if (MaxEntityCountFilter != -1 ||
+                        EntityTextFilter != null ||
+                        !AllTableColumnNamesChecked())
+                    {
+                        EntityFilter.IsChecked = true;
+                    }
+                    else
+                    {
+                        EntityFilter.IsChecked = false;
+                    }
+
+                } // end if
+            } // end try
+            catch (Exception ex)
+            {
+                //Console.WriteLine(ex.Message);
+            }
+        }
+
+        //*****************************
+        //*                           *
+        //*  SaveDefaultEntityFilter  *
+        //*                           *
+        //*****************************
+        // Save default entity filter configuration.
+
+        private void SaveDefaultEntityFilter()
+        {
+            String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-DefaultEntityFilter.dt1";
+
+            try
+            {
+                using (TextWriter writer = File.CreateText(filename))
+                {
+                    if (MaxEntityCountFilter != -1)
+                    {
+                        writer.WriteLine("MaxEntityCount|" + MaxEntityCountFilter.ToString());
+                    }
+
+                    if (EntityTextFilter != null)
+                    {
+                        writer.WriteLine("EntityText|" + EntityTextFilter);
+                    }
+
+                    writer.WriteLine("EntitySortHeader|" + EntitySortHeader);
+
+                    if (EntitySortDirection == ListSortDirection.Ascending)
+                    {
+                        writer.WriteLine("EntitySortDirection|A");
+                    }
+                    else
+                    {
+                        writer.WriteLine("EntitySortDirection|D");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("An error occurred saving entity filter settings to file " + filename + ":\n\n" + ex.Message, "Error Saving Entity Filter");
+            }
+        }
+
+
+        #endregion
+
         #region Helper Functions
+
+        // Process n | nK | nM | nG and return integer number of bytes.
+
+        public long GetLength(String text)
+        {
+            int multiplier = 1;
+
+            String size = text.ToUpper();
+            if (size.EndsWith("K"))
+            {
+                multiplier = 1024;
+                size = size.Substring(0, size.Length - 1);
+            }
+            else if (size.EndsWith("M"))
+            {
+                multiplier = 1024 * 1024;
+                size = size.Substring(0, size.Length - 1);
+            }
+            else if (size.EndsWith("G"))
+            {
+                multiplier = 1024 * 1024 * 1024;
+                size = size.Substring(0, size.Length - 1);
+            }
+            size = size.Trim();
+            if (size.Length == 0)
+            {
+                return -1;
+            }
+
+            int count = 0;
+
+            if (!Int32.TryParse(size, out count))
+            {
+                return -1;
+            }
+
+            return count * multiplier;
+
+
+        }
+
 
         //****************
         //*              *
@@ -1784,17 +2822,31 @@ namespace AzureStorageExplorer
         //****************
         // Return length in text form with most appropriate units.
 
-        public String LengthText(long length)
+        public String LengthText(long length, bool showBytesText = true)
         {
             decimal n = Convert.ToDecimal(length);
             if (length == 1)
             {
-                return "1 byte";
+                if (showBytesText)
+                {
+                    return "1 byte";
+                }
+                else
+                {
+                    return "1";
+                }
             }
             else if (length < 1024)
             {
-                return length.ToString() + " bytes";
-            }
+                if (showBytesText)
+                {
+                    return length.ToString() + " bytes";
+                }
+                else
+                {
+                    return length.ToString();
+                }
+                }
             else if (length < (1024 * 1024))
             {
                 return Math.Round(n / 1024, 2).ToString() + "K";
@@ -1866,23 +2918,18 @@ namespace AzureStorageExplorer
             Clipboard.SetData(DataFormats.Text, (Object)connectionString);
         }
 
-        #endregion
-
         private void MenuItem_StorageAccount_CloseTab_Click(object sender, RoutedEventArgs e)
         {
             MainWindow.RemoveActiveTab();
         }
 
-        private void ContainerListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            BlobViewProperties_Click(this, null);
-        }
-
-
+        #endregion
 
     }
 
 }
+
+
 
 #if X
             CloudAnalyticsClient analyticsClient = account.CreateCloudAnalyticsClient();

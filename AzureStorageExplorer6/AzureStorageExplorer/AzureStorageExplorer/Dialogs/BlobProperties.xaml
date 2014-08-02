@@ -99,8 +99,8 @@
 
                         <!-- Column 2 -->
 
-                        <TextBlock Grid.Row="0" Grid.Column="0">Last Modified</TextBlock>
-                        <TextBox Grid.Row="0" Grid.Column="2" x:Name="PropLastModified" IsReadOnly="True" Background="LightYellow"></TextBox>
+                        <TextBlock Grid.Row="0" Grid.Column="4">Last Modified</TextBlock>
+                        <TextBox Grid.Row="0" Grid.Column="6" x:Name="PropLastModified" IsReadOnly="True" Background="LightYellow"></TextBox>
 
                         <TextBlock Grid.Row="2" Grid.Column="4">Length</TextBlock>
                         <TextBox Grid.Row="2" Grid.Column="6" x:Name="PropLength" IsReadOnly="True" Background="LightYellow"></TextBox>

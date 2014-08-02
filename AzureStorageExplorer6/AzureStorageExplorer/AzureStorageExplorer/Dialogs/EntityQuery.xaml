@@ -1,0 +1,72 @@
+﻿<Window x:Class="AzureStorageExplorer.EntityQuery"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:AzureStorageExplorer"
+        Title="Table Query" Height="280" Width="500" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Orientation="Vertical">
+        <StackPanel Margin="12" Orientation="Vertical">
+
+            <TextBlock Margin="0,0,0,0">Use this tab to specify an entity query to run against the table.</TextBlock>
+
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <RadioButton x:Name="AllEntities" x:FieldModifier="public" IsChecked="True" Checked="AllEntities_Checked">All Entities</RadioButton>
+                <RadioButton x:Name="QueryEntities" x:FieldModifier="public" Margin="16,0,0,0" Checked="QueryEntities_Checked">Query Entities</RadioButton>
+            </StackPanel>
+
+            <StackPanel x:Name="QueryPanel" Orientation="Vertical" Visibility="Hidden">
+                <TextBlock Margin="0,12,0,0">Query Conditions</TextBlock>
+            
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <ComboBox x:Name="Column1" x:FieldModifier="public" Width="100" Margin="0,0,12,0">
+                        <ComboBoxItem>-- None --</ComboBoxItem>
+                    </ComboBox>
+                    <ComboBox x:Name="Condition1" x:FieldModifier="public" Width="110" Margin="0,0,12,0" >
+                        <ComboBoxItem IsSelected="True">equals</ComboBoxItem>
+                        <ComboBoxItem>does not equal</ComboBoxItem>
+                        <ComboBoxItem>contains</ComboBoxItem>
+                        <ComboBoxItem>starts with</ComboBoxItem>
+                        <ComboBoxItem>ends with</ComboBoxItem>
+                    </ComboBox>
+                    <TextBox x:Name="Value1" x:FieldModifier="public" Margin="0,2,0,0" Width="220" HorizontalAlignment="Left" Background="LightYellow"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <ComboBox x:Name="Column2" x:FieldModifier="public" Width="100" Margin="0,0,12,0">
+                        <ComboBoxItem>-- None --</ComboBoxItem>
+                    </ComboBox>
+                    <ComboBox x:Name="Condition2" x:FieldModifier="public" Width="110" Margin="0,0,12,0" >
+                        <ComboBoxItem IsSelected="True">equals</ComboBoxItem>
+                        <ComboBoxItem>does not equal</ComboBoxItem>
+                        <ComboBoxItem>contains</ComboBoxItem>
+                        <ComboBoxItem>starts with</ComboBoxItem>
+                        <ComboBoxItem>ends with</ComboBoxItem>
+                    </ComboBox>
+                    <TextBox x:Name="Value2" x:FieldModifier="public" Margin="0,2,0,0" Width="220" HorizontalAlignment="Left" Background="LightYellow"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <ComboBox x:Name="Column3" x:FieldModifier="public" Width="100" Margin="0,0,12,0">
+                        <ComboBoxItem>-- None --</ComboBoxItem>
+                    </ComboBox>
+                    <ComboBox x:Name="Condition3" x:FieldModifier="public" Width="110" Margin="0,0,12,0" >
+                        <ComboBoxItem IsSelected="True">equals</ComboBoxItem>
+                        <ComboBoxItem>does not equal</ComboBoxItem>
+                        <ComboBoxItem>contains</ComboBoxItem>
+                        <ComboBoxItem>starts with</ComboBoxItem>
+                        <ComboBoxItem>ends with</ComboBoxItem>
+                    </ComboBox>
+                    <TextBox x:Name="Value3" x:FieldModifier="public" Margin="0,2,0,0" Width="220" HorizontalAlignment="Left" Background="LightYellow"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!--<CheckBox x:Name="SaveAsDefaultFilter" Margin="0,12,0,0">Save this as my default filter</CheckBox>-->
+            
+            <StackPanel x:Name="ButtonPanel" Orientation="Horizontal"  Margin="0,12,0,0">
+                <Button x:Name="CmdApply" Padding="4" IsDefault="True" Margin="0,0,8,0" Click="CmdApplyClick">Apply</Button>
+                <Button x:Name="CmdClearAllConditions" Padding="4" Margin="0,0,8,0" Click="CmdClearAllConditions_Click">Clear</Button>
+                <Button x:Name="CmdCancel" Padding="4" IsCancel="true" Click="CmdCancel_Click">Cancel</Button>
+            </StackPanel>
+        </StackPanel>
+    </StackPanel>
+</Window>

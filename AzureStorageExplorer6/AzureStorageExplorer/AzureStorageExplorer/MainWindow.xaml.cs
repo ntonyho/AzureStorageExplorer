@@ -278,7 +278,6 @@ namespace AzureStorageExplorer
             {
                 AccountList.Items.Add(account.Name);
             }
-            AccountList.Items.Add("--- Select a Storage Account ---");
             AccountList.SelectedIndex = 0;
         }
 

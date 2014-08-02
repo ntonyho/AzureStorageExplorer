@@ -128,6 +128,12 @@
                                 <TextBlock Text="Clear All"/>
                             </StackPanel>
                         </Button>
+                        <ToggleButton x:Name="BlobFilter" Width="54" ToolBar.OverflowMode="Never" ToolTip="Filter Selection" Click="BlobFilter_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\filter.png" Height="16" />
+                                <TextBlock Text="Filter"/>
+                            </StackPanel>
+                        </ToggleButton>
                     </ToolBar>
                     <ToolBar Band="1" BandIndex="2">
                         <Button x:Name="BlobUploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Files" Click="BlobUploadButton_Click" >
@@ -172,10 +178,89 @@
                     </ToolBar>
                 </ToolBarTray>
             </StackPanel>
+
+            <StackPanel Grid.Row="1" x:Name="EntityToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
+                <ToolBarTray x:Name="EntityToolbarTray" Background="White" ToolBarTray.IsLocked="True"  IsManipulationEnabled="False">
+                    <ToolBar Band="1" BandIndex="1">
+                        <Button x:Name="EntityRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Entity List" Click="EntityRefresh_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\refresh.png" Height="16" />
+                                <TextBlock Text="Refresh"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="EntitySelectAll" Width="54" ToolBar.OverflowMode="Never" ToolTip="Select All Entities" Click="EntitySelectAll_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\list.png" Height="16" />
+                                <TextBlock Text="Select All"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="EntityClearSelection" Width="54" ToolBar.OverflowMode="Never" ToolTip="Clear Selection" Click="EntityClearSelection_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\clear.png" Height="16" />
+                                <TextBlock Text="Clear All"/>
+                            </StackPanel>
+                        </Button>
+                        <ToggleButton x:Name="EntityQuery" Width="54" ToolBar.OverflowMode="Never" ToolTip="Set Query Conditions" Click="EntityQuery_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\query.png" Height="16" />
+                                <TextBlock Text="Query"/>
+                            </StackPanel>
+                        </ToggleButton>
+                        <ToggleButton x:Name="EntityFilter" Width="54" ToolBar.OverflowMode="Never" ToolTip="Filter Selection" Click="EntityFilter_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\filter.png" Height="16" />
+                                <TextBlock Text="Filter"/>
+                            </StackPanel>
+                        </ToggleButton>
+                    </ToolBar>
+                    <!--<ToolBar Band="1" BandIndex="2">
+                        <Button x:Name="BlobUploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Files" Click="BlobUploadButton_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\upload-blob.png" Height="16" />
+                                <TextBlock Text="Upload"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobDownloadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Download Selected Blobs"  Click="BlobDownloadButton_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\download-blob.png" Height="16" />
+                                <TextBlock Text="Downld"/>
+                            </StackPanel>
+                        </Button>
+                    </ToolBar>
+                    <ToolBar Band="1" BandIndex="3">
+                        <Button x:Name="BlobView" Width="54" ToolTip="View Blob Properties" ToolBar.OverflowMode="Never" Click="BlobViewProperties_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\properties.png" Height="16" />
+                                <TextBlock Text="View"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobNew" Width="54" ToolTip="Create New Blob" ToolBar.OverflowMode="Never" Click="BlobNew_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\new_blob.png" Height="16" />
+                                <TextBlock Text="New"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobCopy" Width="54" ToolTip="Copy Selected Blob" ToolBar.OverflowMode="Never" Click="BlobCopy_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\copy.png" Height="16" />
+                                <TextBlock Text="Copy"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BlobDelete" Width="54" ToolBar.OverflowMode="Never" ToolTip="Delete Selected Blobs" Click="BlobDelete_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\delete.png" Height="16" />
+                                <TextBlock Text="Delete"/>
+                            </StackPanel>
+                        </Button>
+
+                    </ToolBar>-->
+                </ToolBarTray>
+            </StackPanel>
+
             <ListView Grid.Row="2" x:Name="ContainerListView" 
                       GridViewColumnHeader.Click="ContainerListView_ColumnHeaderClicked" 
                       MouseDoubleClick="ContainerListView_MouseDoubleClick"
-                      Visibility="Visible" ItemsSource="{Binding BlobCollection}">
+                      Visibility="Collapsed" ItemsSource="{Binding BlobCollection}">
                 <ListView.Resources>
                     <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
                 </ListView.Resources>
@@ -192,6 +277,20 @@
                     </GridView>
                 </ListView.View>
             </ListView>
+
+            <ListView Grid.Row="2" x:Name="TableListView" 
+                      Visibility="Collapsed" ItemsSource="{Binding EntityCollection}">
+                <ListView.Resources>
+                    <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
+                </ListView.Resources>
+                <ListView.View>
+                    <GridView x:Name="TableListViewGridView">
+                        <!--<GridViewColumn Width="140" Header="RowKey" DisplayMemberBinding="{Binding RowKey}" />
+                        <GridViewColumn Width="40" Header="PartitionKey" DisplayMemberBinding="{Binding PartitionKey}" />-->
+                    </GridView>
+                </ListView.View>
+            </ListView>
+
             <TextBlock x:Name="StatusMessage" Grid.Row="3" Padding="4" LineHeight="12" Background="AliceBlue" Visibility="Collapsed" ></TextBlock>
         </Grid>
     </Grid>
