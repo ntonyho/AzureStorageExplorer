@@ -27,6 +27,8 @@ namespace AzureStorageExplorer
             InitializeComponent();
             Initialized = true;
             CenterWindowOnScreen();
+            //BlobName.Focus();
+            BlobTypeBlock.Focus();
         }
 
         //**************************

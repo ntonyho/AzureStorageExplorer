@@ -279,6 +279,7 @@
             </ListView>
 
             <ListView Grid.Row="2" x:Name="TableListView" 
+                      GridViewColumnHeader.Click="EntityListView_ColumnHeaderClicked" 
                       Visibility="Collapsed" ItemsSource="{Binding EntityCollection}">
                 <ListView.Resources>
                     <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>

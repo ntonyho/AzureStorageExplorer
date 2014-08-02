@@ -46,6 +46,7 @@ namespace AzureStorageExplorer
                 {
                     this.Values[v] = value.ToString();
                 }
+
                 Fields.Add(this.Names[v], this.Values[v]);
                 v++;
             }

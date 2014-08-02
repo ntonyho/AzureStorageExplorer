@@ -58,6 +58,9 @@ namespace AzureStorageExplorer
         private GridViewColumnHeader _lastHeaderClicked = null;
         private ListSortDirection _lastDirection = ListSortDirection.Ascending;
 
+        private GridViewColumnHeader _lastEntityHeaderClicked = null;
+        private ListSortDirection _lastEntityDirection = ListSortDirection.Ascending;
+
         private String EntitySortHeader;
         private ListSortDirection EntitySortDirection = ListSortDirection.Ascending;
 
@@ -301,12 +304,12 @@ namespace AzureStorageExplorer
 
         #region Left and Main Pane Interaction Handlers
 
-        //*****************************************
-        //*                                       *
-        //*  AccountTreeView_SelectedItemChanged  *
-        //*                                       *
-        //*****************************************
-        // Left pane tree item item clicked - an item was selected in the outline. Update main pane with content.
+        //*******************
+        //*                 *
+        //*  ClearMainPane  *
+        //*                 *
+        //*******************
+        // Clear the main pane content.
 
         private void ClearMainPane()
         {
@@ -315,6 +318,8 @@ namespace AzureStorageExplorer
             EntityToolbarPanel.Visibility = Visibility.Collapsed;
             ContainerPanel.Visibility = Visibility.Collapsed;
             ContainerListView.Visibility = Visibility.Collapsed;
+            TableListView.Visibility = Visibility.Collapsed;
+
             ButtonContainerAccess.Visibility = Visibility.Collapsed;
             ButtonDeleteContainer.Visibility = Visibility.Collapsed;
             ButtonBlobServiceCORS.Visibility = Visibility.Collapsed;
@@ -579,6 +584,102 @@ namespace AzureStorageExplorer
 
         #region Toolbar Button Handlers
 
+        //*******************************************
+        //*                                         *
+        //*  EntityListView_ColumnHeaderClicked  *
+        //*                                         *
+        //*******************************************
+        // Main pane table entity list column clicked - sort and re-display the entity list.
+
+        private void EntityListView_ColumnHeaderClicked(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
+            ListSortDirection direction;
+
+            if (headerClicked != null)
+            {
+                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
+                {
+                    if (headerClicked != _lastEntityHeaderClicked)
+                    {
+                        direction = ListSortDirection.Ascending;
+                    }
+                    else
+                    {
+                        if (_lastEntityDirection == ListSortDirection.Ascending)
+                        {
+                            direction = ListSortDirection.Descending;
+                        }
+                        else
+                        {
+                            direction = ListSortDirection.Ascending;
+                        }
+                    }
+
+                    string header = headerClicked.Column.Header as string;
+
+                    EntitySortHeader = header;
+                    EntitySortDirection = direction;
+
+                    SortEntityList();
+
+
+                    if (direction == ListSortDirection.Ascending)
+                    {
+                        headerClicked.Column.HeaderTemplate =
+                          Resources["HeaderTemplateArrowUp"] as DataTemplate;
+                    }
+                    else
+                    {
+                        headerClicked.Column.HeaderTemplate =
+                          Resources["HeaderTemplateArrowDown"] as DataTemplate;
+                    }
+
+                    // Remove arrow from previously sorted header 
+                    if (_lastEntityHeaderClicked != null && _lastHeaderClicked != headerClicked)
+                    {
+                        _lastEntityHeaderClicked.Column.HeaderTemplate = null;
+                    }
+
+
+                    _lastEntityHeaderClicked = headerClicked;
+                    _lastEntityDirection = direction;
+                }
+            }
+        }
+
+        //********************
+        //*                  *
+        //*  SortEntityList  *
+        //*                  *
+        //********************
+        // Sort the entity list by selected column / direction.
+
+        private void SortEntityList()
+        {
+            if (TableColumnNames.ContainsKey(EntitySortHeader))
+            {
+                TableListView.ItemsSource = null;
+
+                IEnumerable<EntityItem> entities = null;
+
+                entities = from e in _EntityCollection select e;
+
+                if (EntitySortDirection == ListSortDirection.Ascending)
+                {
+                    _EntityCollection = new ObservableCollection<EntityItem>(entities.OrderBy(e => e.Fields[EntitySortHeader], StringComparer.CurrentCultureIgnoreCase));
+                }
+                else
+                {
+                    _EntityCollection = new ObservableCollection<EntityItem>(entities.OrderByDescending(e => e.Fields[EntitySortHeader], StringComparer.CurrentCultureIgnoreCase));
+                }
+
+                TableListView.ItemsSource = EntityCollection;
+            }
+        }
+
+
+
         //**************************
         //*                        *
         //*  AccountRefresh_Click  *
@@ -614,6 +715,11 @@ namespace AzureStorageExplorer
 
                 String containerName = dlg.Container.Text;
 
+                int accessLevel = 3;
+                if (dlg.AccessContainer.IsChecked.Value) accessLevel = 1;
+                if (dlg.AccessBlob.IsChecked.Value) accessLevel = 2;
+                if (dlg.AccessNone.IsChecked.Value) accessLevel = 3;
+
                 Action action = new Action()
                 {
                     Id = NextAction++,
@@ -638,6 +744,21 @@ namespace AzureStorageExplorer
                         }
                         CloudBlobContainer container = blobClient.GetContainerReference(containerName);
                         container.CreateIfNotExists();
+
+                        BlobContainerPermissions permissions = container.GetPermissions();
+                        switch (accessLevel)
+                        {
+                            case 1:
+                                permissions.PublicAccess = BlobContainerPublicAccessType.Container;
+                                break;
+                            case 2:
+                                permissions.PublicAccess = BlobContainerPublicAccessType.Blob;
+                                break;
+                            case 3:
+                                permissions.PublicAccess = BlobContainerPublicAccessType.Off;
+                                break;
+                        }
+                        container.SetPermissions(permissions);
                     }
                     catch (Exception ex)
                     {
@@ -2104,21 +2225,13 @@ namespace AzureStorageExplorer
 
                 // Query the table and retrieve a collection of entities.
 
-                //var query = new TableQuery<ElasticTableEntity>();
-
                 var query = new TableQuery<ElasticTableEntity>();
-
-                //where entity.PartitionKey == "MyPartitionKey"
-
-                //IEnumerable<ElasticTableEntity> entities = table.ExecuteQuery(query).ToList();
 
                 IEnumerable<ElasticTableEntity> entities = null;
 
                 if (EntityQueryEnabled)
                 {
                     EntityQuery.IsChecked = true;
-
-                    //var q = table.ExecuteQuery(query).ToList().Where(e => e.Value(EntityQueryColumnName[0]) == EntityQueryValue[0]).Select(e => e);  // from c in dc.Customers select c;
 
                     IEnumerable<ElasticTableEntity> q = null;
 
@@ -2248,12 +2361,10 @@ namespace AzureStorageExplorer
                         }
 
                         TableColumnNames = tempTableColumnNames;
-
-                        //containerSize += record.Length; // TODO:
                     }
                 }
 
-                //TODO: SortEntityList();
+                SortEntityList();
 
                 ContainerDetails.Text = "(" + containerCount.ToString() + " entities) as of " + DateTime.Now.ToString();
 
