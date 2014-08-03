@@ -37,6 +37,8 @@ namespace AzureStorageExplorer
     {
         #region Class Variables
 
+        public const String NULL_VALUE = "NULL ";
+
         public AzureAccount Account = null;
         public String SelectedBlobContainer = null;
         public String SelectedTableContainer = null;
@@ -2523,9 +2525,11 @@ namespace AzureStorageExplorer
 
                 AddTableListViewColumn("RowKey");
                 AddTableListViewColumn("PartitionKey");
+                AddTableListViewColumn("Timestamp", false);
 
                 tempTableColumnNames.Add("RowKey", TableColumnNames["RowKey"]);
                 tempTableColumnNames.Add("PartitionKey", TableColumnNames["PartitionKey"]);
+                tempTableColumnNames.Add("Timestamp", TableColumnNames["Timestamp"]);
 
                 int containerCount = 0;
                 long containerSize = 0;
@@ -2675,6 +2679,15 @@ namespace AzureStorageExplorer
                     }
                 }
 
+
+                if (_EntityCollection != null)
+                {
+                    foreach (EntityItem entity in _EntityCollection)
+                    {
+                        entity.AddMissingFields(TableColumnNames);
+                    }
+                }
+
                 SortEntityList();
 
                 ContainerDetails.Text = "(" + containerCount.ToString() + " entities) as of " + DateTime.Now.ToString();
@@ -2698,20 +2711,19 @@ namespace AzureStorageExplorer
         //****************************
         // Add a column to the internal list of table columns (if not already present) and add a databound column to the entity list view (if not already present).
 
-        private void AddTableListViewColumn(String columnName)
+        private void AddTableListViewColumn(String columnName, bool enabled = true)
         {
             // If the column is not in the internal list of table column names, add it now and default to visible.
 
             if (!TableColumnNames.ContainsKey(columnName))
             {
-                TableColumnNames.Add(columnName, true);
+                TableColumnNames.Add(columnName, enabled);
             }
 
             // Check to see if the column is already in the entity list view.
 
             if (TableColumnNames[columnName])
             {
-
                 bool colExists = false;
                 foreach (GridViewColumn col in TableListViewGridView.Columns)
                 {
@@ -3275,14 +3287,14 @@ namespace AzureStorageExplorer
                                 writer.WriteLine("    \"entities\": [");
                                 break;
                             case "xml":
-                                writer.WriteLine("<?xml version=\"1.0\"?>");
-                                writer.WriteLine("<Entities>");
+                                writer.WriteLine("<?xml version=\"1.0\" ?>");
+                                writer.WriteLine("<Entities xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");
                                 break;
                             default:
                                 break;
                         }
 
-                        // Iterate through each entity in the collection and write out a line.
+                        // Write entities - iterate through each entity in the collection and write out a line/record.
 
                         String colName;
                         String value;
@@ -3312,11 +3324,11 @@ namespace AzureStorageExplorer
                                             }
                                             if (f == 0)
                                             {
-                                                writer.Write(quote(value));
+                                                writer.Write(quote_csv(value));
                                             }
                                             else
                                             {
-                                                writer.Write("," + quote(value));
+                                                writer.Write("," + quote_csv(value));
                                             }
                                             f++;
                                         } // end if
@@ -3342,9 +3354,16 @@ namespace AzureStorageExplorer
                                             {
                                                 value = String.Empty;
                                             }
-                                            writer.Write("    <" + colName + ">");
-                                            writer.Write(value);    // TODO: quote for XML
-                                            writer.WriteLine("</" + colName + ">");
+                                            if (value == NULL_VALUE)
+                                            {
+                                                writer.WriteLine("    <" + colName + " xsi:nil=\"true\" />");
+                                            }
+                                            else
+                                            {
+                                                writer.Write("    <" + colName + ">");
+                                                writer.Write(quote_xml(value));
+                                                writer.WriteLine("</" + colName + ">");
+                                            }
                                         } // end if
                                     } // next col
                                     writer.WriteLine("  </Entity>");
@@ -3377,18 +3396,19 @@ namespace AzureStorageExplorer
                                             {
                                                 writer.WriteLine(",");
                                             }
-                                            writer.Write("            \"" + colName + "\": \"" + value + "\"");
+                                            writer.Write("            \"" + colName + "\": " + quote_json(value));
                                         } // end if
                                         f++;
                                     } // next col
                                     //writer.WriteLine("      }");
+                                    writer.WriteLine();
                                 } // end XML
                                 break;
                             default:
                                 break;
                             } // end switch
                             e++;
-                            writer.WriteLine();
+                            //writer.WriteLine();
                         } // next entity
 
                         // Write footer.
@@ -3440,11 +3460,17 @@ namespace AzureStorageExplorer
 
         #region Helper Functions
 
-        // Return a copy of a string value. If the string contains commas, enclose in quotes.
+        //***************
+        //*             *
+        //*  quote_csv  *
+        //*             *
+        //***************
+        // "Quote" a string value for CSV export.
+        // Return a copy of the string value. If the string contains commas, enclose in quotes. If string is a null value, return an empty string.
 
-        private string quote(String value)
+        private string quote_csv(String value)
         {
-            if (String.IsNullOrEmpty(value))
+            if (String.IsNullOrEmpty(value) || value==NULL_VALUE)
             {
                 return "\"\"";
             }
@@ -3459,6 +3485,55 @@ namespace AzureStorageExplorer
                 {
                     return value;
                 }
+            }
+        }
+
+        //****************
+        //*              *
+        //*  quote_json  *
+        //*              *
+        //****************
+        // "Quote" a string value for JSON export.
+        // Return a copy of the string value, enclosed in double quotation marks. 
+        // If the string contains double quotation marks, enclose in single quotes. If string is a null value, return an empty string.
+
+        private string quote_json(String value)
+        {
+            String qc = "\"";
+
+            if (value == null || value == NULL_VALUE)
+            {
+                return "null";
+            }
+            else
+            {
+                if (value.Contains(qc))
+                {
+                    qc = "'";
+                }
+                return qc + value + qc;
+            }
+        }
+
+        //***************
+        //*             *
+        //*  quote_xml  *
+        //*             *
+        //***************
+        // "Quote" a string value for XML export.
+        // Return a copy of the string value. If string is a null value, return an empty string.
+        // TODO: encode special characters for XML
+
+        private string quote_xml(String value)
+        {
+            if (String.IsNullOrEmpty(value) || value == NULL_VALUE)
+            {
+                return String.Empty;
+            }
+            else
+            {
+                String result = System.Security.SecurityElement.Escape(value);
+                return result;
             }
         }
 
