@@ -120,6 +120,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" x:Name="ContainerPanel" Orientation="Horizontal" Background="White">
                 <Image x:Name="ContainerImage" Height="32" Width="32" Margin="12,0,0,0"></Image>
@@ -223,6 +224,8 @@
                                 <TextBlock Text="Clear All"/>
                             </StackPanel>
                         </Button>
+                    </ToolBar>
+                    <ToolBar Band="1" BandIndex="2">
                         <ToggleButton x:Name="EntityQuery" Width="54" ToolBar.OverflowMode="Never" ToolTip="Set Query Conditions" Click="EntityQuery_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\query.png" Height="16" />
@@ -236,7 +239,7 @@
                             </StackPanel>
                         </ToggleButton>
                     </ToolBar>
-                    <ToolBar Band="1" BandIndex="2">
+                    <ToolBar Band="1" BandIndex="3">
                         <!--<Button x:Name="UploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Entities" Click="EntityUploadButton_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\upload-blob.png" Height="16" />
@@ -313,6 +316,7 @@
             </ListView>
 
             <TextBlock x:Name="StatusMessage" Grid.Row="3" Padding="4" LineHeight="12" Background="AliceBlue" Visibility="Collapsed" ></TextBlock>
+            <TextBlock x:Name="ErrorMessage" Grid.Row="4" Padding="4" LineHeight="12" Background="MistyRose" Visibility="Collapsed" ></TextBlock>
         </Grid>
     </Grid>
 </UserControl>

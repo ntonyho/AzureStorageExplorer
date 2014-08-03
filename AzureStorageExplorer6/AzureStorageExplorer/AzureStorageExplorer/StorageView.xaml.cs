@@ -53,6 +53,8 @@ namespace AzureStorageExplorer
 
         private int NextAction = 1;
         private Dictionary<int, Action> Actions = new Dictionary<int, Action>();
+        private int NextError = 1;
+        private Dictionary<int, Action> Errors = new Dictionary<int, Action>();
 
         private String BlobSortHeader;
         private ListSortDirection BlobSortDirection = ListSortDirection.Ascending;
@@ -105,6 +107,8 @@ namespace AzureStorageExplorer
         public void LoadLeftPane()
         {
             Cursor = Cursors.Wait;
+
+            NewAction();
 
             AccountTitle.Text = Account.Name;
 
@@ -213,7 +217,7 @@ namespace AzureStorageExplorer
             }
             catch (Exception ex)
             {
-                MessageBox.Show("An error occurred enumerating the blob containers in the storage account:\n\n" + ex.Message, "Error Loading Storage Account");
+                ShowError("Error enumering blob containers in the storage account: " + ex.Message);
             }
 
             try
@@ -253,7 +257,7 @@ namespace AzureStorageExplorer
             }
             catch (Exception ex)
             {
-                MessageBox.Show("An error occurred enumerating the queues in the storage account:\n\n" + ex.Message, "Error Loading Storage Account");
+                ShowError("Error enumering queues in storage account: " + ex.Message);
             }
 
             // OData version number occurs here:
@@ -294,7 +298,7 @@ namespace AzureStorageExplorer
             }
             catch(Exception ex)
             {
-                MessageBox.Show("An error occurred enumerating the tables in the storage account:\n\n" + ex.Message, "Error Loading Storage Account");
+                ShowError("Error enumerating tables in storage account: " + ex.Message);
             }
 
             Cursor = Cursors.Arrow;
@@ -349,9 +353,19 @@ namespace AzureStorageExplorer
             EntityDownloadButton.Visibility = Visibility.Collapsed;
         }
 
+        //*****************************************
+        //*                                       *
+        //*  AccountTreeView_SelectedItemChanged  *
+        //*                                       *
+        //*****************************************
+        // An item in the left pane was selected. Update the main pane.
+
         private void AccountTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             if (AccountTreeView.SelectedItem == null) return;
+
+            NewAction();
+
             TreeViewItem item = AccountTreeView.SelectedItem as TreeViewItem;
 
             ClearMainPane();
@@ -442,6 +456,8 @@ namespace AzureStorageExplorer
 
         private void ContainerListView_ColumnHeaderClicked(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
             ListSortDirection direction;
 
@@ -622,7 +638,7 @@ namespace AzureStorageExplorer
                     _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.Name, StringComparer.CurrentCultureIgnoreCase));
                 }
                 ContainerListView.ItemsSource = BlobCollection;
-                MessageBox.Show("An error occurred sorting the blob list:\n\n" + ex.Message, "Error Sorting Blob List");
+                ShowError("Error sorting blob list: " + ex.Message);
             }
         }
 
@@ -639,6 +655,8 @@ namespace AzureStorageExplorer
 
         private void EntityListView_ColumnHeaderClicked(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
             ListSortDirection direction;
 
@@ -744,8 +762,7 @@ namespace AzureStorageExplorer
 
                 TableListView.ItemsSource = EntityCollection;
 
-                
-                MessageBox.Show("An error occurred sorting the entity list:\n\n" + ex.Message, "Error Sorting Entity List");
+                ShowError("Error sorting entity list: " + ex.Message);
             }
         }
 
@@ -762,6 +779,8 @@ namespace AzureStorageExplorer
         {
             Cursor = Cursors.Wait;
 
+            NewAction();
+
             LoadLeftPane();
 
             Cursor = Cursors.Arrow;
@@ -777,6 +796,8 @@ namespace AzureStorageExplorer
 
         private void NewContainer_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             NewContainerDialog dlg = new NewContainerDialog();
 
             if (dlg.ShowDialog().Value)
@@ -848,7 +869,7 @@ namespace AzureStorageExplorer
 
                     if (isError)
                     {
-                        MessageBox.Show(errorMessage, "Exception Creating Blob Container");
+                        ShowError("Error Creating Blob Container " + containerName + ": " + errorMessage);
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             }
@@ -864,6 +885,8 @@ namespace AzureStorageExplorer
 
         private void DeleteContainer_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             String message = "To delete a blob container, select a container and then clck the Delete Container button.";
 
             if (AccountTreeView.SelectedItem == null || !(AccountTreeView.SelectedItem is TreeViewItem))
@@ -938,7 +961,7 @@ namespace AzureStorageExplorer
 
                     if (isError)
                     {
-                        MessageBox.Show(errorMessage, "Exception Deleting Blob Container" + containerName);
+                        ShowError("Error Deleting Blob Container " + containerName + ": " + errorMessage);
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             }
@@ -958,6 +981,8 @@ namespace AzureStorageExplorer
 
         private void BlobFilter_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             // Initialize the dialog.
 
             BlobFilter dlg = new BlobFilter();
@@ -1095,7 +1120,10 @@ namespace AzureStorageExplorer
 
         private void BlobUploadButton_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             // Configure open file dialog box 
+            
             OpenFileDialog dlg = new OpenFileDialog();
             dlg.Filter = "All files (*.*)|*.*|Image files (*.bmp,*.ico;*.jpg,*.gif,*.png,*.tif)|*.bmp;*.ico;*.jpg;*.jpeg;*.gif;*.png;*.tif"; // Filter files by extension 
             dlg.Multiselect = true;
@@ -1123,6 +1151,8 @@ namespace AzureStorageExplorer
 
         private void BlobDelete_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             List<String> blobs = new List<string>();
 
             foreach (BlobItem blob in ContainerListView.SelectedItems)
@@ -1234,6 +1264,8 @@ namespace AzureStorageExplorer
 
         private void BlobSelectAll_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             ContainerListView.SelectAll();
         }
 
@@ -1246,6 +1278,8 @@ namespace AzureStorageExplorer
 
         private void BlobClearSelection_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             ContainerListView.SelectedIndex = -1;
         }
 
@@ -1258,6 +1292,8 @@ namespace AzureStorageExplorer
 
         private void BlobDownloadButton_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             List<String> blobs = new List<string>();
 
             foreach (BlobItem blob in ContainerListView.SelectedItems)
@@ -1309,6 +1345,8 @@ namespace AzureStorageExplorer
 
             CloudStorageAccount sourceAccount = OpenStorageAccount();
             CloudStorageAccount destAccount = sourceAccount;
+
+            NewAction();
 
             // Validate a single blob has been selected.
 
@@ -1463,6 +1501,7 @@ namespace AzureStorageExplorer
                     {
                         Success = false;
                         ErrorMessage = "Error attempting to copy blob " + sourceContainer + "/" + blobName + " to " + destContainer + "/" + destName + " - " + ex.Message;
+                        ShowError(ErrorMessage);
                     }
 
                     Actions[action.Id].IsCompleted = true;
@@ -1474,7 +1513,7 @@ namespace AzureStorageExplorer
 
                     if (!Success)
                     {
-                        MessageBox.Show(ErrorMessage, "Error Copying Blob");
+                        ShowError("Error copying blob: "+ ErrorMessage);
                     }
 
                     Cursor = Cursors.Arrow;
@@ -1493,6 +1532,8 @@ namespace AzureStorageExplorer
 
         private void BlobRefresh_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             ContainerListView.ItemsSource = null;
             ShowBlobContainer(SelectedBlobContainer);
         }
@@ -1506,6 +1547,8 @@ namespace AzureStorageExplorer
 
         private void ContainerAccess_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             ContainerSecurity dlg = new ContainerSecurity();
 
             // Set up Access Level tab
@@ -1592,7 +1635,6 @@ namespace AzureStorageExplorer
                                 CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.EndpointDomain, Account.UseSSL);
                                 blobClient = account.CreateCloudBlobClient();
                             }
-                            //CloudBlobContainer container = blobClient.GetContainerReference(containerName);
                             BlobContainerPermissions permissions = container.GetPermissions();
                             switch (accessLevel)
                             {
@@ -1639,7 +1681,7 @@ namespace AzureStorageExplorer
 
                         if (isError)
                         {
-                            MessageBox.Show(errorMessage, "Exception Setting Blob Container Permissions");
+                            ShowError("Error setting blob container permissions: " + errorMessage);
                         }
                         //else
                         //{
@@ -1662,6 +1704,8 @@ namespace AzureStorageExplorer
 
         private void BlobServiceCORS_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+            
             BlobServiceCORSDialog dlg = new BlobServiceCORSDialog();
 
             // Load dialog with current blob servicec CORS rules.
@@ -1727,6 +1771,8 @@ namespace AzureStorageExplorer
 
         private void BlobNew_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             NewBlobDialog dlg = new NewBlobDialog();
             if (dlg.ShowDialog().Value)
             {
@@ -1784,7 +1830,7 @@ namespace AzureStorageExplorer
                 }
                 catch(Exception ex)
                 {
-                    MessageBox.Show("An error occurred creating the blob '" + blobName + ":\n\n" + ex.Message, "Error Creating Blob");
+                    ShowError("Error creating blob " + blobName + ": " + ex.Message);
                 }
                 finally
                 {
@@ -1806,6 +1852,8 @@ namespace AzureStorageExplorer
 
         private void NewTable_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             NewTableDialog dlg = new NewTableDialog();
 
             if (dlg.ShowDialog().Value)
@@ -1858,7 +1906,7 @@ namespace AzureStorageExplorer
 
                     if (isError)
                     {
-                        MessageBox.Show(errorMessage, "Exception Creating Table");
+                        ShowError("Error creating table " + tableName + ": " + errorMessage);
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             }
@@ -1873,6 +1921,8 @@ namespace AzureStorageExplorer
 
         private void DeleteTable_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             String message = "To delete a table, select a table and then clck the Delete Table button.";
 
             if (AccountTreeView.SelectedItem == null || !(AccountTreeView.SelectedItem is TreeViewItem))
@@ -1947,10 +1997,9 @@ namespace AzureStorageExplorer
 
                     if (isError)
                     {
-                        MessageBox.Show(errorMessage, "Exception Deleting Table " + tableName);
+                        ShowError("Error deleting table " + tableName + ": " + errorMessage);
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext());
-
             }
         }
 
@@ -1964,6 +2013,8 @@ namespace AzureStorageExplorer
 
         private void EntityDownloadButton_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             List<EntityItem> entities = new List<EntityItem>();
 
             foreach (EntityItem entity in TableListView.SelectedItems)
@@ -2041,6 +2092,7 @@ namespace AzureStorageExplorer
 
         private void EntityRefresh_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
             TableListView.ItemsSource = null;
             ShowTableContainer(SelectedTableContainer);
         }
@@ -2054,6 +2106,7 @@ namespace AzureStorageExplorer
 
         private void EntitySelectAll_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
             TableListView.SelectAll();
         }
 
@@ -2066,6 +2119,7 @@ namespace AzureStorageExplorer
 
         private void EntityClearSelection_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
             TableListView.SelectedIndex = -1;
         }
 
@@ -2080,6 +2134,8 @@ namespace AzureStorageExplorer
         {
             try
             {
+                NewAction();
+
                 // Initialize the diaog.
 
                 EntityQuery dlg = new EntityQuery();
@@ -2169,7 +2225,7 @@ namespace AzureStorageExplorer
             }
             catch(Exception ex)
             {
-                MessageBox.Show("An error occurred processing the query:\n\n" + ex.Message, "Error Processing Query");
+                ShowError("Error processing query: " + ex.Message);
             }
         }
 
@@ -2182,6 +2238,8 @@ namespace AzureStorageExplorer
 
         private void EntityFilter_Click(object sender, RoutedEventArgs e)
         {
+            NewAction();
+
             // Initialize the dialog.
 
             EntityFilter dlg = new EntityFilter();
@@ -2298,12 +2356,14 @@ namespace AzureStorageExplorer
 
         #region Update UI
 
+        #region Action Status Messages
+
         //******************
         //*                *
         //*  UpdateStatus  *
         //*                *
         //******************
-        // Update status messages. Call from UI thread.
+        // Update status messages. If there are multiple actions in progress, stack the messages. Call from UI thread.
 
         public void UpdateStatus()
         {
@@ -2329,14 +2389,121 @@ namespace AzureStorageExplorer
             if (count == 0)
             {
                 StatusMessage.Visibility = Visibility.Collapsed;
-                //UpdateLayout();
             }
             else
             {
                 StatusMessage.Visibility = Visibility.Visible;
-                //UpdateLayout();
             }
         }
+
+        #endregion
+
+        #region Error Messages
+
+        //***************
+        //*             *
+        //*  NewAction  *
+        //*             *
+        //***************
+        // A new action has been started by the user. Perform any display clean-up here. Call from UI thread.
+
+        private void NewAction()
+        {
+            //Errors.Clear();
+            //UpdateErrors();
+        }
+
+        //*****************
+        //*               *
+        //*  ClearErrors  *
+        //*               *
+        //*****************
+        // Clear error messages. Call from UI thread.
+
+        private void ClearErrors()
+        {
+            Errors.Clear();
+            UpdateErrors();
+        }
+
+        //***************
+        //*             *
+        //*  ShowError  *
+        //*             *
+        //***************
+        // Add an error message and display it. Call from UI thread.
+
+        private void ShowError(String message)
+        {
+            Errors.Add(NextError, new Action()
+            {
+                ActionType = -1,
+                Id = NextError++,
+                IsCompleted = false,
+                Message = message
+            });
+            UpdateErrors();
+        }
+
+        //******************
+        //*                *
+        //*  UpdateErrors  *
+        //*                *
+        //******************
+        // Update error message display. If there are multiple errors, stack them.
+
+        public void UpdateErrors()
+        {
+            int count = 0;
+            ErrorMessage.Inlines.Clear();
+            if (Actions != null)
+            {
+                foreach (KeyValuePair<int, Action> error in Errors)
+                {
+                    if (!error.Value.IsCompleted)
+                    {
+                        if (count > 0)
+                        {
+                            ErrorMessage.Inlines.Add(new LineBreak());
+                        }
+
+                        Run closeBox = new Run("× ");
+                        closeBox.Tag = error.Key;
+                        ErrorMessage.Inlines.Add(closeBox);
+                        closeBox.MouseDown += ErrorMessageMouseDown;
+                        
+                        Run run = new Run(error.Value.Message);
+                        run.FontWeight = FontWeights.Bold;
+                        run.Foreground = new SolidColorBrush(Colors.DarkRed);
+                        ErrorMessage.Inlines.Add(run);
+
+                        count++;
+                    }
+                }
+            }
+            if (count == 0)
+            {
+                ErrorMessage.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                ErrorMessage.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void ErrorMessageMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Run)
+            {
+                Run run = sender as Run;
+                int errorId = (int)run.Tag;
+                Errors.Remove(errorId);
+                UpdateErrors();
+            }
+        }
+
+        #endregion
+
 
         //***********************
         //*                     *
@@ -2446,7 +2613,7 @@ namespace AzureStorageExplorer
             catch(Exception ex)
             {
                 this.Cursor = Cursors.Wait;
-                MessageBox.Show("An error occurred retrieving the blob list:\n\n" + ex.Message, "Blob Listing Error");
+                ShowError("Error retrieving blob list: " + ex.Message);
             }
         }
 
@@ -2699,7 +2866,7 @@ namespace AzureStorageExplorer
             catch(Exception ex)
             {
                 this.Cursor = Cursors.Arrow;
-                MessageBox.Show("An error occurred querying the table:\n\n" + ex.Message, "Table Query Error");
+                ShowError("Error querying table: " + ex.Message);
             }
         }
 
@@ -2916,7 +3083,7 @@ namespace AzureStorageExplorer
             }
             catch(Exception ex)
             {
-                MessageBox.Show("An error occurred saving blob filter settings to file " + filename + ":\n\n" + ex.Message, "Error Saving Blob Filter");
+                ShowError("Error saving blob filter settings to file " + filename + ": " + ex.Message);
             }
         }
 
@@ -2989,7 +3156,7 @@ namespace AzureStorageExplorer
 
                 if (isError)
                 {
-                    MessageBox.Show(errorMessage, "Exception Uploading Files");
+                    ShowError("Error uploading files: " + errorMessage);
                 }
 
             }, TaskScheduler.FromCurrentSynchronizationContext());
@@ -3199,7 +3366,7 @@ namespace AzureStorageExplorer
             }
             catch (Exception ex)
             {
-                MessageBox.Show("An error occurred saving entity filter settings to file " + filename + ":\n\n" + ex.Message, "Error Saving Entity Filter");
+                ShowError("Error savinng entity filter settings to file " + filename + ": " + ex.Message);
             }
         }
 
