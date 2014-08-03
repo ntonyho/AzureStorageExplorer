@@ -80,6 +80,30 @@
                     </ToolBar>
                 </ToolBarTray>
             </StackPanel>
+            <StackPanel Grid.Row="1" x:Name="TableToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
+                <ToolBarTray x:Name="TableToolbarTray" Background="White" ToolBarTray.IsLocked="True"  IsManipulationEnabled="False">
+                    <ToolBar Band="1" BandIndex="1">
+                        <Button x:Name="TableRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Table List" Click="AccountRefresh_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\refresh.png" Height="16" />
+                                <TextBlock Text="Refresh"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ButtonNewTable" Width="54" ToolBar.OverflowMode="Never" ToolTip="Create New Table" Click="NewTable_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\new_container.png" Height="16" />
+                                <TextBlock Text="New"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ButtonDeleteTable" Width="54" ToolBar.OverflowMode="Never" ToolTip="Delete Selected Table" Click="DeleteTable_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\delete_container.png" Height="16" />
+                                <TextBlock Text="Delete"/>
+                            </StackPanel>
+                        </Button>
+                    </ToolBar>
+                </ToolBarTray>
+            </StackPanel>
 
             <TreeView Grid.Row="2"  x:Name="AccountTreeView" SelectedItemChanged="AccountTreeView_SelectedItemChanged" >
                 <TreeView.Resources>
@@ -88,7 +112,6 @@
             </TreeView>
         </Grid>
         
-
         <!-- Main Pane -->
 
         <Grid Grid.Row="2" Grid.Column="1" Background="LightGray">
@@ -213,47 +236,21 @@
                             </StackPanel>
                         </ToggleButton>
                     </ToolBar>
-                    <!--<ToolBar Band="1" BandIndex="2">
-                        <Button x:Name="BlobUploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Files" Click="BlobUploadButton_Click" >
+                    <ToolBar Band="1" BandIndex="2">
+                        <!--<Button x:Name="UploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Entities" Click="EntityUploadButton_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\upload-blob.png" Height="16" />
                                 <TextBlock Text="Upload"/>
                             </StackPanel>
-                        </Button>
-                        <Button x:Name="BlobDownloadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Download Selected Blobs"  Click="BlobDownloadButton_Click" >
+                        </Button>-->
+                        <Button x:Name="EntityDownloadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Download Selected Entities"  Click="EntityDownloadButton_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\download-blob.png" Height="16" />
                                 <TextBlock Text="Downld"/>
                             </StackPanel>
                         </Button>
                     </ToolBar>
-                    <ToolBar Band="1" BandIndex="3">
-                        <Button x:Name="BlobView" Width="54" ToolTip="View Blob Properties" ToolBar.OverflowMode="Never" Click="BlobViewProperties_Click" >
-                            <StackPanel Orientation="Vertical">
-                                <Image Source="Images\properties.png" Height="16" />
-                                <TextBlock Text="View"/>
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="BlobNew" Width="54" ToolTip="Create New Blob" ToolBar.OverflowMode="Never" Click="BlobNew_Click" >
-                            <StackPanel Orientation="Vertical">
-                                <Image Source="Images\new_blob.png" Height="16" />
-                                <TextBlock Text="New"/>
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="BlobCopy" Width="54" ToolTip="Copy Selected Blob" ToolBar.OverflowMode="Never" Click="BlobCopy_Click" >
-                            <StackPanel Orientation="Vertical">
-                                <Image Source="Images\copy.png" Height="16" />
-                                <TextBlock Text="Copy"/>
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="BlobDelete" Width="54" ToolBar.OverflowMode="Never" ToolTip="Delete Selected Blobs" Click="BlobDelete_Click" >
-                            <StackPanel Orientation="Vertical">
-                                <Image Source="Images\delete.png" Height="16" />
-                                <TextBlock Text="Delete"/>
-                            </StackPanel>
-                        </Button>
 
-                    </ToolBar>-->
                 </ToolBarTray>
             </StackPanel>
 
@@ -286,8 +283,6 @@
                 </ListView.Resources>
                 <ListView.View>
                     <GridView x:Name="TableListViewGridView">
-                        <!--<GridViewColumn Width="140" Header="RowKey" DisplayMemberBinding="{Binding RowKey}" />
-                        <GridViewColumn Width="40" Header="PartitionKey" DisplayMemberBinding="{Binding PartitionKey}" />-->
                     </GridView>
                 </ListView.View>
             </ListView>

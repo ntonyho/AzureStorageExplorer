@@ -117,6 +117,12 @@
     <Compile Include="Dialogs\NewBlobDialog.xaml.cs">
       <DependentUpon>NewBlobDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\DownloadEntitiesDialog.xaml.cs">
+      <DependentUpon>DownloadEntitiesDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\NewTableDialog.xaml.cs">
+      <DependentUpon>NewTableDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\NewContainerDialog.xaml.cs">
       <DependentUpon>NewContainerDialog.xaml</DependentUpon>
     </Compile>
@@ -177,6 +183,14 @@
     <Page Include="Dialogs\NewBlobDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dialogs\DownloadEntitiesDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\NewTableDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Dialogs\NewContainerDialog.xaml">
       <SubType>Designer</SubType>

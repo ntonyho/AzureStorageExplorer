@@ -118,8 +118,25 @@ namespace AzureStorageExplorer
                 }
             };
 
-            TreeViewItem queueSection = new TreeViewItem() { Header = "Queues", Tag = ItemType.QUEUE_SERVICE /* 200 */ };
-            TreeViewItem tableSection = new TreeViewItem() { Header = "Tables", Tag = ItemType.TABLE_SERVICE /* 300 */ };
+            TreeViewItem queueSection = new TreeViewItem()
+            {
+                Header = "Queues",
+                Tag = new OutlineItem()
+                {
+                    ItemType = ItemType.QUEUE_SERVICE /* 200 */,
+                    Container = null
+                }
+            };
+
+            TreeViewItem tableSection = new TreeViewItem()
+            {
+                Header = "Tables",
+                Tag = new OutlineItem()
+                {
+                    ItemType = ItemType.TABLE_SERVICE /* 300 */,
+                    Container = null
+                }
+            };
 
             AccountTreeView.Items.Clear();
 
@@ -318,11 +335,16 @@ namespace AzureStorageExplorer
             EntityToolbarPanel.Visibility = Visibility.Collapsed;
             ContainerPanel.Visibility = Visibility.Collapsed;
             ContainerListView.Visibility = Visibility.Collapsed;
-            TableListView.Visibility = Visibility.Collapsed;
 
             ButtonContainerAccess.Visibility = Visibility.Collapsed;
             ButtonDeleteContainer.Visibility = Visibility.Collapsed;
             ButtonBlobServiceCORS.Visibility = Visibility.Collapsed;
+
+            TableToolbarPanel.Visibility = Visibility.Collapsed;
+            TableListView.Visibility = Visibility.Collapsed;
+
+            ButtonDeleteTable.Visibility = Visibility.Collapsed;
+            EntityDownloadButton.Visibility = Visibility.Collapsed;
         }
 
         private void AccountTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -381,8 +403,12 @@ namespace AzureStorageExplorer
                     ContainerType.Text = "queue";
                     break;
                 case ItemType.TABLE_SERVICE:   // Tables section
+                    TableToolbarPanel.Visibility = Visibility.Visible;
                     break;
                 case ItemType.TABLE_CONTAINER:   // Table
+                    TableToolbarPanel.Visibility = Visibility.Visible;
+                    ButtonDeleteTable.Visibility = Visibility.Visible;
+                    EntityDownloadButton.Visibility = Visibility.Visible;
 
                     // TODO: COMPLETE IMPLEMENTATION (ADAPTING FROM BLOB CONTAINER)
 
@@ -480,109 +506,127 @@ namespace AzureStorageExplorer
 
         private void SortBlobList()
         {
-            ContainerListView.ItemsSource = null;
-
             IEnumerable<BlobItem> x;
-            switch (BlobSortHeader)
-            {
-                case "Name":
-                    x = from b in _BlobCollection select b;
-                    if (BlobSortDirection == ListSortDirection.Ascending)
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.Name, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    else
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.Name, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    break;
-                case "Type":
-                    x = from b in _BlobCollection select b;
-                    if (BlobSortDirection == ListSortDirection.Ascending)
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.BlobType, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    else
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.BlobType, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    break;
-                case "Length":
-                    x = from b in _BlobCollection select b;
-                    if (BlobSortDirection == ListSortDirection.Ascending)
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.Length));
-                    }
-                    else
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.Length));
-                    }
-                    break;
-                case "Content Type":
-                    x = from b in _BlobCollection select b;
-                    if (BlobSortDirection == ListSortDirection.Ascending)
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.ContentType, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    else
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.ContentType, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    break;
-                case "Encoding":
-                    x = from b in _BlobCollection select b;
-                    if (BlobSortDirection == ListSortDirection.Ascending)
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.Encoding, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    else
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.Encoding, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    break;
-                case "Last Modified":
-                    x = from b in _BlobCollection select b;
-                    if (BlobSortDirection == ListSortDirection.Ascending)
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.LastModified));
-                    }
-                    else
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.LastModified));
-                    }
-                    break;
-                case "ETag":
-                    x = from b in _BlobCollection select b;
-                    if (BlobSortDirection == ListSortDirection.Ascending)
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.ETag, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    else
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.ETag, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    break;
-                case "Copy State":
-                    x = from b in _BlobCollection select b;
-                    if (BlobSortDirection == ListSortDirection.Ascending)
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.CopyState, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    else
-                    {
-                        _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.CopyState, StringComparer.CurrentCultureIgnoreCase));
-                    }
-                    break;
-                default:
-                    break;
-            }
+            
+            try
+            { 
+                ContainerListView.ItemsSource = null;
 
-            ContainerListView.ItemsSource = BlobCollection;
+                switch (BlobSortHeader)
+                {
+                    case "Name":
+                        x = from b in _BlobCollection select b;
+                        if (BlobSortDirection == ListSortDirection.Ascending)
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.Name, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.Name, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "Type":
+                        x = from b in _BlobCollection select b;
+                        if (BlobSortDirection == ListSortDirection.Ascending)
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.BlobType, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.BlobType, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "Length":
+                        x = from b in _BlobCollection select b;
+                        if (BlobSortDirection == ListSortDirection.Ascending)
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.Length));
+                        }
+                        else
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.Length));
+                        }
+                        break;
+                    case "Content Type":
+                        x = from b in _BlobCollection select b;
+                        if (BlobSortDirection == ListSortDirection.Ascending)
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.ContentType, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.ContentType, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "Encoding":
+                        x = from b in _BlobCollection select b;
+                        if (BlobSortDirection == ListSortDirection.Ascending)
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.Encoding, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.Encoding, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "Last Modified":
+                        x = from b in _BlobCollection select b;
+                        if (BlobSortDirection == ListSortDirection.Ascending)
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.LastModified));
+                        }
+                        else
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.LastModified));
+                        }
+                        break;
+                    case "ETag":
+                        x = from b in _BlobCollection select b;
+                        if (BlobSortDirection == ListSortDirection.Ascending)
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.ETag, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.ETag, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "Copy State":
+                        x = from b in _BlobCollection select b;
+                        if (BlobSortDirection == ListSortDirection.Ascending)
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.CopyState, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.CopyState, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                ContainerListView.ItemsSource = BlobCollection;
+            }
+            catch (Exception ex)
+            {
+                x = from b in _BlobCollection select b;
+                if (BlobSortDirection == ListSortDirection.Ascending)
+                {
+                    _BlobCollection = new ObservableCollection<BlobItem>(x.OrderBy(w => w.Name, StringComparer.CurrentCultureIgnoreCase));
+                }
+                else
+                {
+                    _BlobCollection = new ObservableCollection<BlobItem>(x.OrderByDescending(w => w.Name, StringComparer.CurrentCultureIgnoreCase));
+                }
+                ContainerListView.ItemsSource = BlobCollection;
+                MessageBox.Show("An error occurred sorting the blob list:\n\n" + ex.Message, "Error Sorting Blob List");
+            }
         }
 
         #endregion
 
-        #region Toolbar Button Handlers
+        #region Blob Toolbar Button Handlers
 
         //*******************************************
         //*                                         *
@@ -598,6 +642,8 @@ namespace AzureStorageExplorer
 
             if (headerClicked != null)
             {
+                this.Cursor = Cursors.Wait;
+
                 if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
                 {
                     if (headerClicked != _lastEntityHeaderClicked)
@@ -645,6 +691,8 @@ namespace AzureStorageExplorer
                     _lastEntityHeaderClicked = headerClicked;
                     _lastEntityDirection = direction;
                 }
+
+                this.Cursor = Cursors.Arrow;
             }
         }
 
@@ -657,24 +705,45 @@ namespace AzureStorageExplorer
 
         private void SortEntityList()
         {
-            if (TableColumnNames.ContainsKey(EntitySortHeader))
+            IEnumerable<EntityItem> entities = null;
+
+            try
             {
-                TableListView.ItemsSource = null;
+                if (TableColumnNames.ContainsKey(EntitySortHeader))
+                {
+                    TableListView.ItemsSource = null;
 
-                IEnumerable<EntityItem> entities = null;
+                    entities = from e in _EntityCollection select e;
 
+                    if (EntitySortDirection == ListSortDirection.Ascending)
+                    {
+                        _EntityCollection = new ObservableCollection<EntityItem>(entities.OrderBy(e => e.Fields[EntitySortHeader], StringComparer.CurrentCultureIgnoreCase));
+                    }
+                    else
+                    {
+                        _EntityCollection = new ObservableCollection<EntityItem>(entities.OrderByDescending(e => e.Fields[EntitySortHeader], StringComparer.CurrentCultureIgnoreCase));
+                    }
+
+                    TableListView.ItemsSource = EntityCollection;
+                }
+            }
+            catch(Exception ex)
+            {
                 entities = from e in _EntityCollection select e;
 
                 if (EntitySortDirection == ListSortDirection.Ascending)
                 {
-                    _EntityCollection = new ObservableCollection<EntityItem>(entities.OrderBy(e => e.Fields[EntitySortHeader], StringComparer.CurrentCultureIgnoreCase));
+                    _EntityCollection = new ObservableCollection<EntityItem>(entities.OrderBy(e => e.Fields["RowKey"], StringComparer.CurrentCultureIgnoreCase));
                 }
                 else
                 {
-                    _EntityCollection = new ObservableCollection<EntityItem>(entities.OrderByDescending(e => e.Fields[EntitySortHeader], StringComparer.CurrentCultureIgnoreCase));
+                    _EntityCollection = new ObservableCollection<EntityItem>(entities.OrderByDescending(e => e.Fields["RowKey"], StringComparer.CurrentCultureIgnoreCase));
                 }
 
                 TableListView.ItemsSource = EntityCollection;
+
+                
+                MessageBox.Show("An error occurred sorting the entity list:\n\n" + ex.Message, "Error Sorting Entity List");
             }
         }
 
@@ -779,12 +848,7 @@ namespace AzureStorageExplorer
                     {
                         MessageBox.Show(errorMessage, "Exception Creating Blob Container");
                     }
-                    //else
-                    //{
-                    //    SelectContainer(containerName);
-                    //}
                 }, TaskScheduler.FromCurrentSynchronizationContext());
-
             }
         }
 
@@ -841,7 +905,7 @@ namespace AzureStorageExplorer
 
                 UpdateStatus();
 
-                // Execute background task to create the container.
+                // Execute background task to delete the container.
 
                 Task task = Task.Factory.StartNew(() =>
                 {
@@ -875,7 +939,6 @@ namespace AzureStorageExplorer
                         MessageBox.Show(errorMessage, "Exception Deleting Blob Container" + containerName);
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext());
-
             }
         }
 
@@ -1732,6 +1795,241 @@ namespace AzureStorageExplorer
 
         #region Table Entity Toolbar handlers
 
+        //********************
+        //*                  *
+        //*  NewTable_Click  *
+        //*                  *
+        //********************
+        // Create a new table.
+
+        private void NewTable_Click(object sender, RoutedEventArgs e)
+        {
+            NewTableDialog dlg = new NewTableDialog();
+
+            if (dlg.ShowDialog().Value)
+            {
+                bool isError = false;
+                String errorMessage = null;
+
+                String tableName = dlg.Table.Text;
+
+                Action action = new Action()
+                {
+                    Id = NextAction++,
+                    ActionType = Action.ACTION_NEW_TABLE,
+                    IsCompleted = false,
+                    Message = "Creating table " + tableName
+                };
+                Actions.Add(action.Id, action);
+
+                UpdateStatus();
+
+                // Execute background task to create the table.
+
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        if (tableClient == null)
+                        {
+                            CloudStorageAccount account = OpenStorageAccount();
+                            tableClient = account.CreateCloudTableClient();
+                        }
+                        CloudTable table = tableClient.GetTableReference(tableName);
+
+                        table.CreateIfNotExists();
+                    }
+                    catch (Exception ex)
+                    {
+                        isError = true;
+                        errorMessage = ex.Message;
+                    }
+                    Actions[action.Id].IsCompleted = true;
+                });
+
+                // Task complete - update UI.
+
+                task.ContinueWith((t) =>
+                {
+                    LoadLeftPane();
+                    UpdateStatus();
+
+                    if (isError)
+                    {
+                        MessageBox.Show(errorMessage, "Exception Creating Table");
+                    }
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
+        }
+
+        //***********************
+        //*                     *
+        //*  DeleteTable_Click  *
+        //*                     *
+        //***********************
+        // Delete selected table.
+
+        private void DeleteTable_Click(object sender, RoutedEventArgs e)
+        {
+            String message = "To delete a table, select a table and then clck the Delete Table button.";
+
+            if (AccountTreeView.SelectedItem == null || !(AccountTreeView.SelectedItem is TreeViewItem))
+            {
+                MessageBox.Show(message, "Table Selection Required");
+                return;
+            }
+
+            TreeViewItem tvi = AccountTreeView.SelectedItem as TreeViewItem;
+
+            if (!(tvi.Tag is OutlineItem))
+            {
+                MessageBox.Show(message, "Table Selection Required");
+                return;
+            }
+
+            OutlineItem item = tvi.Tag as OutlineItem;
+
+            if (item.ItemType != ItemType.TABLE_CONTAINER)
+            {
+                MessageBox.Show(message, "Table Selection Required");
+                return;
+            }
+
+            String tableName = SelectedTableContainer;
+
+            if (MessageBox.Show("Are you SURE you want to delete table " + SelectedTableContainer + "?\n\nThe table and all entities it contains will be permanently deleted",
+                "Confirm Table Delete", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                bool isError = false;
+                String errorMessage = null;
+
+                Action action = new Action()
+                {
+                    Id = NextAction++,
+                    ActionType = Action.ACTION_DELETE_TABLE,
+                    IsCompleted = false,
+                    Message = "Deleting table " + tableName
+                };
+                Actions.Add(action.Id, action);
+
+                UpdateStatus();
+
+                // Execute background task to delete the table.
+
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        if (tableClient == null)
+                        {
+                            CloudStorageAccount account = OpenStorageAccount();
+                            tableClient = account.CreateCloudTableClient();
+                        }
+                        CloudTable table = tableClient.GetTableReference(tableName);
+                        table.DeleteIfExists();
+                    }
+                    catch (Exception ex)
+                    {
+                        isError = true;
+                        errorMessage = ex.Message;
+                    }
+                    Actions[action.Id].IsCompleted = true;
+                });
+
+                // Task complete - update UI.
+
+                task.ContinueWith((t) =>
+                {
+                    LoadLeftPane();
+                    UpdateStatus();
+
+                    if (isError)
+                    {
+                        MessageBox.Show(errorMessage, "Exception Deleting Table " + tableName);
+                    }
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+
+            }
+        }
+
+
+        //*******************************
+        //*                             *
+        //* EntityDownloadButton_Click  *
+        //*                             *
+        //*******************************
+        // Download selected entities to a local file.
+
+        private void EntityDownloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            List<EntityItem> entities = new List<EntityItem>();
+
+            foreach (EntityItem entity in TableListView.SelectedItems)
+            {
+                entities.Add(entity);
+            }
+
+            DownloadEntitiesDialog dlg = new DownloadEntitiesDialog();
+
+            dlg.OutputFile.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\" + Account.Name + "_" + SelectedTableContainer;
+
+            dlg.SetEntityCounts(_EntityCollection.Count(), entities.Count());
+
+            if (dlg.ShowDialog().Value)
+            {
+                bool downloadAll = dlg.DownloadAllEntities.IsChecked.Value;
+                
+                String format = "csv";
+                if (dlg.DownloadFormatCSV.IsChecked.Value)
+                {
+                    format = "csv";
+                }
+                else if (dlg.DownloadFormatJSON.IsChecked.Value)
+                {
+                    format = "json";
+                }
+                if (dlg.DownloadFormatXML.IsChecked.Value)
+                {
+                    format = "xml";
+                }
+
+                // Get output file. If a file extension was not specified, add one based on the format selection.
+
+                String outputFile = dlg.OutputFile.Text;
+
+                String name = outputFile;
+                int index = name.LastIndexOf("\\");
+                if (index != -1)
+                {
+                    name = name.Substring(index);
+                }
+                if (!name.Contains("."))
+                {
+                    outputFile = outputFile + "." + format;
+                }
+
+                bool autoOpen = dlg.AutoOpen.IsChecked.Value;
+
+                if (File.Exists(outputFile))
+                {
+                    if (MessageBox.Show("Output file " + outputFile + " already exists - overwrite it?", "Confirm Overwrite", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+                
+                if (!downloadAll)
+                {
+                    DownloadEntities(SelectedTableContainer, entities.ToArray(), format, outputFile, autoOpen);
+                }
+                else
+                {
+                    DownloadEntities(SelectedTableContainer, _EntityCollection.ToArray(), format, outputFile, autoOpen);
+                }
+            }
+        }
+
+
         //*************************
         //*                       *
         //*  EntityRefresh_Click  *
@@ -2047,93 +2345,106 @@ namespace AzureStorageExplorer
 
         public void ShowBlobContainer(String containerName) //, CancellationToken token, TaskScheduler uiTask)
         {
-            Cursor = Cursors.Wait;
-            ContainerListView.ItemsSource = BlobCollection;
-
-            int containerCount = 0;
-            long containerSize = 0;
-            _BlobCollection.Clear();
-            ContainerListView.Visibility = Visibility.Visible;
-            ContainerToolbarPanel.Visibility = Visibility.Visible;
-            BlobToolbarPanel.Visibility = Visibility.Visible;
-            IEnumerable<IListBlobItem> blobs = blobClient.GetContainerReference(containerName).ListBlobs();
-            if (blobs != null)
+            try
             {
-                foreach (IListBlobItem item in blobs)
+                this.Cursor = Cursors.Wait;
+
+                ContainerDetails.Text = "Loading blob list...";
+
+                ContainerListView.ItemsSource = null; //  BlobCollection;
+
+                int containerCount = 0;
+                long containerSize = 0;
+                _BlobCollection.Clear();
+                ContainerListView.Visibility = Visibility.Visible;
+                ContainerToolbarPanel.Visibility = Visibility.Visible;
+                BlobToolbarPanel.Visibility = Visibility.Visible;
+                IEnumerable<IListBlobItem> blobs = blobClient.GetContainerReference(containerName).ListBlobs();
+                if (blobs != null)
                 {
-                    if (MaxBlobCountFilter != -1 && containerCount >= MaxBlobCountFilter) break;
-                    
-                    if (item.GetType() == typeof(CloudBlobDirectory))
+                    foreach (IListBlobItem item in blobs)
                     {
-                    }
-                    else if (item.GetType() == typeof(CloudBlockBlob))
-                    {
-                        CloudBlockBlob blockBlob = item as CloudBlockBlob;
+                        if (MaxBlobCountFilter != -1 && containerCount >= MaxBlobCountFilter) break;
 
-                        if (BlobTypeFilter != 2)
+                        if (item.GetType() == typeof(CloudBlobDirectory))
                         {
-                            if (BlobNameFilter == null || blockBlob.Name.Contains(BlobNameFilter))
+                        }
+                        else if (item.GetType() == typeof(CloudBlockBlob))
+                        {
+                            CloudBlockBlob blockBlob = item as CloudBlockBlob;
+
+                            if (BlobTypeFilter != 2)
                             {
-                                if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
-                                    (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
+                                if (BlobNameFilter == null || blockBlob.Name.Contains(BlobNameFilter))
                                 {
-                                    _BlobCollection.Add(new BlobItem()
+                                    if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
+                                        (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
                                     {
-                                        Name = blockBlob.Name,
-                                        BlobType = "Block",
-                                        ContentType = blockBlob.Properties.ContentType,
-                                        Encoding = blockBlob.Properties.ContentEncoding,
-                                        Length = blockBlob.Properties.Length,
-                                        LengthText = LengthText(blockBlob.Properties.Length),
-                                        ETag = blockBlob.Properties.ETag,
-                                        LastModified = blockBlob.Properties.LastModified.Value.DateTime,
-                                        LastModifiedText = blockBlob.Properties.LastModified.Value.ToString(),
-                                        CopyState = CopyStateText(blockBlob.CopyState)
-                                    });
-                                    containerCount++;
-                                    containerSize += blockBlob.Properties.Length;
+                                        _BlobCollection.Add(new BlobItem()
+                                        {
+                                            Name = blockBlob.Name,
+                                            BlobType = "Block",
+                                            ContentType = blockBlob.Properties.ContentType,
+                                            Encoding = blockBlob.Properties.ContentEncoding,
+                                            Length = blockBlob.Properties.Length,
+                                            LengthText = LengthText(blockBlob.Properties.Length),
+                                            ETag = blockBlob.Properties.ETag,
+                                            LastModified = blockBlob.Properties.LastModified.Value.DateTime,
+                                            LastModifiedText = blockBlob.Properties.LastModified.Value.ToString(),
+                                            CopyState = CopyStateText(blockBlob.CopyState)
+                                        });
+                                        containerCount++;
+                                        containerSize += blockBlob.Properties.Length;
+                                    }
                                 }
                             }
                         }
-                    }
-                    else if (item.GetType() == typeof(CloudPageBlob))
-                    {
-                        CloudPageBlob pageBlob = item as CloudPageBlob;
-
-                        if (BlobTypeFilter != 1)
+                        else if (item.GetType() == typeof(CloudPageBlob))
                         {
-                            if (BlobNameFilter == null || pageBlob.Name.Contains(BlobNameFilter))
+                            CloudPageBlob pageBlob = item as CloudPageBlob;
+
+                            if (BlobTypeFilter != 1)
                             {
-                                if ((MinBlobSize == -1 || pageBlob.Properties.Length >= MinBlobSize) &&
-                                    (MaxBlobSize == -1 || pageBlob.Properties.Length <= MaxBlobSize))
+                                if (BlobNameFilter == null || pageBlob.Name.Contains(BlobNameFilter))
                                 {
-                                    _BlobCollection.Add(new BlobItem()
+                                    if ((MinBlobSize == -1 || pageBlob.Properties.Length >= MinBlobSize) &&
+                                        (MaxBlobSize == -1 || pageBlob.Properties.Length <= MaxBlobSize))
                                     {
-                                        Name = pageBlob.Name,
-                                        BlobType = "Page",
-                                        ContentType = pageBlob.Properties.ContentType,
-                                        Encoding = pageBlob.Properties.ContentEncoding,
-                                        Length = pageBlob.Properties.Length,
-                                        LengthText = LengthText(pageBlob.Properties.Length),
-                                        ETag = pageBlob.Properties.ETag,
-                                        LastModified = pageBlob.Properties.LastModified.Value.DateTime,
-                                        LastModifiedText = pageBlob.Properties.LastModified.Value.ToString(),
-                                        CopyState = CopyStateText(pageBlob.CopyState)
-                                    });
-                                    containerCount++;
-                                    containerSize += pageBlob.Properties.Length;
+                                        _BlobCollection.Add(new BlobItem()
+                                        {
+                                            Name = pageBlob.Name,
+                                            BlobType = "Page",
+                                            ContentType = pageBlob.Properties.ContentType,
+                                            Encoding = pageBlob.Properties.ContentEncoding,
+                                            Length = pageBlob.Properties.Length,
+                                            LengthText = LengthText(pageBlob.Properties.Length),
+                                            ETag = pageBlob.Properties.ETag,
+                                            LastModified = pageBlob.Properties.LastModified.Value.DateTime,
+                                            LastModifiedText = pageBlob.Properties.LastModified.Value.ToString(),
+                                            CopyState = CopyStateText(pageBlob.CopyState)
+                                        });
+                                        containerCount++;
+                                        containerSize += pageBlob.Properties.Length;
+                                    }
                                 }
                             }
                         }
-                    }
 
-                } // end foreach
+                    } // end foreach
 
-                SortBlobList();
+                    ContainerListView.ItemsSource = BlobCollection;
 
-                ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ")  as of " + DateTime.Now.ToString();
+                    SortBlobList();
 
-                Cursor = Cursors.Arrow;
+                    ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ")  as of " + DateTime.Now.ToString();
+
+                    this.Cursor = Cursors.Arrow;
+                }
+            }
+            catch(Exception ex)
+            {
+                this.Cursor = Cursors.Wait;
+                MessageBox.Show("An error occurred retrieving the blob list:\n\n" + ex.Message, "Blob Listing Error");
             }
         }
 
@@ -2171,7 +2482,6 @@ namespace AzureStorageExplorer
             }
             else if (blob.BlobType == BlobType.PageBlob)
             {
-                //CloudPageBlob pageBlob = container.GetPageBlobReference(blobName);
                 CloudPageBlob pageBlob = container.GetBlobReferenceFromServer(blobName) as CloudPageBlob;
                 Microsoft.WindowsAzure.Storage.Blob.BlobProperties props = pageBlob.Properties;
                 dlg.ShowPageBlob(pageBlob);
@@ -2179,7 +2489,6 @@ namespace AzureStorageExplorer
 
             if (dlg.ShowDialog().Value)
             {
-                // TODO: apply updates
                 if (dlg.IsBlobChanged)
                 {
                     ShowBlobContainer(SelectedBlobContainer);
@@ -2199,7 +2508,10 @@ namespace AzureStorageExplorer
         {
             try
             {
-                Cursor = Cursors.Wait;
+                this.Cursor = Cursors.Wait;
+
+                ContainerDetails.Text = "Loading entity list...";
+
                 TableListView.ItemsSource = null;
 
                 // Create a temporary copy of the TableColumnNames table and add columns as we encounter them.
@@ -2278,7 +2590,6 @@ namespace AzureStorageExplorer
 
                     if (EntityQueryColumnName.Length > 2)
                     {
-                        //q = q.Where(e => e.Value(EntityQueryColumnName[2]) == EntityQueryValue[2]);
                         switch (EntityQueryCondition[2])
                         {
                             case "equals":
@@ -2344,9 +2655,9 @@ namespace AzureStorageExplorer
                             }
                             else
                             {
-                                foreach (String value in item.Values)
+                                foreach(KeyValuePair<String, String> field in item.Fields)
                                 {
-                                    if (value.Contains(EntityTextFilter))
+                                    if (field.Value.Contains(EntityTextFilter))
                                     {
                                         match = true;
                                     }
@@ -2370,11 +2681,11 @@ namespace AzureStorageExplorer
 
                 TableListView.ItemsSource = EntityCollection;
 
-                Cursor = Cursors.Arrow;
+                this.Cursor = Cursors.Arrow;
             }
             catch(Exception ex)
             {
-                Cursor = Cursors.Arrow;
+                this.Cursor = Cursors.Arrow;
                 MessageBox.Show("An error occurred querying the table:\n\n" + ex.Message, "Table Query Error");
             }
         }
@@ -2880,10 +3191,276 @@ namespace AzureStorageExplorer
             }
         }
 
+        //**********************
+        //*                    *
+        //*  DownloadEntities  *
+        //*                    *
+        //**********************
+        // Download a collection of entities to a local file in a selected download format.
+
+        private void DownloadEntities(String tableName, IEnumerable<EntityItem> entities, String format, String outputFile, bool autoOpen)
+        {
+            // Create task action.
+
+            String message = null;
+
+            if (entities.Count() == 1)
+            {
+                message = "Downloading " + entities.Count().ToString() + " entities from table " + tableName + " to file " + outputFile;
+            }
+            else
+            {
+                message = "Downloading 1 entity trom table " + tableName + " to file " + outputFile;
+            }
+
+            Action action = new Action()
+            {
+                Id = NextAction++,
+                ActionType = Action.ACTION_DOWNLOAD_ENTITIES,
+                IsCompleted = false,
+                Message = message
+            };
+            Actions.Add(action.Id, action);
+
+            UpdateStatus();
+
+            // Execute background task to perform the downloading.
+
+            Task task = Task.Factory.StartNew(() =>
+            {
+                if (entities != null)
+                {
+                    CloudTable table = tableClient.GetTableReference(tableName);
+                    //table.CreateIfNotExists();
+
+                    if (File.Exists(outputFile))
+                    {
+                        File.Delete(outputFile);
+                    }
+
+                    // CSV format export
+
+                    int e = 0;
+                    int f = 0;
+
+                    using (TextWriter writer = File.CreateText(outputFile))
+                    {
+                        // Write header.
+
+                        switch (format)
+                        {
+                            case "csv":
+                                if (TableColumnNames != null)
+                                {
+                                    foreach (KeyValuePair<String, bool> col in TableColumnNames)
+                                    {
+                                        if (col.Value)
+                                        {
+                                            if (f == 0)
+                                            {
+                                                writer.Write("\"" + col.Key + "\"");
+                                            }
+                                            else
+                                            {
+                                                writer.Write(",\"" + col.Key + "\"");
+                                            }
+                                            f++;
+                                        } // end if
+                                    } // next col
+                                    writer.WriteLine();
+                                } // end if (TableColumns != null)
+                                break;
+                            case "json":
+                                writer.WriteLine("{");
+                                writer.WriteLine("    \"entities\": [");
+                                break;
+                            case "xml":
+                                writer.WriteLine("<?xml version=\"1.0\"?>");
+                                writer.WriteLine("<Entities>");
+                                break;
+                            default:
+                                break;
+                        }
+
+                        // Iterate through each entity in the collection and write out a line.
+
+                        String colName;
+                        String value;
+
+                        foreach (EntityItem entity in entities)
+                        {
+                            switch (format)
+                            {
+                            case "csv":
+                                {
+                                    f = 0;
+
+                                    foreach (KeyValuePair<String, bool> col in TableColumnNames)
+                                    {
+                                        // Write out each column that has not been turned off in a filter.
+
+                                        if (col.Value)
+                                        {
+                                            colName = col.Key;
+                                            if (entity.Fields.ContainsKey(colName))
+                                            {
+                                                value = entity.Fields[colName];
+                                            }
+                                            else
+                                            {
+                                                value = String.Empty;
+                                            }
+                                            if (f == 0)
+                                            {
+                                                writer.Write(quote(value));
+                                            }
+                                            else
+                                            {
+                                                writer.Write("," + quote(value));
+                                            }
+                                            f++;
+                                        } // end if
+                                    } // next col
+                                    writer.WriteLine();
+                                } // end CSV
+                                break;
+                            case "xml":
+                                {
+                                    writer.WriteLine("  <Entity>");
+                                    foreach (KeyValuePair<String, bool> col in TableColumnNames)
+                                    {
+                                        // Write out each column that has not been turned off in a filter.
+
+                                        if (col.Value)
+                                        {
+                                            colName = col.Key;
+                                            if (entity.Fields.ContainsKey(colName))
+                                            {
+                                                value = entity.Fields[colName];
+                                            }
+                                            else
+                                            {
+                                                value = String.Empty;
+                                            }
+                                            writer.Write("    <" + colName + ">");
+                                            writer.Write(value);    // TODO: quote for XML
+                                            writer.WriteLine("</" + colName + ">");
+                                        } // end if
+                                    } // next col
+                                    writer.WriteLine("  </Entity>");
+                                } // end XML
+                                break;
+                            case "json":
+                                {
+                                    f = 0;
+                                    if (e > 0)
+                                    {
+                                        writer.WriteLine("        },");
+                                    }
+                                    writer.WriteLine("        {");
+                                    foreach (KeyValuePair<String, bool> col in TableColumnNames)
+                                    {
+                                        // Write out each column that has not been turned off in a filter.
+
+                                        if (col.Value)
+                                        {
+                                            colName = col.Key;
+                                            if (entity.Fields.ContainsKey(colName))
+                                            {
+                                                value = entity.Fields[colName];
+                                            }
+                                            else
+                                            {
+                                                value = String.Empty;
+                                            }
+                                            if (f > 0)
+                                            {
+                                                writer.WriteLine(",");
+                                            }
+                                            writer.Write("            \"" + colName + "\": \"" + value + "\"");
+                                        } // end if
+                                        f++;
+                                    } // next col
+                                    //writer.WriteLine("      }");
+                                } // end XML
+                                break;
+                            default:
+                                break;
+                            } // end switch
+                            e++;
+                            writer.WriteLine();
+                        } // next entity
+
+                        // Write footer.
+
+                        switch (format)
+                        {
+                            case "csv":
+                                break;
+                            case "json":
+                                writer.WriteLine();
+                                writer.WriteLine("        }");
+                                writer.WriteLine("    ]");
+                                writer.WriteLine("}");
+                                break;
+                            case "xml":
+                                writer.WriteLine("</Entities>");
+                                break;
+                        }
+
+                    } // end using TextWriter
+                } // end if entities != nulll
+
+                Actions[action.Id].IsCompleted = true;
+            });
+
+            // Task complete - update UI.
+
+            task.ContinueWith((t) =>
+            {
+                UpdateStatus();
+
+                if (autoOpen)
+                {
+                    try
+                    {
+                        System.Diagnostics.Process.Start(outputFile);
+                    }
+                    catch(Exception)
+                    {
+                        // File could not be opened / no app was associated with its file type.
+                    }
+                }
+
+            }, TaskScheduler.FromCurrentSynchronizationContext());
+
+        }
 
         #endregion
 
         #region Helper Functions
+
+        // Return a copy of a string value. If the string contains commas, enclose in quotes.
+
+        private string quote(String value)
+        {
+            if (String.IsNullOrEmpty(value))
+            {
+                return "\"\"";
+            }
+            else
+            {
+                value = value.Replace("\"", String.Empty);
+                if (value.Contains(","))
+                {
+                    return "\"" + value + "\"";
+                }
+                else
+                {
+                    return value;
+                }
+            }
+        }
 
         // Process n | nK | nM | nG and return integer number of bytes.
 
@@ -3035,6 +3612,7 @@ namespace AzureStorageExplorer
         }
 
         #endregion
+
 
     }
 

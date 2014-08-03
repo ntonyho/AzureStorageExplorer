@@ -6,48 +6,51 @@ using System.Threading.Tasks;
 
 namespace AzureStorageExplorer
 {
-    public class EntityItem
+    public class EntityItem : ElasticTableEntity
     {
-        public String RowKey { get; set; }
-        public String PartitionKey { get; set; }
-        public String[] Names { get; set; }
-        public String[] Values { get; set; }
         public Dictionary<String, String> Fields { get; set; }
+
+        // Create an EntityItem from an ElasticTableEntity.
 
         public EntityItem(ElasticTableEntity entity)
         {
-            this.RowKey = entity.RowKey;
+            this.Properties = entity.Properties;
             this.PartitionKey = entity.PartitionKey;
+            this.RowKey = entity.RowKey;
+            this.Timestamp = entity.Timestamp;
+            this.ETag = entity.ETag;
+
+            // Create and populate Fields dictionary, used for data binding.
 
             this.Fields = new Dictionary<string, string>();
 
-            IEnumerable<String> names = entity.GetNames();
+            IEnumerable<String> names = GetNames();
             int n = 0;
-            this.Names = new String[names.Count()];
-            foreach(String name in names)
+            String[] nameList = new String[names.Count()];
+            foreach (String name in names)
             {
-                this.Names[n++] = name;
+                nameList[n++] = name;
             }
 
-            IEnumerable<Object> values = entity.GetValues();
+            IEnumerable<Object> values = GetValues();
             int v = 0;
-            this.Values = new String[values.Count()];
+            String[] valueList = new String[values.Count()];
             foreach(Object value in values)
             {
                 if (value==null)
                 {
-                    this.Values[v] = "(null)";
+                    valueList[v] = "(null)";
                 }
                 if (value is String)
                 {
-                    this.Values[v] = value as String;
+                    valueList[v] = value as String;
                 }
                 else
                 {
-                    this.Values[v] = value.ToString();
+                    valueList[v] = value.ToString();
                 }
 
-                Fields.Add(this.Names[v], this.Values[v]);
+                Fields.Add(nameList[v], valueList[v]);
                 v++;
             }
         }

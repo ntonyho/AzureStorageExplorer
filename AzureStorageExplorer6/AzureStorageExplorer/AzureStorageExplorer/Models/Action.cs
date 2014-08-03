@@ -15,6 +15,9 @@ namespace AzureStorageExplorer
         public const int ACTION_NEW_CONTAINER = 5;
         public const int ACTION_DELETE_CONTAINER = 6;
         public const int ACTION_CONTAINER_ACCESS_LEVEL = 7;
+        public const int ACTION_NEW_TABLE = 8;
+        public const int ACTION_DELETE_TABLE = 9;
+        public const int ACTION_DOWNLOAD_ENTITIES = 10;
 
         public int Id { get; set; }
         public int ActionType { get; set; }

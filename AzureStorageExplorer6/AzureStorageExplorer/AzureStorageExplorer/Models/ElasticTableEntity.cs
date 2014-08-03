@@ -33,7 +33,7 @@ namespace AzureStorageExplorer
             }
         }
 
-        public IDictionary<string, EntityProperty> Properties { get; private set; }
+        public IDictionary<string, EntityProperty> Properties { get; set; }
 
         public object this[string key]
         {
