@@ -257,9 +257,22 @@
             <ListView Grid.Row="2" x:Name="ContainerListView" 
                       GridViewColumnHeader.Click="ContainerListView_ColumnHeaderClicked" 
                       MouseDoubleClick="ContainerListView_MouseDoubleClick"
-                      Visibility="Collapsed" ItemsSource="{Binding BlobCollection}">
+                      AlternationCount="2" Visibility="Collapsed" ItemsSource="{Binding BlobCollection}">
                 <ListView.Resources>
-                    <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
+                    <!--<SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>-->
+                    <Style TargetType="{x:Type ListViewItem}">
+                        <Style.Triggers>
+                            <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                                <Setter Property="Background" Value="#F0F0F0"></Setter>
+                            </Trigger>
+                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                <Setter Property="Background" Value="#F6F6F6"></Setter>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#FFE79A"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
                 </ListView.Resources>
                 <ListView.View>
                     <GridView>
@@ -277,9 +290,21 @@
 
             <ListView Grid.Row="2" x:Name="TableListView" 
                       GridViewColumnHeader.Click="EntityListView_ColumnHeaderClicked" 
-                      Visibility="Collapsed" ItemsSource="{Binding EntityCollection}">
+                      AlternationCount="2" Visibility="Collapsed" ItemsSource="{Binding EntityCollection}">
                 <ListView.Resources>
-                    <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
+                    <Style TargetType="{x:Type ListViewItem}">
+                        <Style.Triggers>
+                            <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                                <Setter Property="Background" Value="#F0F0F0"></Setter>
+                            </Trigger>
+                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                <Setter Property="Background" Value="#F6F6F6"></Setter>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#DEEBF7"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
                 </ListView.Resources>
                 <ListView.View>
                     <GridView x:Name="TableListViewGridView">
