@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace AzureStorageExplorer
 {
@@ -24,34 +25,12 @@ namespace AzureStorageExplorer
 
             this.Fields = new Dictionary<string, string>();
 
-            IEnumerable<String> names = GetNames();
-            int n = 0;
-            String[] nameList = new String[names.Count()];
-            foreach (String name in names)
-            {
-                nameList[n++] = name;
-            }
+            this.Fields.Add("RowKey", entity.RowKey);
+            this.Fields.Add("PartitionKey", entity.PartitionKey);
 
-            IEnumerable<Object> values = GetValues();
-            int v = 0;
-            String[] valueList = new String[values.Count()];
-            foreach(Object value in values)
+            foreach (KeyValuePair<String, EntityProperty> prop in entity.Properties)
             {
-                if (value==null)
-                {
-                    valueList[v] = "(null)";
-                }
-                if (value is String)
-                {
-                    valueList[v] = value as String;
-                }
-                else
-                {
-                    valueList[v] = value.ToString();
-                }
-
-                Fields.Add(nameList[v], valueList[v]);
-                v++;
+                this.Fields.Add(prop.Key, prop.Value.PropertyAsObject.ToString());
             }
         }
     }
