@@ -1,4 +1,5 @@
-﻿// Source: http://pascallaurin42.blogspot.com/2013/03/using-azure-table-storage-with-dynamic.html
+﻿// Source: http://pascallaurin42.blogspot.com/2013/03/using-azure-table-storage-with-dynamic.html (Pascal Laurin)
+// GitHub: https://gist.github.com/plaurin/5148574
 
 using System;
 using System.Collections.Generic;

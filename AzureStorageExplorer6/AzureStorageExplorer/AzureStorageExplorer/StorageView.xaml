@@ -253,6 +253,32 @@
                             </StackPanel>
                         </Button>
                     </ToolBar>
+                    <ToolBar Band="1" BandIndex="4">
+                        <Button x:Name="EntityView" Width="54" ToolTip="View/Edit Selected Entity" ToolBar.OverflowMode="Never" Click="EntityView_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\properties.png" Height="16" />
+                                <TextBlock Text="View"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="EntityNew" Width="54" ToolTip="Insert New Entity" ToolBar.OverflowMode="Never" Click="EntityNew_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\new_blob.png" Height="16" />
+                                <TextBlock Text="New"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="EntityCopy" Width="54" ToolTip="Copy Selected Entity" ToolBar.OverflowMode="Never" Click="EntityCopy_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\copy.png" Height="16" />
+                                <TextBlock Text="Copy"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="EntityDelete" Width="54" ToolBar.OverflowMode="Never" ToolTip="Delete Selected Entities" Click="EntityDelete_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\delete.png" Height="16" />
+                                <TextBlock Text="Delete"/>
+                            </StackPanel>
+                        </Button>
+                    </ToolBar>
 
                 </ToolBarTray>
             </StackPanel>
@@ -293,6 +319,7 @@
 
             <ListView Grid.Row="2" x:Name="TableListView" 
                       GridViewColumnHeader.Click="EntityListView_ColumnHeaderClicked" 
+                      MouseDoubleClick="TableListView_MouseDoubleClick"
                       AlternationCount="2" Visibility="Collapsed" ItemsSource="{Binding EntityCollection}">
                 <ListView.Resources>
                     <Style TargetType="{x:Type ListViewItem}">

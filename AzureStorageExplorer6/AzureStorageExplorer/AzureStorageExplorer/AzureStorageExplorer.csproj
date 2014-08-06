@@ -114,6 +114,9 @@
     <Compile Include="Dialogs\ContainerSecurity.xaml.cs">
       <DependentUpon>ContainerSecurity.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\EditEntityDialog.xaml.cs">
+      <DependentUpon>EditEntityDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\NewBlobDialog.xaml.cs">
       <DependentUpon>NewBlobDialog.xaml</DependentUpon>
     </Compile>
@@ -179,6 +182,10 @@
     <Page Include="Dialogs\CopyBlob.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dialogs\EditEntityDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Dialogs\NewBlobDialog.xaml">
       <SubType>Designer</SubType>

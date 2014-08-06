@@ -2351,6 +2351,196 @@ namespace AzureStorageExplorer
 
             return result;
         }
+        
+        //*********************
+        //*                   *
+        //*  EntityNew_Click  *
+        //*                   *
+        //*********************
+        // Insert a new entity into the currently selected table.
+
+        private void EntityNew_Click(object sender, RoutedEventArgs e)
+        {
+            EditEntityDialog dlg = new EditEntityDialog();
+
+            CloudTable table = tableClient.GetTableReference(SelectedTableContainer);
+            dlg.InitForInsert(table, TableColumnNames);
+
+            if (dlg.ShowDialog().Value)
+            {
+                if (dlg.RecordsAdded > 0)
+                {
+                    ShowTableContainer(SelectedTableContainer);
+                }
+            }
+        }
+
+
+        //**********************
+        //*                    *
+        //*  EntityView_Click  *
+        //*                    *
+        //**********************
+        // View/edit seleted entity.
+
+        private void EntityView_Click(object sender, RoutedEventArgs e)
+        {
+            if (TableListView.SelectedItems.Count != 1)
+            {
+                MessageBox.Show("In order to view or edit an entity, please select one entity then click the View toolbar button", "Single Selection Requireed");
+                return;
+            }
+
+            EntityItem entity = (TableListView.SelectedItems[0]) as EntityItem;
+            if (entity == null) return;
+
+            EditEntityDialog dlg = new EditEntityDialog();
+
+            CloudTable table = tableClient.GetTableReference(SelectedTableContainer);
+            dlg.InitForUpdate(table, TableColumnNames, entity);
+
+            if (dlg.ShowDialog().Value)
+            {
+                if (dlg.RecordsUpdated > 0)
+                {
+                    ShowTableContainer(SelectedTableContainer);
+                }
+            }
+        }
+
+
+        //**********************
+        //*                    *
+        //*  EntityView_Click  *
+        //*                    *
+        //**********************
+        // View/edit seleted entity.
+
+        private void EntityCopy_Click(object sender, RoutedEventArgs e)
+        {
+            if (TableListView.SelectedItems.Count != 1)
+            {
+                MessageBox.Show("In order to copy an entity, please select one entity then click the View toolbar button", "Single Selection Requireed");
+                return;
+            }
+
+            EntityItem entity = (TableListView.SelectedItems[0]) as EntityItem;
+            if (entity == null) return;
+
+            EditEntityDialog dlg = new EditEntityDialog();
+
+            CloudTable table = tableClient.GetTableReference(SelectedTableContainer);
+            dlg.InitForCopy(table, TableColumnNames, entity);
+
+            if (dlg.ShowDialog().Value)
+            {
+                if (dlg.RecordsAdded > 0)
+                {
+                    ShowTableContainer(SelectedTableContainer);
+                }
+            }
+        }
+
+
+        //************************
+        //*                      *
+        //*  EntityDelete_Click  *
+        //*                      *
+        //************************
+        //Delete selected entities.
+
+        private void EntityDelete_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            List<EntityItem> entities = new List<EntityItem>();
+
+            foreach (EntityItem entity in TableListView.SelectedItems)
+            {
+                entities.Add(entity);
+            }
+
+            int count = entities.Count();
+
+            if (count == 0)
+            {
+                MessageBox.Show("No entities are selected. To delete entities, select one or more from the list then click the Delete toolbar button.", "Selection Required");
+                return;
+            }
+
+            String message = "Are you sure you want to delete these " + count.ToString() + " entities?";
+            if (count == 1)
+            {
+                message = "Are you sure you want to delete this entity?";
+            }
+
+            message = message + "\n";
+            int n = 0;
+            foreach (EntityItem entity in entities)
+            {
+                n++;
+                if (n < 10)
+                {
+                    message = message + "\n" + entity.RowKey + "|" + entity.PartitionKey;
+                }
+                if (n == 10)
+                {
+                    message = message + "\n(" + (count - 10).ToString() + " more)";
+                }
+            }
+
+            MessageBoxResult messageBoxResult = System.Windows.MessageBox.Show(message, "Confirm Delete", System.Windows.MessageBoxButton.YesNo);
+            if (messageBoxResult == MessageBoxResult.Yes)
+            {
+                message = null;
+                if (ContainerListView.SelectedItems.Count == 1)
+                {
+                    message = "Deleting entity " + TableListView.SelectedItems[0] + " from table " + SelectedTableContainer;
+                }
+                else
+                {
+                    message = "Deleting " + TableListView.SelectedItems.Count.ToString() + " entities from table " + SelectedTableContainer;
+                }
+
+                Action action = new Action()
+                {
+                    Id = NextAction++,
+                    ActionType = Action.ACTION_DELETE_ENTITIES,
+                    IsCompleted = false,
+                    Message = message
+                };
+                Actions.Add(action.Id, action);
+
+                UpdateStatus();
+
+                Cursor = Cursors.Wait;
+
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    CloudTable table = tableClient.GetTableReference(SelectedTableContainer);
+
+                    int deletedCount = 0;
+                    foreach (EntityItem entity in entities)
+                    {
+                        table.Execute(TableOperation.Delete(entity));
+                        deletedCount++;
+                    }
+
+                    Actions[action.Id].IsCompleted = true;
+                });
+
+                task.ContinueWith((t) =>
+                {
+                    UpdateStatus();
+
+                    Cursor = Cursors.Arrow;
+
+                    ShowTableContainer(SelectedTableContainer);
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
+
+        }
+
 
         #endregion
 
@@ -2544,7 +2734,7 @@ namespace AzureStorageExplorer
 
                             if (BlobTypeFilter != 2)
                             {
-                                if (BlobNameFilter == null || blockBlob.Name.Contains(BlobNameFilter))
+                                if (BlobNameFilter == null || blockBlob.Name.IndexOf(BlobNameFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
                                 {
                                     if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
                                         (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
@@ -2574,7 +2764,7 @@ namespace AzureStorageExplorer
 
                             if (BlobTypeFilter != 1)
                             {
-                                if (BlobNameFilter == null || pageBlob.Name.Contains(BlobNameFilter))
+                                if (BlobNameFilter == null || pageBlob.Name.IndexOf(BlobNameFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
                                 {
                                     if ((MinBlobSize == -1 || pageBlob.Properties.Length >= MinBlobSize) &&
                                         (MaxBlobSize == -1 || pageBlob.Properties.Length <= MaxBlobSize))
@@ -2819,8 +3009,8 @@ namespace AzureStorageExplorer
 
                         if (EntityTextFilter != null)
                         {
-                            if (entity.RowKey.Contains(EntityTextFilter) ||
-                                entity.PartitionKey.Contains(EntityTextFilter))
+                            if (entity.RowKey.IndexOf(EntityTextFilter, 0, StringComparison.OrdinalIgnoreCase) != -1 ||
+                                entity.PartitionKey.IndexOf(EntityTextFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
                             {
                                 match = true;
                             }
@@ -2828,7 +3018,7 @@ namespace AzureStorageExplorer
                             {
                                 foreach(KeyValuePair<String, String> field in item.Fields)
                                 {
-                                    if (field.Value.Contains(EntityTextFilter))
+                                    if (field.Value.IndexOf(EntityTextFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
                                     {
                                         match = true;
                                     }
@@ -2855,7 +3045,7 @@ namespace AzureStorageExplorer
                     }
                 }
 
-                SortEntityList();
+                //SortEntityList();
 
                 ContainerDetails.Text = "(" + containerCount.ToString() + " entities) as of " + DateTime.Now.ToString();
 
@@ -3855,11 +4045,14 @@ namespace AzureStorageExplorer
 
         #endregion
 
+        private void TableListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            EntityView_Click(sender, null);
+        }
 
     }
 
 }
-
 
 
 #if X
