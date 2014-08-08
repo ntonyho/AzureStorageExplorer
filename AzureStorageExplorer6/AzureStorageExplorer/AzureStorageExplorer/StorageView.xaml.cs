@@ -2481,7 +2481,7 @@ namespace AzureStorageExplorer
                 n++;
                 if (n < 10)
                 {
-                    message = message + "\n" + entity.RowKey + "|" + entity.PartitionKey;
+                    message = message + "\n" + entity.PartitionKey + "|" + entity.RowKey;
                 }
                 if (n == 10)
                 {
@@ -2880,12 +2880,12 @@ namespace AzureStorageExplorer
 
                 TableListViewGridView.Columns.Clear();
 
-                AddTableListViewColumn("RowKey");
                 AddTableListViewColumn("PartitionKey");
+                AddTableListViewColumn("RowKey");
                 AddTableListViewColumn("Timestamp", false);
 
-                tempTableColumnNames.Add("RowKey", TableColumnNames["RowKey"]);
                 tempTableColumnNames.Add("PartitionKey", TableColumnNames["PartitionKey"]);
+                tempTableColumnNames.Add("RowKey", TableColumnNames["RowKey"]);
                 tempTableColumnNames.Add("Timestamp", TableColumnNames["Timestamp"]);
 
                 int containerCount = 0;

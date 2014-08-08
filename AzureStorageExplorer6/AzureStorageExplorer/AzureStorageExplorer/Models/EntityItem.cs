@@ -29,8 +29,8 @@ namespace AzureStorageExplorer
 
             // Add row key, partition key, and timestamp to the fields collection.
 
-            this.Fields.Add("RowKey", entity.RowKey);
             this.Fields.Add("PartitionKey", entity.PartitionKey);
+            this.Fields.Add("RowKey", entity.RowKey);
             this.Fields.Add("Timestamp", entity.Timestamp.ToString());
 
             // Add each entity property to the fields collection.

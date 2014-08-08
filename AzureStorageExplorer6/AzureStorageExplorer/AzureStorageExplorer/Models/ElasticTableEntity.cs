@@ -25,10 +25,10 @@ namespace AzureStorageExplorer
         {
             switch(name)
             {
-                case "RowKey":
-                    return this.RowKey;
                 case "PartitionKey":
                     return this.PartitionKey;
+                case "RowKey":
+                    return this.RowKey;
                 default:
                     return this.Properties[name].StringValue;
             }
