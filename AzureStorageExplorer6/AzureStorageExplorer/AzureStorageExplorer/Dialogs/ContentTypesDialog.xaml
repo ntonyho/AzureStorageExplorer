@@ -1,0 +1,27 @@
+﻿<Window x:Class="AzureStorageExplorer.ContentTypesDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:AzureStorageExplorer"
+        Title="Copy Blob" Height="445" Width="500" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Orientation="Vertical">
+        <StackPanel Margin="12" Orientation="Vertical">
+
+            <TextBlock Margin="0,0,0,0" Text="These settings control how ContentType is set when blobs are uploaded."></TextBlock>
+            
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <TextBlock Width="120" Margin="30,0,16,0">If blob name ends in...</TextBlock>
+                <TextBlock>Set ContentType to...</TextBlock>
+            </StackPanel>
+            <ListView x:Name="ContentTypeListView" Height="300"></ListView>
+            
+            <StackPanel x:Name="ButtonPanel" Orientation="Horizontal"  Margin="0,12,0,0">
+                <Button x:Name="CmdApply" Padding="4" IsDefault="True" Margin="0,0,8,0" Click="CmdApply_Click">Update</Button>
+                <Button x:Name="CmdCancel" Padding="4" IsCancel="true" Click="CmdCancel_Click">Cancel</Button>
+                <TextBlock Margin="170,0,0,0" Foreground="MediumBlue" Cursor="Hand" TextDecorations="Underline" MouseDown="AddRow_MouseDown">Add Row</TextBlock>
+                <TextBlock Margin="16,0,0,0" Foreground="MediumBlue" Cursor="Hand" TextDecorations="Underline" MouseDown="RemoveSelectedRows_MouseDown">Remove Selected Rows</TextBlock>
+            </StackPanel>
+            <TextBlock x:Name="Message" Margin="0,12,0,0" />
+        </StackPanel>
+    </StackPanel>
+</Window>

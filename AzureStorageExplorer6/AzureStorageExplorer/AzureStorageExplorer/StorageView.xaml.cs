@@ -3286,6 +3286,8 @@ namespace AzureStorageExplorer
 
         public void UploadFiles(String[] files, String containerName)
         {
+            Dictionary<String, String> contentTypes = MainWindow.ContentTypes;
+
             Action action = new Action()
             {
                 Id = NextAction++,
@@ -3304,7 +3306,6 @@ namespace AzureStorageExplorer
 
             Task task = Task.Factory.StartNew(() =>
             {
-
                 if (files != null)
                 {
                     try
@@ -3322,9 +3323,17 @@ namespace AzureStorageExplorer
                             }
                             CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
 
-                            // Upload content to the blob, which will create the blob if it does not already exist.
-                            //blob.UploadFromFileAsync(file);
                             blob.UploadFromFile(file, System.IO.FileMode.Open);
+
+                            foreach(KeyValuePair<String, String> ct in contentTypes)
+                            {
+                                if (blob.Name.EndsWith(ct.Key))
+                                {
+                                    blob.Properties.ContentType = ct.Value;
+                                    blob.SetProperties();
+                                    break;
+                                }
+                            }
                         }
                     }
                     catch (Exception ex)

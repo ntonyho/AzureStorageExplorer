@@ -39,6 +39,7 @@ namespace AzureStorageExplorer
 
         public static List<AzureAccount> Accounts = null;
         public static System.Windows.Controls.TabControl StorageViewsTabControl = null;
+        public static Dictionary<String, String> ContentTypes = new Dictionary<string, string>();
 
         #endregion
 
@@ -53,6 +54,7 @@ namespace AzureStorageExplorer
             Accounts = new List<AzureAccount>();
             CenterWindowOnScreen();
             LoadAccountList();
+            LoadContentTypes();
             DisplayAccountList();
         }
 
@@ -364,6 +366,7 @@ namespace AzureStorageExplorer
                 {
                     String line = account.Name + "|";
                     line = line + account.Key + "|";
+
                     if (account.IsDeveloperAccount)
                     {
                         line = line + "1|";
@@ -383,7 +386,6 @@ namespace AzureStorageExplorer
                     }
 
                     line = line + account.EndpointDomain + "|";
-
                     line = StringCipher.Encrypt(line, cipherKey);
 
                     writer.WriteLine(line);
@@ -531,5 +533,152 @@ namespace AzureStorageExplorer
             }
         }
         #endregion
+
+        #region Content Types
+
+        //***********************
+        //*                     *
+        //*  ContentType_Click  *
+        //*                     *
+        //***********************
+        // Edit content types.
+
+        private void ContentType_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            ContentTypesDialog dlg = new ContentTypesDialog();
+
+            dlg.LoadContentTypes(ContentTypes);
+
+            if (dlg.ShowDialog().Value)
+            {
+                this.Cursor = System.Windows.Input.Cursors.Wait;
+
+                ContentTypes = dlg.GetContentTypes();
+                SaveContentTypes();
+
+                this.Cursor = System.Windows.Input.Cursors.Arrow;
+            }
+        }
+
+        //**********************
+        //*                    *
+        //*  LoadContentTypes  *
+        //*                    *
+        //**********************
+        // Load save table of file types and content types. If file doesn't exist, set to default list.
+
+        private void LoadContentTypes()
+        {
+            try
+            {
+                String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-ContentTypes.dt1";
+                String line, name, value;
+
+                MainWindow.ContentTypes.Clear();
+
+                if (File.Exists(filename))
+                {
+                    using (TextReader reader = File.OpenText(filename))
+                    {
+                        string[] items = null;
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            items = line.Split('|');
+                            if (items.Length >= 2)
+                            {
+                                try
+                                {
+                                    name = items[0];
+                                    value = items[1];
+                                    MainWindow.ContentTypes.Add(name, value);
+                                }
+                                catch (Exception)
+                                {
+                                }
+                            } // end if items.Length >= 2
+                        } // end while
+                    } // end using TextReader
+                } // end if
+                else
+                {
+                    // Load default content types table.
+
+                    MainWindow.ContentTypes.Add(".avi", "video/msvideo");
+                    MainWindow.ContentTypes.Add(".bmp", "image/bmp");
+                    MainWindow.ContentTypes.Add(".css", "text/css");
+                    MainWindow.ContentTypes.Add(".dtd", "application/xml-dtd");
+                    MainWindow.ContentTypes.Add(".doc", "application/msword");
+                    MainWindow.ContentTypes.Add(".docx", "application/msword");
+                    MainWindow.ContentTypes.Add(".exe", "application/octet-stream");
+                    MainWindow.ContentTypes.Add(".gif", "image/gif");
+                    MainWindow.ContentTypes.Add(".gz", "application/x-gzip");
+                    MainWindow.ContentTypes.Add(".htm", "text/html");
+                    MainWindow.ContentTypes.Add(".html", "text/html");
+                    MainWindow.ContentTypes.Add(".jar", "application/java-archive");
+                    MainWindow.ContentTypes.Add(".jpg", "image/jpeg");
+                    MainWindow.ContentTypes.Add(".jpeg", "image/jpeg");
+                    MainWindow.ContentTypes.Add(".js", "application/x-javascript");
+                    MainWindow.ContentTypes.Add(".midi", "audio/x-midi");
+                    MainWindow.ContentTypes.Add(".mp3", "audio/mpeg");
+                    MainWindow.ContentTypes.Add(".mpg", "video/mpeg");
+                    MainWindow.ContentTypes.Add(".mpeg", "video/mpeg");
+                    MainWindow.ContentTypes.Add(".ogg", "audio/vorbis, application/ogg");
+                    MainWindow.ContentTypes.Add(".pdf", "application/pdf");
+                    MainWindow.ContentTypes.Add(".pl", "application/x-perl");
+                    MainWindow.ContentTypes.Add(".png", "image/png");
+                    MainWindow.ContentTypes.Add("ppt", "application/vnd.ms-powerpoint");
+                    MainWindow.ContentTypes.Add(".pptx", "application/vnd.ms-powerpoint");
+                    MainWindow.ContentTypes.Add(".ps", "application/postscript");
+                    MainWindow.ContentTypes.Add(".qt", "video/quicktime");
+                    MainWindow.ContentTypes.Add(".ra", "audio/x-pn-realaudio, audio/vnd.rn-realaudio");
+                    MainWindow.ContentTypes.Add(".ram", "audio/x-pn-realaudio, audio/vnd.rn-realaudio");
+                    MainWindow.ContentTypes.Add(".rdf", "application/rdf, application/rdf+xml");
+                    MainWindow.ContentTypes.Add(".rtf", "application/rtf");
+                    MainWindow.ContentTypes.Add(".sgml", "text/sgml");
+                    MainWindow.ContentTypes.Add(".svg", "image/svg+xml");
+                    MainWindow.ContentTypes.Add(".swf", "application/x-shockwave-flash");
+                    MainWindow.ContentTypes.Add(".tar.gz", "application/x-tar");
+                    MainWindow.ContentTypes.Add(".tgz", "application/x-tar");
+                    MainWindow.ContentTypes.Add(".tiff", "image/tiff");
+                    MainWindow.ContentTypes.Add(".tsv", "text/tab-separated-values");
+                    MainWindow.ContentTypes.Add(".txt", "text/plain");
+                    MainWindow.ContentTypes.Add(".wav", "audio/wav, audio/x-wav");
+                    MainWindow.ContentTypes.Add(".xls", "application/vnd.ms-excel");
+                    MainWindow.ContentTypes.Add(".xml", "application/xml");
+                    MainWindow.ContentTypes.Add(".zip", "application/zip");
+                }
+            } // end try
+            catch (Exception ex)
+            {
+                //Console.WriteLine(ex.Message);
+            }
+        }
+
+        //**********************
+        //*                    *
+        //*  SaveContentTypes  *
+        //*                    *
+        //**********************
+        // Save the content types to disk.
+
+        private void SaveContentTypes()
+        {
+            // Sort account list.
+
+            Accounts = Accounts.OrderBy(o => o.Name).ToList();
+
+            String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-ContentTypes.dt1";
+
+            using (TextWriter writer = File.CreateText(filename))
+            {
+                foreach (KeyValuePair<String, String> ct in ContentTypes)
+                {
+                    writer.WriteLine(ct.Key + "|" + ct.Value);
+                }
+            }
+        }
+
+        #endregion
+
     }
 }
