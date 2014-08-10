@@ -64,15 +64,23 @@ namespace AzureStorageExplorer
 
         private String BlobSortHeader;
         private ListSortDirection BlobSortDirection = ListSortDirection.Ascending;
-        
+
+        private String MessageSortHeader = "InsertionTime";
+        private ListSortDirection MessageSortDirection = ListSortDirection.Descending;
+
+        private String EntitySortHeader;
+        private ListSortDirection EntitySortDirection = ListSortDirection.Ascending;
+
         private GridViewColumnHeader _lastHeaderClicked = null;
         private ListSortDirection _lastDirection = ListSortDirection.Ascending;
+
+        private GridViewColumnHeader _lastMessageHeaderClicked = null;
+        private ListSortDirection _lastMessageDirection = ListSortDirection.Ascending;
 
         private GridViewColumnHeader _lastEntityHeaderClicked = null;
         private ListSortDirection _lastEntityDirection = ListSortDirection.Ascending;
 
-        private String EntitySortHeader;
-        private ListSortDirection EntitySortDirection = ListSortDirection.Ascending;
+
 
         // Blob filters
 
@@ -785,7 +793,6 @@ namespace AzureStorageExplorer
         }
 
 
-
         //**************************
         //*                        *
         //*  AccountRefresh_Click  *
@@ -1306,7 +1313,7 @@ namespace AzureStorageExplorer
         //*  BlobDownloadButton_Click  *
         //*                            *
         //******************************
-        // Download blob(s) toolbar button handler.
+        // Download blob(s).
 
         private void BlobDownloadButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1860,7 +1867,194 @@ namespace AzureStorageExplorer
         #endregion
 
         #region Queue Toolbar Button Handlers
-        
+
+        //*****************************************
+        //*                                       *
+        //*  MessageListView_ColumnHeaderClicked  *
+        //*                                       *
+        //*****************************************
+        // Main pane table message list column clicked - sort and re-display the message list.
+
+        private void MessageListView_ColumnHeaderClicked(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            GridViewColumnHeader headerClicked = e.OriginalSource as GridViewColumnHeader;
+            ListSortDirection direction;
+
+            if (headerClicked != null)
+            {
+                this.Cursor = Cursors.Wait;
+
+                if (headerClicked.Role != GridViewColumnHeaderRole.Padding)
+                {
+                    if (headerClicked != _lastMessageHeaderClicked)
+                    {
+                        direction = ListSortDirection.Ascending;
+                    }
+                    else
+                    {
+                        if (_lastMessageDirection == ListSortDirection.Ascending)
+                        {
+                            direction = ListSortDirection.Descending;
+                        }
+                        else
+                        {
+                            direction = ListSortDirection.Ascending;
+                        }
+                    }
+
+                    string header = headerClicked.Column.Header as string;
+
+                    MessageSortHeader = header;
+                    MessageSortDirection = direction;
+
+                    SortMessageList();
+
+
+                    if (direction == ListSortDirection.Ascending)
+                    {
+                        headerClicked.Column.HeaderTemplate = Resources["HeaderTemplateArrowUp"] as DataTemplate;
+                    }
+                    else
+                    {
+                        headerClicked.Column.HeaderTemplate =Resources["HeaderTemplateArrowDown"] as DataTemplate;
+                    }
+
+                    // Remove arrow from previously sorted header 
+                    if (_lastMessageHeaderClicked != null && _lastHeaderClicked != headerClicked)
+                    {
+                        _lastMessageHeaderClicked.Column.HeaderTemplate = null;
+                    }
+
+                    _lastMessageHeaderClicked = headerClicked;
+                    _lastMessageDirection = direction;
+                }
+
+                this.Cursor = Cursors.Arrow;
+            }
+        }
+
+
+        //*********************
+        //*                   *
+        //*  SortMessageList  *
+        //*                   *
+        //*********************
+        // Sort the message list by selected column / direction.
+
+        private void SortMessageList()
+        {
+            IEnumerable<MessageItem> x;
+
+            try
+            {
+                MessageListView.ItemsSource = null;
+
+                switch (MessageSortHeader)
+                {
+                    case "Id":
+                        x = from m in _MessageCollection select m;
+                        if (MessageSortDirection == ListSortDirection.Ascending)
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderBy(w => w.Id, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderByDescending(w => w.Id, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "StringValue":
+                        x = from m in _MessageCollection select m;
+                        if (MessageSortDirection == ListSortDirection.Ascending)
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderBy(w => w.StringValue, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderByDescending(w => w.StringValue, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "DQCount":
+                        x = from m in _MessageCollection select m;
+                        if (MessageSortDirection == ListSortDirection.Ascending)
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderBy(w => w.DequeueCount));
+                        }
+                        else
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderByDescending(w => w.DequeueCount));
+                        }
+                        break;
+                    case "PopReceipt":
+                        x = from m in _MessageCollection select m;
+                        if (MessageSortDirection == ListSortDirection.Ascending)
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderBy(w => w.PopReceipt, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderByDescending(w => w.PopReceipt, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "InsertionTime":
+                        x = from m in _MessageCollection select m;
+                        if (MessageSortDirection == ListSortDirection.Ascending)
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderBy(w => w.InsertionTime, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderByDescending(w => w.InsertionTime, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    case "ExpirationTime":
+                        x = from m in _MessageCollection select m;
+                        if (MessageSortDirection == ListSortDirection.Ascending)
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderBy(w => w.ExpirationTime));
+                        }
+                        else
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderByDescending(w => w.ExpirationTime));
+                        }
+                        break;
+                    case "NextVisibleTime":
+                        x = from m in _MessageCollection select m;
+                        if (MessageSortDirection == ListSortDirection.Ascending)
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderBy(w => w.NextVisibleTime, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        else
+                        {
+                            _MessageCollection = new ObservableCollection<MessageItem>(x.OrderByDescending(w => w.NextVisibleTime, StringComparer.CurrentCultureIgnoreCase));
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                MessageListView.ItemsSource = MessageCollection;
+            }
+            catch (Exception ex)
+            {
+                x = from m in _MessageCollection select m;
+                if (MessageSortDirection == ListSortDirection.Ascending)
+                {
+                    _MessageCollection = new ObservableCollection<MessageItem>(x.OrderBy(w => w.InsertionTime, StringComparer.CurrentCultureIgnoreCase));
+                }
+                else
+                {
+                    _MessageCollection = new ObservableCollection<MessageItem>(x.OrderByDescending(w => w.InsertionTime, StringComparer.CurrentCultureIgnoreCase));
+                }
+                MessageListView.ItemsSource = MessageCollection;
+                ShowError("Error sorting message list: " + ex.Message);
+            }
+        }
+
+
+
+
         //********************
         //*                  *
         //*  NewQueue_Click  *
@@ -2021,8 +2215,136 @@ namespace AzureStorageExplorer
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             }
+        }
+
+
+        //**************************
+        //*                        *
+        //*  MessageRefresh_Click  *
+        //*                        *
+        //**************************
+        // Refresh queue message list.
+
+        private void MessageRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            MessageListView.ItemsSource = null;
+            ShowQueueContainer(SelectedQueueContainer);
+        }
+
+
+
+
+        //**********************
+        //*                    *
+        //*  MessageNew_Click  *
+        //*                    *
+        //**********************
+        // Create a new queue message.
+
+        private void MessageNew_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            NewMessageDialog dlg = new NewMessageDialog();
+            if (dlg.ShowDialog().Value)
+            {
+                String messageText = dlg.MessageText.Text;
+
+                try
+                {
+                    Cursor = Cursors.Wait;
+
+                    if (queueClient == null)
+                    {
+                        CloudStorageAccount account = OpenStorageAccount();
+                        queueClient = account.CreateCloudQueueClient();
+                    }
+
+                    CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
+
+                    // Create queue message.
+
+                    CloudQueueMessage message = new CloudQueueMessage(messageText);
+                    container.AddMessage(message);
+
+                    ShowQueueContainer(SelectedQueueContainer);
+
+                }
+                catch (Exception ex)
+                {
+                    ShowError("Error creating message for queue " + SelectedQueueContainer + ": " + ex.Message);
+                }
+                finally
+                {
+                    Cursor = Cursors.Arrow;
+                }
+            }
 
         }
+
+        //**********************
+        //*                    *
+        //*  MessagePop_Click  *
+        //*                    *
+        //**********************
+        // Pop top message off the current queue.
+
+        private void MessagePop_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            if (MessageCollection.Count() == 0)
+            {
+                MessageBox.Show("The queue is empty.", "No Messages in Queue");
+                return;
+            }
+
+            String message = "Are you sure you want to pop the top message from the queue?";
+
+            MessageBoxResult messageBoxResult = System.Windows.MessageBox.Show(message, "Confirm Delete", System.Windows.MessageBoxButton.YesNo);
+            if (messageBoxResult == MessageBoxResult.Yes)
+            {
+                message = null;
+                message = "Deleting top message from queue " + SelectedQueueContainer;
+
+                Action action = new Action()
+                {
+                    Id = NextAction++,
+                    ActionType = Action.ACTION_DELETE_MESSAGES,
+                    IsCompleted = false,
+                    Message = message
+                };
+                Actions.Add(action.Id, action);
+
+                UpdateStatus();
+
+                Cursor = Cursors.Wait;
+
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
+
+                    int deletedCount = 0;
+                    CloudQueueMessage msg = container.GetMessage();
+                    deletedCount++;
+
+                    Actions[action.Id].IsCompleted = true;
+                });
+
+                task.ContinueWith((t) =>
+                {
+                    UpdateStatus();
+
+                    Cursor = Cursors.Arrow;
+
+                    ShowQueueContainer(SelectedQueueContainer);
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
+
+        }
+
 
         #endregion
 
@@ -3758,7 +4080,14 @@ namespace AzureStorageExplorer
                     }
                     else
                     {
-                        ContainerDetails.Text = "(" + containerCount.ToString() + " messages) as of " + DateTime.Now.ToString();
+                        if (containerCount >= CloudQueueMessage.MaxNumberOfMessagesToPeek)
+                        {
+                            ContainerDetails.Text = "(top " + containerCount.ToString() + " messages) as of " + DateTime.Now.ToString();
+                        }
+                        else
+                        {
+                            ContainerDetails.Text = "(" + containerCount.ToString() + " messages) as of " + DateTime.Now.ToString();
+                        }
                     }
 
                     this.Cursor = Cursors.Arrow;
@@ -4386,116 +4715,6 @@ namespace AzureStorageExplorer
         }
 
         #endregion
-
-
-        //**********************
-        //*                    *
-        //*  MessageNew_Click  *
-        //*                    *
-        //**********************
-        // Create a new queue message.
-
-        private void MessageNew_Click(object sender, RoutedEventArgs e)
-        {
-            NewAction();
-
-            NewMessageDialog dlg = new NewMessageDialog();
-            if (dlg.ShowDialog().Value)
-            {
-                String messageText = dlg.MessageText.Text;
-
-                try
-                {
-                    Cursor = Cursors.Wait;
-
-                    if (queueClient == null)
-                    {
-                        CloudStorageAccount account = OpenStorageAccount();
-                        queueClient = account.CreateCloudQueueClient();
-                    }
-
-                    CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
-
-                    // Create queue message.
-
-                    CloudQueueMessage message = new CloudQueueMessage(messageText);
-                    container.AddMessage(message);
-
-                    ShowQueueContainer(SelectedQueueContainer);
-
-                }
-                catch (Exception ex)
-                {
-                    ShowError("Error creating message for queue " + SelectedQueueContainer + ": " + ex.Message);
-                }
-                finally
-                {
-                    Cursor = Cursors.Arrow;
-                }
-            }
-
-        }
-
-        //**********************
-        //*                    *
-        //*  MessagePop_Click  *
-        //*                    *
-        //**********************
-        // Pop top message off the current queue.
-
-        private void MessagePop_Click(object sender, RoutedEventArgs e)
-        {
-            NewAction();
-
-            if (MessageCollection.Count()==0)
-            {
-                MessageBox.Show("The queue is empty.", "No Messages in Queue");
-                return;
-            }
-
-            String message = "Are you sure you want to pop the top message from the queue?";
-
-            MessageBoxResult messageBoxResult = System.Windows.MessageBox.Show(message, "Confirm Delete", System.Windows.MessageBoxButton.YesNo);
-            if (messageBoxResult == MessageBoxResult.Yes)
-            {
-                message = null;
-                message = "Deleting top message from queue " + SelectedQueueContainer;
- 
-                Action action = new Action()
-                {
-                    Id = NextAction++,
-                    ActionType = Action.ACTION_DELETE_MESSAGES,
-                    IsCompleted = false,
-                    Message = message
-                };
-                Actions.Add(action.Id, action);
-
-                UpdateStatus();
-
-                Cursor = Cursors.Wait;
-
-                Task task = Task.Factory.StartNew(() =>
-                {
-                    CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
-
-                    int deletedCount = 0;
-                    CloudQueueMessage msg = container.GetMessage();
-                    deletedCount++;
-
-                    Actions[action.Id].IsCompleted = true;
-                });
-
-                task.ContinueWith((t) =>
-                {
-                    UpdateStatus();
-
-                    Cursor = Cursors.Arrow;
-
-                    ShowQueueContainer(SelectedQueueContainer);
-                }, TaskScheduler.FromCurrentSynchronizationContext());
-            }
-
-        }
 
 
     }

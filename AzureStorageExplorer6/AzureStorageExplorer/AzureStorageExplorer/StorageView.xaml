@@ -229,14 +229,14 @@
 
             <StackPanel Grid.Row="1" x:Name="MessageToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
                 <ToolBarTray x:Name="MessageToolbarTray" Background="White" ToolBarTray.IsLocked="True" IsManipulationEnabled="False">
-                    <!--<ToolBar Band="1" BandIndex="1">
-                        <Button x:Name="MessageRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Message List" Click="BlobRefresh_Click" >
+                    <ToolBar Band="1" BandIndex="1">
+                        <Button x:Name="MessageRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Message List" Click="MessageRefresh_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\refresh.png" Height="16" />
                                 <TextBlock Text="Refresh"/>
                             </StackPanel>
                         </Button>
-                        <Button x:Name="MessageSelectAll" Width="54" ToolBar.OverflowMode="Never" ToolTip="Select All Messages" Click="MessageSelectAll_Click" >
+                        <!--<Button x:Name="MessageSelectAll" Width="54" ToolBar.OverflowMode="Never" ToolTip="Select All Messages" Click="MessageSelectAll_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\list.png" Height="16" />
                                 <TextBlock Text="Select All"/>
@@ -253,9 +253,9 @@
                                 <Image Source="Images\filter.png" Height="16" />
                                 <TextBlock Text="Filter"/>
                             </StackPanel>
-                        </ToggleButton>
+                        </ToggleButton>-->
                     </ToolBar>
-                    <ToolBar Band="1" BandIndex="2">
+                    <!--<ToolBar Band="1" BandIndex="2">
                         <Button x:Name="MessageUploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Files" Click="MessageUploadButton_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\upload-blob.png" Height="16" />
@@ -282,7 +282,7 @@
                                 <TextBlock Text="New"/>
                             </StackPanel>
                         </Button>
-                        <!--<Button x:Name="BlobCopy" Width="54" ToolTip="Copy Selected Blob" ToolBar.OverflowMode="Never" Click="BlobCopy_Click" >
+                        <!--<Button x:Name="MessageCopy" Width="54" ToolTip="Copy Selected Message" ToolBar.OverflowMode="Never" Click="MessageCopy_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\copy.png" Height="16" />
                                 <TextBlock Text="Copy"/>
@@ -413,6 +413,7 @@
             </ListView>
 
             <ListView Grid.Row="2" x:Name="MessageListView" 
+                      GridViewColumnHeader.Click="MessageListView_ColumnHeaderClicked" 
                       AlternationCount="2" Visibility="Collapsed" ItemsSource="{Binding MessageCollection}">
                 <ListView.Resources>
                     <Style TargetType="{x:Type ListViewItem}">
