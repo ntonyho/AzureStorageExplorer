@@ -41,11 +41,17 @@ namespace AzureStorageExplorer
 
         public AzureAccount Account = null;
         public String SelectedBlobContainer = null;
+        public String SelectedQueueContainer = null;
         public String SelectedTableContainer = null;
         public CloudBlobClient blobClient = null;
         public CloudTableClient tableClient = null;
+        public CloudQueueClient queueClient = null;
+
         public ObservableCollection<BlobItem> _BlobCollection = new ObservableCollection<BlobItem>();
         public ObservableCollection<BlobItem> BlobCollection { get { return _BlobCollection; } }
+
+        public ObservableCollection<MessageItem> _MessageCollection = new ObservableCollection<MessageItem>();
+        public ObservableCollection<MessageItem> MessageCollection { get { return _MessageCollection; } }
 
         public Dictionary<String, bool> TableColumnNames = new Dictionary<string, bool>();
         public ObservableCollection<EntityItem> _EntityCollection = new ObservableCollection<EntityItem>();
@@ -154,6 +160,7 @@ namespace AzureStorageExplorer
 
             blobClient = account.CreateCloudBlobClient();
             tableClient = account.CreateCloudTableClient();
+            queueClient = account.CreateCloudQueueClient();
 
             try
             { 
@@ -222,7 +229,6 @@ namespace AzureStorageExplorer
 
             try
             { 
-                CloudQueueClient queueClient = account.CreateCloudQueueClient();
                 IEnumerable<CloudQueue> queues = queueClient.ListQueues();
 
                 if (queues != null)
@@ -346,6 +352,14 @@ namespace AzureStorageExplorer
             ButtonDeleteContainer.Visibility = Visibility.Collapsed;
             ButtonBlobServiceCORS.Visibility = Visibility.Collapsed;
 
+
+            QueueToolbarPanel.Visibility = Visibility.Collapsed;
+            ButtonDeleteQueue.Visibility = Visibility.Collapsed;
+            
+            MessageToolbarPanel.Visibility = Visibility.Collapsed;
+
+            MessageListView.Visibility = System.Windows.Visibility.Collapsed;
+
             TableToolbarPanel.Visibility = Visibility.Collapsed;
             TableListView.Visibility = Visibility.Collapsed;
 
@@ -411,12 +425,21 @@ namespace AzureStorageExplorer
                     ShowBlobContainer(SelectedBlobContainer);
                     break;
                 case ItemType.QUEUE_SERVICE:   // Queues section
+                    QueueToolbarPanel.Visibility = Visibility.Visible;
                     break;
-                case 201:   // Queue
+                case ItemType.QUEUE_CONTAINER:   // Queue
                     ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_queue.png"));
-                    //ContainerPanel.Background = (SolidColorBrush)(new BrushConverter().ConvertFrom("#7BDBA2"));
+                    ContainerPanel.Visibility = Visibility.Visible;
                     ContainerTitle.Text = outlineItem.Container;
                     ContainerType.Text = "queue";
+                    ContainerDetails.Text = String.Empty;
+                    SelectedTableContainer = outlineItem.Container;
+
+                    QueueToolbarPanel.Visibility = Visibility.Visible;
+                    ButtonDeleteQueue.Visibility = Visibility.Visible;
+
+                    SelectedQueueContainer = outlineItem.Container;
+                    ShowQueueContainer(SelectedQueueContainer);
                     break;
                 case ItemType.TABLE_SERVICE:   // Tables section
                     TableToolbarPanel.Visibility = Visibility.Visible;
@@ -426,17 +449,12 @@ namespace AzureStorageExplorer
                     ButtonDeleteTable.Visibility = Visibility.Visible;
                     EntityDownloadButton.Visibility = Visibility.Visible;
 
-                    // TODO: COMPLETE IMPLEMENTATION (ADAPTING FROM BLOB CONTAINER)
-
                     ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_table.png"));
                     ContainerPanel.Visibility = Visibility.Visible;
                     ContainerTitle.Text = outlineItem.Container;
                     ContainerType.Text = "table";
                     ContainerDetails.Text = String.Empty;
                     SelectedTableContainer = outlineItem.Container;
-
-                    //ButtonDeleteContainer.Visibility = Visibility.Visible;
-                    //ButtonContainerAccess.Visibility = Visibility.Visible;
 
                     TableColumnNames.Clear();
 
@@ -1841,6 +1859,173 @@ namespace AzureStorageExplorer
 
         #endregion
 
+        #region Queue Toolbar Button Handlers
+        
+        //********************
+        //*                  *
+        //*  NewQueue_Click  *
+        //*                  *
+        //********************
+        // Create a new queue.
+
+        private void NewQueue_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            NewQueueDialog dlg = new NewQueueDialog();
+
+            if (dlg.ShowDialog().Value)
+            {
+                bool isError = false;
+                String errorMessage = null;
+
+                String queueName = dlg.Queue.Text;
+
+                Action action = new Action()
+                {
+                    Id = NextAction++,
+                    ActionType = Action.ACTION_NEW_QUEUE,
+                    IsCompleted = false,
+                    Message = "Creating queue " + queueName
+                };
+                Actions.Add(action.Id, action);
+
+                UpdateStatus();
+
+                // Execute background task to create the queue.
+
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        if (queueClient == null)
+                        {
+                            CloudStorageAccount account = OpenStorageAccount();
+                            queueClient = account.CreateCloudQueueClient();
+                        }
+                        CloudQueue queue = queueClient.GetQueueReference(queueName);
+
+                        queue.CreateIfNotExists();
+                    }
+                    catch (Exception ex)
+                    {
+                        isError = true;
+                        errorMessage = ex.Message;
+                    }
+                    Actions[action.Id].IsCompleted = true;
+                });
+
+                // Task complete - update UI.
+
+                task.ContinueWith((t) =>
+                {
+                    LoadLeftPane();
+                    UpdateStatus();
+
+                    if (isError)
+                    {
+                        ShowError("Error creating queue " + queueName + ": " + errorMessage);
+                    }
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
+
+        }
+
+
+        //***********************
+        //*                     *
+        //*  DeleteQueue_Click  *
+        //*                     *
+        //***********************
+        // Delete selected queue.
+        
+        private void DeleteQueue_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            String message = "To delete a queue, select a queue and then clck the Delete Queue button.";
+
+            if (AccountTreeView.SelectedItem == null || !(AccountTreeView.SelectedItem is TreeViewItem))
+            {
+                MessageBox.Show(message, "Queue Selection Required");
+                return;
+            }
+
+            TreeViewItem tvi = AccountTreeView.SelectedItem as TreeViewItem;
+
+            if (!(tvi.Tag is OutlineItem))
+            {
+                MessageBox.Show(message, "Queue Selection Required");
+                return;
+            }
+
+            OutlineItem item = tvi.Tag as OutlineItem;
+
+            if (item.ItemType != ItemType.QUEUE_CONTAINER)
+            {
+                MessageBox.Show(message, "Queue Selection Required");
+                return;
+            }
+
+            String queueName = SelectedQueueContainer;
+
+            if (MessageBox.Show("Are you SURE you want to delete queue " + SelectedQueueContainer + "?\n\nThe queue and all messages it contains will be permanently deleted",
+                "Confirm Queue Delete", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
+                bool isError = false;
+                String errorMessage = null;
+
+                Action action = new Action()
+                {
+                    Id = NextAction++,
+                    ActionType = Action.ACTION_DELETE_QUEUE,
+                    IsCompleted = false,
+                    Message = "Deleting queue " + queueName
+                };
+                Actions.Add(action.Id, action);
+
+                UpdateStatus();
+
+                // Execute background task to delete the queue.
+
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        if (queueClient == null)
+                        {
+                            CloudStorageAccount account = OpenStorageAccount();
+                            queueClient = account.CreateCloudQueueClient();
+                        }
+                        CloudQueue queuee = queueClient.GetQueueReference(queueName);
+                        queuee.DeleteIfExists();
+                    }
+                    catch (Exception ex)
+                    {
+                        isError = true;
+                        errorMessage = ex.Message;
+                    }
+                    Actions[action.Id].IsCompleted = true;
+                });
+
+                // Task complete - update UI.
+
+                task.ContinueWith((t) =>
+                {
+                    LoadLeftPane();
+                    UpdateStatus();
+
+                    if (isError)
+                    {
+                        ShowError("Error deleting queue " + queueName + ": " + errorMessage);
+                    }
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
+
+        }
+
+        #endregion
+
         #region Table Entity Toolbar handlers
 
         //********************
@@ -2001,6 +2186,11 @@ namespace AzureStorageExplorer
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             }
+        }
+
+        private void TableListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            EntityView_Click(sender, null);
         }
 
 
@@ -2795,7 +2985,14 @@ namespace AzureStorageExplorer
 
                     SortBlobList();
 
-                    ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ")  as of " + DateTime.Now.ToString();
+                    if (containerCount == 1)
+                    {
+                        ContainerDetails.Text = "(1 blob, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
+                    }
+                    else
+                    {
+                        ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
+                    }
 
                     this.Cursor = Cursors.Arrow;
                 }
@@ -3047,7 +3244,14 @@ namespace AzureStorageExplorer
 
                 //SortEntityList();
 
-                ContainerDetails.Text = "(" + containerCount.ToString() + " entities) as of " + DateTime.Now.ToString();
+                if (containerCount == 1)
+                {
+                    ContainerDetails.Text = "(1 entity) as of " + DateTime.Now.ToString();
+                }
+                else
+                {
+                    ContainerDetails.Text = "(" + containerCount.ToString() + " entities) as of " + DateTime.Now.ToString();
+                }
 
                 TableListView.ItemsSource = EntityCollection;
 
@@ -3438,6 +3642,135 @@ namespace AzureStorageExplorer
                 UpdateStatus();
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
+
+        #endregion
+
+        #region Queue Operations
+
+        //************************
+        //*                      *
+        //*  ShowQueueContainer  *
+        //*                      *
+        //************************
+        // Get and show messages in selected queue container. Call from UI thread.
+
+        public void ShowQueueContainer(String containerName)
+        {
+            try
+            {
+                this.Cursor = Cursors.Wait;
+
+                ContainerDetails.Text = "Loading message list...";
+
+                MessageListView.ItemsSource = null; //  MessageCollection;
+
+                int containerCount = 0;
+                long containerSize = 0;
+                _MessageCollection.Clear();
+                MessageListView.Visibility = Visibility.Visible;
+                QueueToolbarPanel.Visibility = Visibility.Visible;
+                MessageToolbarPanel.Visibility = Visibility.Visible;
+                IEnumerable<CloudQueueMessage> messages = queueClient.GetQueueReference(containerName).PeekMessages(CloudQueueMessage.MaxNumberOfMessagesToPeek);
+                if (messages != null)
+                {
+                    foreach (CloudQueueMessage message in messages)
+                    {
+                        //if (MaxMessageCountFilter != -1 && containerCount >= MaxMessageCountFilter) break;
+
+                        //if (BlobNameFilter == null || blockBlob.Name.IndexOf(BlobNameFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
+                        //{
+                            //if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
+                            //    (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
+                            //{
+                                MessageItem messageItem = new MessageItem()
+                                {
+                                    Id = message.Id,
+                                    DequeueCount = message.DequeueCount,
+                                    //InsertionTime = message.InsertionTime.Value,
+                                    //ExpirationTime = message.ExpirationTime.Value,
+                                    //NextVisibleTime = message.NextVisibleTime.Value,
+                                    PopReceipt = message.PopReceipt,
+                                    //BytesValue = "byte[" + message.AsBytes.Length.ToString() + "]",
+                                    //StringValue = message.AsString
+                                };
+
+                                String stringValue = message.AsString;
+                                if (stringValue == null)
+                                {
+                                    messageItem.StringValue = "NULL";
+                                }
+                                else
+                                {
+                                    messageItem.StringValue = stringValue;
+                                }
+
+                                if (message.PopReceipt == null)
+                                {
+                                    messageItem.PopReceipt = "NULL";
+                                }
+                                else
+                                {
+                                    messageItem.PopReceipt = message.PopReceipt;
+                                }
+
+                                if (message.InsertionTime.HasValue)
+                                {
+                                    messageItem.InsertionTime = message.InsertionTime.Value.ToString();
+                                }
+                                else
+                                {
+                                    messageItem.ExpirationTime = "NULL";
+                                }
+
+                                if (message.ExpirationTime.HasValue)
+                                {
+                                    messageItem.ExpirationTime = message.ExpirationTime.Value.ToString();
+                                }
+                                else
+                                {
+                                    messageItem.ExpirationTime = "NULL";
+                                }
+
+                                if (message.NextVisibleTime.HasValue)
+                                {
+                                    messageItem.NextVisibleTime = message.NextVisibleTime.Value.ToString();
+                                }
+                                else
+                                {
+                                    messageItem.NextVisibleTime = "NULL";
+                                }
+
+                                _MessageCollection.Add(messageItem);
+                                containerCount++;
+                                //containerSize += blockBlob.Properties.Length;
+                            //}
+                        //}
+
+                    } // end foreach
+
+                    MessageListView.ItemsSource = MessageCollection;
+
+                    //SortMessageList();
+
+                    if (containerCount == 1)
+                    {
+                        ContainerDetails.Text = "(1 message) as of " + DateTime.Now.ToString();
+                    }
+                    else
+                    {
+                        ContainerDetails.Text = "(" + containerCount.ToString() + " messages) as of " + DateTime.Now.ToString();
+                    }
+
+                    this.Cursor = Cursors.Arrow;
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Cursor = Cursors.Wait;
+                ShowError("Error retrieving message list: " + ex.Message);
+            }
+        }
+
 
         #endregion
 
@@ -4054,15 +4387,119 @@ namespace AzureStorageExplorer
 
         #endregion
 
-        private void TableListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+
+        //**********************
+        //*                    *
+        //*  MessageNew_Click  *
+        //*                    *
+        //**********************
+        // Create a new queue message.
+
+        private void MessageNew_Click(object sender, RoutedEventArgs e)
         {
-            EntityView_Click(sender, null);
+            NewAction();
+
+            NewMessageDialog dlg = new NewMessageDialog();
+            if (dlg.ShowDialog().Value)
+            {
+                String messageText = dlg.MessageText.Text;
+
+                try
+                {
+                    Cursor = Cursors.Wait;
+
+                    if (queueClient == null)
+                    {
+                        CloudStorageAccount account = OpenStorageAccount();
+                        queueClient = account.CreateCloudQueueClient();
+                    }
+
+                    CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
+
+                    // Create queue message.
+
+                    CloudQueueMessage message = new CloudQueueMessage(messageText);
+                    container.AddMessage(message);
+
+                    ShowQueueContainer(SelectedQueueContainer);
+
+                }
+                catch (Exception ex)
+                {
+                    ShowError("Error creating message for queue " + SelectedQueueContainer + ": " + ex.Message);
+                }
+                finally
+                {
+                    Cursor = Cursors.Arrow;
+                }
+            }
+
         }
 
+        //**********************
+        //*                    *
+        //*  MessagePop_Click  *
+        //*                    *
+        //**********************
+        // Pop top message off the current queue.
+
+        private void MessagePop_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            if (MessageCollection.Count()==0)
+            {
+                MessageBox.Show("The queue is empty.", "No Messages in Queue");
+                return;
+            }
+
+            String message = "Are you sure you want to pop the top message from the queue?";
+
+            MessageBoxResult messageBoxResult = System.Windows.MessageBox.Show(message, "Confirm Delete", System.Windows.MessageBoxButton.YesNo);
+            if (messageBoxResult == MessageBoxResult.Yes)
+            {
+                message = null;
+                message = "Deleting top message from queue " + SelectedQueueContainer;
+ 
+                Action action = new Action()
+                {
+                    Id = NextAction++,
+                    ActionType = Action.ACTION_DELETE_MESSAGES,
+                    IsCompleted = false,
+                    Message = message
+                };
+                Actions.Add(action.Id, action);
+
+                UpdateStatus();
+
+                Cursor = Cursors.Wait;
+
+                Task task = Task.Factory.StartNew(() =>
+                {
+                    CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
+
+                    int deletedCount = 0;
+                    CloudQueueMessage msg = container.GetMessage();
+                    deletedCount++;
+
+                    Actions[action.Id].IsCompleted = true;
+                });
+
+                task.ContinueWith((t) =>
+                {
+                    UpdateStatus();
+
+                    Cursor = Cursors.Arrow;
+
+                    ShowQueueContainer(SelectedQueueContainer);
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
+
+        }
+
+
     }
-
 }
-
 
 #if X
             CloudAnalyticsClient analyticsClient = account.CreateCloudAnalyticsClient();

@@ -1,0 +1,26 @@
+﻿<Window x:Class="AzureStorageExplorer.NewMessageDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:AzureStorageExplorer"
+        Title="New Queue Message" Height="215" Width="500" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Orientation="Vertical">
+        <StackPanel Margin="12" Orientation="Vertical">
+
+            <TextBlock Margin="0,0,0,0" Text="Message Text:"></TextBlock>
+            <AdornerDecorator>
+                <TextBox x:Name="MessageText" Margin="0,2,0,0" Height="100" Background="LightYellow">
+                    <controls:WatermarkService.Watermark>
+                        <TextBlock>Enter text for the message content</TextBlock>
+                    </controls:WatermarkService.Watermark>
+                </TextBox>
+            </AdornerDecorator>
+
+            <StackPanel x:Name="ButtonPanel" Orientation="Horizontal"  Margin="0,12,0,0">
+                <Button x:Name="CmdCreate" IsDefault="True" Padding="4" Margin="0,0,8,0" Click="CmdCreate_Click">Add to Queue</Button>
+                <Button x:Name="CmdCancel" IsCancel="true" Padding="4" Click="CmdCancel_Click">Cancel</Button>
+            </StackPanel>
+            <!--<TextBlock x:Name="Message" Margin="0,12,0,0" />-->
+        </StackPanel>
+    </StackPanel>
+</Window>

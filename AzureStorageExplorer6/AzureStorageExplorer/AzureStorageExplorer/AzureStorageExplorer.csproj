@@ -126,6 +126,12 @@
     <Compile Include="Dialogs\DownloadEntitiesDialog.xaml.cs">
       <DependentUpon>DownloadEntitiesDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\NewQueueDialog.xaml.cs">
+      <DependentUpon>NewQueueDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\NewMessageDialog.xaml.cs">
+      <DependentUpon>NewMessageDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\NewTableDialog.xaml.cs">
       <DependentUpon>NewTableDialog.xaml</DependentUpon>
     </Compile>
@@ -134,6 +140,7 @@
     </Compile>
     <Compile Include="Helpers\Crypto.cs" />
     <Compile Include="Models\Action.cs" />
+    <Compile Include="Models\MessageItem.cs" />
     <Compile Include="Models\CheckedListItem.cs" />
     <Compile Include="Models\EntityItem.cs" />
     <Compile Include="Models\BlobItem.cs" />
@@ -199,6 +206,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Dialogs\DownloadEntitiesDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\NewQueueDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\NewMessageDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

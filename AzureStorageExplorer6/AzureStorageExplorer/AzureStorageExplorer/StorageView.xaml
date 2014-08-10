@@ -80,6 +80,30 @@
                     </ToolBar>
                 </ToolBarTray>
             </StackPanel>
+            <StackPanel Grid.Row="1" x:Name="QueueToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
+                <ToolBarTray x:Name="QueueToolbarTray" Background="White" ToolBarTray.IsLocked="True"  IsManipulationEnabled="False">
+                    <ToolBar Band="1" BandIndex="1">
+                        <Button x:Name="QueueRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Queue List" Click="AccountRefresh_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\refresh.png" Height="16" />
+                                <TextBlock Text="Refresh"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ButtonNewQueue" Width="54" ToolBar.OverflowMode="Never" ToolTip="Create New Queue" Click="NewQueue_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\new_container.png" Height="16" />
+                                <TextBlock Text="New"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ButtonDeleteQueue" Width="54" ToolBar.OverflowMode="Never" ToolTip="Delete Selected Queue" Click="DeleteQueue_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\delete_container.png" Height="16" />
+                                <TextBlock Text="Delete"/>
+                            </StackPanel>
+                        </Button>
+                    </ToolBar>
+                </ToolBarTray>
+            </StackPanel>
             <StackPanel Grid.Row="1" x:Name="TableToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
                 <ToolBarTray x:Name="TableToolbarTray" Background="White" ToolBarTray.IsLocked="True"  IsManipulationEnabled="False">
                     <ToolBar Band="1" BandIndex="1">
@@ -203,8 +227,79 @@
                 </ToolBarTray>
             </StackPanel>
 
+            <StackPanel Grid.Row="1" x:Name="MessageToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
+                <ToolBarTray x:Name="MessageToolbarTray" Background="White" ToolBarTray.IsLocked="True" IsManipulationEnabled="False">
+                    <!--<ToolBar Band="1" BandIndex="1">
+                        <Button x:Name="MessageRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Message List" Click="BlobRefresh_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\refresh.png" Height="16" />
+                                <TextBlock Text="Refresh"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="MessageSelectAll" Width="54" ToolBar.OverflowMode="Never" ToolTip="Select All Messages" Click="MessageSelectAll_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\list.png" Height="16" />
+                                <TextBlock Text="Select All"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="MessageClearSelection" Width="54" ToolBar.OverflowMode="Never" ToolTip="Clear Selection" Click="MessageClearSelection_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\clear.png" Height="16" />
+                                <TextBlock Text="Clear All"/>
+                            </StackPanel>
+                        </Button>
+                        <ToggleButton x:Name="MessageFilter" Width="54" ToolBar.OverflowMode="Never" ToolTip="Filter Selection" Click="MessageFilter_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\filter.png" Height="16" />
+                                <TextBlock Text="Filter"/>
+                            </StackPanel>
+                        </ToggleButton>
+                    </ToolBar>
+                    <ToolBar Band="1" BandIndex="2">
+                        <Button x:Name="MessageUploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Files" Click="MessageUploadButton_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\upload-blob.png" Height="16" />
+                                <TextBlock Text="Upload"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="MessageDownloadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Download Selected Blobs"  Click="MessageDownloadButton_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\download-blob.png" Height="16" />
+                                <TextBlock Text="Downld"/>
+                            </StackPanel>
+                        </Button>
+                    </ToolBar>-->
+                    <ToolBar Band="1" BandIndex="3">
+                        <!--<Button x:Name="MessageView" Width="54" ToolTip="View Message Properties" ToolBar.OverflowMode="Never" Click="BlobViewProperties_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\properties.png" Height="16" />
+                                <TextBlock Text="View"/>
+                            </StackPanel>
+                        </Button>-->
+                        <Button x:Name="MessageNew" Width="54" ToolTip="Create New Message" ToolBar.OverflowMode="Never" Click="MessageNew_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\new_blob.png" Height="16" />
+                                <TextBlock Text="New"/>
+                            </StackPanel>
+                        </Button>
+                        <!--<Button x:Name="BlobCopy" Width="54" ToolTip="Copy Selected Blob" ToolBar.OverflowMode="Never" Click="BlobCopy_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\copy.png" Height="16" />
+                                <TextBlock Text="Copy"/>
+                            </StackPanel>
+                        </Button>-->
+                        <Button x:Name="MessagePop" Width="54" ToolBar.OverflowMode="Never" ToolTip="Pop (Delete) Top Message" Click="MessagePop_Click" >
+                            <StackPanel Orientation="Vertical">
+                                <Image Source="Images\delete.png" Height="16" />
+                                <TextBlock Text="Pop"/>
+                            </StackPanel>
+                        </Button>
+                    </ToolBar>
+                </ToolBarTray>
+            </StackPanel>
+
             <StackPanel Grid.Row="1" x:Name="EntityToolbarPanel" Orientation="Horizontal" Background="White" Visibility="Collapsed">
-                <ToolBarTray x:Name="EntityToolbarTray" Background="White" ToolBarTray.IsLocked="True"  IsManipulationEnabled="False">
+                <ToolBarTray x:Name="EntityToolbarTray" Background="White" ToolBarTray.IsLocked="True" IsManipulationEnabled="False">
                     <ToolBar Band="1" BandIndex="1">
                         <Button x:Name="EntityRefresh" Width="54" ToolBar.OverflowMode="Never" ToolTip="Refresh Entity List" Click="EntityRefresh_Click" >
                             <StackPanel Orientation="Vertical">
@@ -314,6 +409,37 @@
                         <GridViewColumn Width="140" Header="ETag"  DisplayMemberBinding="{Binding ETag}" />
                         <GridViewColumn Width="140" Header="Copy State"  DisplayMemberBinding="{Binding CopyState}" />
                     </GridView>
+                </ListView.View>
+            </ListView>
+
+            <ListView Grid.Row="2" x:Name="MessageListView" 
+                      AlternationCount="2" Visibility="Collapsed" ItemsSource="{Binding MessageCollection}">
+                <ListView.Resources>
+                    <Style TargetType="{x:Type ListViewItem}">
+                        <Style.Triggers>
+                            <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                                <Setter Property="Background" Value="#F0F0F0"></Setter>
+                            </Trigger>
+                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                <Setter Property="Background" Value="#F6F6F6"></Setter>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Background" Value="#C5E084"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.Resources>
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Width="140" Header="Id" DisplayMemberBinding="{Binding Id}" />
+                        <!--<GridViewColumn Width="170" Header="BytesValue" DisplayMemberBinding="{Binding BytesValue}" />-->
+                        <GridViewColumn Width="170" Header="StringValue" DisplayMemberBinding="{Binding StringValue}" />
+                        <GridViewColumn Width="60" Header="DQCount" DisplayMemberBinding="{Binding DequeueCount}" />
+                        <GridViewColumn Width="100" Header="PopReceipt" DisplayMemberBinding="{Binding PopReceipt}" />
+                        <GridViewColumn Width="120" Header="InsertionTime" DisplayMemberBinding="{Binding InsertionTime}" />
+                        <GridViewColumn Width="120" Header="ExpirationTime"  DisplayMemberBinding="{Binding ExpirationTime}" />
+                        <GridViewColumn Width="120" Header="NextVisibleTime"  DisplayMemberBinding="{Binding NextVisibleTime}" />
+                     </GridView>
                 </ListView.View>
             </ListView>
 

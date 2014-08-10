@@ -221,9 +221,6 @@ namespace AzureStorageExplorer
             this.AllowedMethods = methods;
 
             this.MaxAgeInSeconds = rule.MaxAgeInSeconds.ToString();
-
-            // LEFT OFF HERE
-
         }
 
         // Return the Azure CORSRule data for this rule.
