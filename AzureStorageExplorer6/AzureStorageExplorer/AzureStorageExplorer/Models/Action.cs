@@ -8,6 +8,7 @@ namespace AzureStorageExplorer
 {
     public class Action
     {
+        public const int ACTION_NONE = 0;
         public const int ACTION_UPLOAD_BLOBS = 1;
         public const int ACTION_DOWNLOAD_BLOBS = 2;
         public const int ACTION_COPY_BLOB = 3;

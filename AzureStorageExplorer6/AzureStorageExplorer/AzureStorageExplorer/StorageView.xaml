@@ -282,12 +282,12 @@
                                 <TextBlock Text="New"/>
                             </StackPanel>
                         </Button>
-                        <!--<Button x:Name="MessageCopy" Width="54" ToolTip="Copy Selected Message" ToolBar.OverflowMode="Never" Click="MessageCopy_Click" >
+                        <Button x:Name="MessageCopy" Width="54" ToolTip="Copy Selected Message" ToolBar.OverflowMode="Never" Click="MessageCopy_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\copy.png" Height="16" />
                                 <TextBlock Text="Copy"/>
                             </StackPanel>
-                        </Button>-->
+                        </Button>
                         <Button x:Name="MessagePop" Width="54" ToolBar.OverflowMode="Never" ToolTip="Pop (Delete) Top Message" Click="MessagePop_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\delete.png" Height="16" />

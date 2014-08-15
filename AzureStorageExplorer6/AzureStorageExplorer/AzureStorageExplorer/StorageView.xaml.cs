@@ -39,6 +39,8 @@ namespace AzureStorageExplorer
 
         public const String NULL_VALUE = "NULL ";
 
+        public int LastItemType = 0;
+
         public AzureAccount Account = null;
         public String SelectedBlobContainer = null;
         public String SelectedQueueContainer = null;
@@ -66,7 +68,7 @@ namespace AzureStorageExplorer
         private ListSortDirection BlobSortDirection = ListSortDirection.Ascending;
 
         private String MessageSortHeader = "InsertionTime";
-        private ListSortDirection MessageSortDirection = ListSortDirection.Descending;
+        private ListSortDirection MessageSortDirection = ListSortDirection.Ascending;
 
         private String EntitySortHeader;
         private ListSortDirection EntitySortDirection = ListSortDirection.Ascending;
@@ -192,6 +194,37 @@ namespace AzureStorageExplorer
 
             try
             {
+                // Check for $logs container and add it if present ($logs is not included in the general ListContainers call).
+                
+                CloudBlobContainer logsContainer = blobClient.GetContainerReference("$logs");
+                if (logsContainer.Exists())
+                {
+                    StackPanel stack = new StackPanel();
+                    stack.Orientation = Orientation.Horizontal;
+
+                    Image cloudFolderImage = new Image();
+                    cloudFolderImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_folder.png"));
+                    cloudFolderImage.Height = 24;
+
+                    Label label = new Label();
+                    label.Content = logsContainer.Name;
+
+                    stack.Children.Add(cloudFolderImage);
+                    stack.Children.Add(label);
+
+                    TreeViewItem blobItem = new TreeViewItem()
+                    {
+                        Header = stack,
+                        Tag = new OutlineItem()
+                        {
+                            ItemType = ItemType.BLOB_CONTAINER,
+                            Container = logsContainer.Name,
+                            Permissions = logsContainer.GetPermissions()
+                        }
+                    };
+                    blobSection.Items.Add(blobItem);
+                }
+
                 IEnumerable<CloudBlobContainer> containers = blobClient.ListContainers();
                 if (containers != null)
                 {
@@ -228,7 +261,26 @@ namespace AzureStorageExplorer
                 }
                 blobSection.Header = "Blob Containers (" + containers.Count().ToString() + ")";
 
-                blobSection.IsExpanded = true;
+                switch(LastItemType)
+                {
+                    case ItemType.BLOB_SERVICE:
+                    case ItemType.BLOB_CONTAINER:
+                        blobSection.IsExpanded = true;
+                        break;
+                    case ItemType.QUEUE_SERVICE:
+                    case ItemType.QUEUE_CONTAINER:
+                        queueSection.IsExpanded = true;
+                        break;
+                    case ItemType.TABLE_SERVICE:
+                    case ItemType.TABLE_CONTAINER:
+                        tableSection.IsExpanded = true;
+                        break;
+                    default:
+                        blobSection.IsExpanded = true;
+                        break;
+                }
+
+
             }
             catch (Exception ex)
             {
@@ -399,6 +451,8 @@ namespace AzureStorageExplorer
             _BlobCollection.Clear();
             
             OutlineItem outlineItem = item.Tag as OutlineItem;
+
+            LastItemType = outlineItem.ItemType;
 
             switch (outlineItem.ItemType)
             {
@@ -2234,8 +2288,6 @@ namespace AzureStorageExplorer
         }
 
 
-
-
         //**********************
         //*                    *
         //*  MessageNew_Click  *
@@ -2281,8 +2333,73 @@ namespace AzureStorageExplorer
                     Cursor = Cursors.Arrow;
                 }
             }
+        }
+
+
+        //***********************
+        //*                     *
+        //*  MessageCopy_Click  *
+        //*                     *
+        //***********************
+        // Copy selected queue message.
+
+        private void MessageCopy_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            // Validate a single message has been selected.
+
+            if (MessageListView.SelectedItems.Count != 1)
+            {
+                MessageBox.Show("In order to copy a message, please select one message then click the Copy toolbar button", "Single Selection Requireed");
+                return;
+            }
+
+            MessageItem selectedMessage = MessageListView.SelectedItems[0] as MessageItem;
+            if (selectedMessage == null) return;
+
+            // Display the copy message dialog.
+
+            NewMessageDialog dlg = new NewMessageDialog();
+            dlg.Title = "Copy Queue Message";
+            dlg.MessageText.Text = selectedMessage.StringValue;
+
+            if (dlg.ShowDialog().Value)
+            {
+                String messageText = dlg.MessageText.Text;
+
+                try
+                {
+                    Cursor = Cursors.Wait;
+
+                    if (queueClient == null)
+                    {
+                        CloudStorageAccount account = OpenStorageAccount();
+                        queueClient = account.CreateCloudQueueClient();
+                    }
+
+                    CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
+
+                    // Create queue message.
+
+                    CloudQueueMessage message = new CloudQueueMessage(messageText);
+                    container.AddMessage(message);
+
+                    ShowQueueContainer(SelectedQueueContainer);
+
+                }
+                catch (Exception ex)
+                {
+                    ShowError("Error creating message for queue " + SelectedQueueContainer + ": " + ex.Message);
+                }
+                finally
+                {
+                    Cursor = Cursors.Arrow;
+                }
+            }
 
         }
+
 
         //**********************
         //*                    *
@@ -3230,93 +3347,104 @@ namespace AzureStorageExplorer
                 ContainerListView.Visibility = Visibility.Visible;
                 ContainerToolbarPanel.Visibility = Visibility.Visible;
                 BlobToolbarPanel.Visibility = Visibility.Visible;
-                IEnumerable<IListBlobItem> blobs = blobClient.GetContainerReference(containerName).ListBlobs();
-                if (blobs != null)
+
+                CloudBlobContainer container = blobClient.GetContainerReference(containerName);
+                if (container != null)
                 {
-                    foreach (IListBlobItem item in blobs)
+                    IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All);
+                    if (blobs != null)
                     {
-                        if (MaxBlobCountFilter != -1 && containerCount >= MaxBlobCountFilter) break;
-
-                        if (item.GetType() == typeof(CloudBlobDirectory))
+                        foreach (IListBlobItem item in blobs)
                         {
-                        }
-                        else if (item.GetType() == typeof(CloudBlockBlob))
-                        {
-                            CloudBlockBlob blockBlob = item as CloudBlockBlob;
-
-                            if (BlobTypeFilter != 2)
+                            try
                             {
-                                if (BlobNameFilter == null || blockBlob.Name.IndexOf(BlobNameFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
+                                if (MaxBlobCountFilter != -1 && containerCount >= MaxBlobCountFilter) break;
+
+                                if (item.GetType() == typeof(CloudBlobDirectory))
                                 {
-                                    if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
-                                        (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
+                                }
+                                else if (item.GetType() == typeof(CloudBlockBlob))
+                                {
+                                    CloudBlockBlob blockBlob = item as CloudBlockBlob;
+
+                                    if (BlobTypeFilter != 2)
                                     {
-                                        _BlobCollection.Add(new BlobItem()
+                                        if (BlobNameFilter == null || blockBlob.Name.IndexOf(BlobNameFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
                                         {
-                                            Name = blockBlob.Name,
-                                            BlobType = "Block",
-                                            ContentType = blockBlob.Properties.ContentType,
-                                            Encoding = blockBlob.Properties.ContentEncoding,
-                                            Length = blockBlob.Properties.Length,
-                                            LengthText = LengthText(blockBlob.Properties.Length),
-                                            ETag = blockBlob.Properties.ETag,
-                                            LastModified = blockBlob.Properties.LastModified.Value.DateTime,
-                                            LastModifiedText = blockBlob.Properties.LastModified.Value.ToString(),
-                                            CopyState = CopyStateText(blockBlob.CopyState)
-                                        });
-                                        containerCount++;
-                                        containerSize += blockBlob.Properties.Length;
+                                            if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
+                                                (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
+                                            {
+                                                _BlobCollection.Add(new BlobItem()
+                                                {
+                                                    Name = blockBlob.Name,
+                                                    BlobType = "Block",
+                                                    ContentType = blockBlob.Properties.ContentType,
+                                                    Encoding = blockBlob.Properties.ContentEncoding,
+                                                    Length = blockBlob.Properties.Length,
+                                                    LengthText = LengthText(blockBlob.Properties.Length),
+                                                    ETag = blockBlob.Properties.ETag,
+                                                    LastModified = blockBlob.Properties.LastModified.Value.DateTime,
+                                                    LastModifiedText = blockBlob.Properties.LastModified.Value.ToString(),
+                                                    CopyState = CopyStateText(blockBlob.CopyState)
+                                                });
+                                                containerCount++;
+                                                containerSize += blockBlob.Properties.Length;
+                                            }
+                                        }
+                                    }
+                                }
+                                else if (item.GetType() == typeof(CloudPageBlob))
+                                {
+                                    CloudPageBlob pageBlob = item as CloudPageBlob;
+
+                                    if (BlobTypeFilter != 1)
+                                    {
+                                        if (BlobNameFilter == null || pageBlob.Name.IndexOf(BlobNameFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
+                                        {
+                                            if ((MinBlobSize == -1 || pageBlob.Properties.Length >= MinBlobSize) &&
+                                                (MaxBlobSize == -1 || pageBlob.Properties.Length <= MaxBlobSize))
+                                            {
+                                                _BlobCollection.Add(new BlobItem()
+                                                {
+                                                    Name = pageBlob.Name,
+                                                    BlobType = "Page",
+                                                    ContentType = pageBlob.Properties.ContentType,
+                                                    Encoding = pageBlob.Properties.ContentEncoding,
+                                                    Length = pageBlob.Properties.Length,
+                                                    LengthText = LengthText(pageBlob.Properties.Length),
+                                                    ETag = pageBlob.Properties.ETag,
+                                                    LastModified = pageBlob.Properties.LastModified.Value.DateTime,
+                                                    LastModifiedText = pageBlob.Properties.LastModified.Value.ToString(),
+                                                    CopyState = CopyStateText(pageBlob.CopyState)
+                                                });
+                                                containerCount++;
+                                                containerSize += pageBlob.Properties.Length;
+                                            }
+                                        }
                                     }
                                 }
                             }
-                        }
-                        else if (item.GetType() == typeof(CloudPageBlob))
-                        {
-                            CloudPageBlob pageBlob = item as CloudPageBlob;
-
-                            if (BlobTypeFilter != 1)
+                            catch(Exception)
                             {
-                                if (BlobNameFilter == null || pageBlob.Name.IndexOf(BlobNameFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
-                                {
-                                    if ((MinBlobSize == -1 || pageBlob.Properties.Length >= MinBlobSize) &&
-                                        (MaxBlobSize == -1 || pageBlob.Properties.Length <= MaxBlobSize))
-                                    {
-                                        _BlobCollection.Add(new BlobItem()
-                                        {
-                                            Name = pageBlob.Name,
-                                            BlobType = "Page",
-                                            ContentType = pageBlob.Properties.ContentType,
-                                            Encoding = pageBlob.Properties.ContentEncoding,
-                                            Length = pageBlob.Properties.Length,
-                                            LengthText = LengthText(pageBlob.Properties.Length),
-                                            ETag = pageBlob.Properties.ETag,
-                                            LastModified = pageBlob.Properties.LastModified.Value.DateTime,
-                                            LastModifiedText = pageBlob.Properties.LastModified.Value.ToString(),
-                                            CopyState = CopyStateText(pageBlob.CopyState)
-                                        });
-                                        containerCount++;
-                                        containerSize += pageBlob.Properties.Length;
-                                    }
-                                }
+
                             }
+                        } // end foreach
+
+                        ContainerListView.ItemsSource = BlobCollection;
+
+                        SortBlobList();
+
+                        if (containerCount == 1)
+                        {
+                            ContainerDetails.Text = "(1 blob, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
+                        }
+                        else
+                        {
+                            ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
                         }
 
-                    } // end foreach
-
-                    ContainerListView.ItemsSource = BlobCollection;
-
-                    SortBlobList();
-
-                    if (containerCount == 1)
-                    {
-                        ContainerDetails.Text = "(1 blob, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
+                        this.Cursor = Cursors.Arrow;
                     }
-                    else
-                    {
-                        ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
-                    }
-
-                    this.Cursor = Cursors.Arrow;
                 }
             }
             catch(Exception ex)
@@ -4072,7 +4200,7 @@ namespace AzureStorageExplorer
 
                     MessageListView.ItemsSource = MessageCollection;
 
-                    //SortMessageList();
+                    SortMessageList();
 
                     if (containerCount == 1)
                     {
@@ -4715,7 +4843,6 @@ namespace AzureStorageExplorer
         }
 
         #endregion
-
 
     }
 }
