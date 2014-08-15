@@ -20,10 +20,13 @@ namespace AzureStorageExplorer
     /// </summary>
     public partial class UploadEntitiesDialog : Window
     {
+        private bool Initialized = false;
+
         public UploadEntitiesDialog()
         {
             InitializeComponent();
             CenterWindowOnScreen();
+            Initialized = true;
         }
 
         //**************************
@@ -79,6 +82,21 @@ namespace AzureStorageExplorer
             {
                 InputFile.Focus();
                 InputFile.Text = dlg.FileName;
+
+                String filename =  dlg.FileName.ToLower();
+
+                if (dlg.FileName.EndsWith(".csv"))
+                {
+                    UploadFormatCSV.IsChecked = true;
+                }
+                else if (dlg.FileName.EndsWith(".json"))
+                {
+                    UploadFormatJSON.IsChecked = true;
+                }
+                if (dlg.FileName.EndsWith(".xml"))
+                {
+                    UploadFormatXML.IsChecked = true;
+                }
             }
         }
 
@@ -104,6 +122,29 @@ namespace AzureStorageExplorer
 
 
             DialogResult = true;
+        }
+
+        private void UploadFormatCSV_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void UploadFormat_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!Initialized) return;
+
+            EntityXPathPanel.Visibility = System.Windows.Visibility.Collapsed;
+            OuterElementPanel.Visibility = System.Windows.Visibility.Collapsed;
+
+            if (UploadFormatJSON.IsChecked.Value)
+            {
+                OuterElementPanel.Visibility = System.Windows.Visibility.Visible;
+            }
+
+            if (UploadFormatXML.IsChecked.Value)
+            {
+                EntityXPathPanel.Visibility = System.Windows.Visibility.Visible;
+            }
         }
     }
 }

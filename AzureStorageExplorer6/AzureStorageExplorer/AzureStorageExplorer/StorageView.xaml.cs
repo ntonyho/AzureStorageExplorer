@@ -2736,6 +2736,8 @@ namespace AzureStorageExplorer
 
             if (dlg.ShowDialog().Value)
             {
+                String outerElementName = dlg.OuterElementName.Text;
+
                 String format = "csv";
                 if (dlg.UploadFormatCSV.IsChecked.Value)
                 {
@@ -2748,6 +2750,7 @@ namespace AzureStorageExplorer
                 if (dlg.UploadFormatXML.IsChecked.Value)
                 {
                     format = "xml";
+                    outerElementName = dlg.EntityXPath.Text;
                 }
 
                 // Get input file. If a file extension was not specified, add one based on the format selection.
@@ -2774,7 +2777,7 @@ namespace AzureStorageExplorer
                 String partitionKeyColumnName = dlg.PartitionKeyColumnName.Text;
                 String rowKeyColumnName = dlg.RowKeyColumnName.Text;
 
-                UploadEntities(SelectedTableContainer, format, inputFile, partitionKeyColumnName, rowKeyColumnName, stopOnError);
+                UploadEntities(SelectedTableContainer, format, inputFile, outerElementName, partitionKeyColumnName, rowKeyColumnName, stopOnError);
             }
 
         }
@@ -4508,7 +4511,7 @@ namespace AzureStorageExplorer
                                 break;
                             case "json":
                                 writer.WriteLine("{");
-                                writer.WriteLine("    \"entities\": [");
+                                writer.WriteLine("    \"Entities\": [");
                                 break;
                             case "xml":
                                 writer.WriteLine("<?xml version=\"1.0\" ?>");
@@ -4688,12 +4691,14 @@ namespace AzureStorageExplorer
         //********************
         // Upload a collection of entities from a local file in a selected download format.
 
-        private void UploadEntities(String tableName, String format, String inputFile, String partitionKeyColumnName, String rowKeyColumnName, bool stopOnError)
+        private void UploadEntities(String tableName, String format, String inputFile, String outerElementName, String partitionKeyColumnName, String rowKeyColumnName, bool stopOnError)
         {
             int recordNumber = 1;
             int recordsAdded = 0;
             int recordErrors = 0;
             String serializationError = null;
+
+            String xpath = outerElementName;
 
             // Create task action.
 
@@ -4719,35 +4724,130 @@ namespace AzureStorageExplorer
                 CloudTable table = tableClient.GetTableReference(tableName);
                 //table.CreateIfNotExists();
 
-                if (format == "json")
+                // Upload data using the specified format (csv, json, or xml).
+
+                switch (format)
                 {
-                    // JSON format upload
-
-                    Dictionary<String, Object> entries = null;
-
-                    try
-                    {
-                        JavaScriptSerializer ser = new JavaScriptSerializer();
-                        entries = ser.DeserializeObject(File.ReadAllText(inputFile)) as Dictionary<String, Object>;
-                    }
-                    catch(Exception ex)
-                    {
-                        serializationError = "An error occurred deserializing the JSON file: " + ex.Message;
-                    }
-
-                    if (entries != null)
-                    {
-                        foreach (KeyValuePair<String, Object> entry in entries)
+                    case "json":
                         {
-                            Object[] entities = entry.Value as Object[];
+                            // JSON format upload
 
-                            foreach (object ent in entities)
+                            //  {
+                            //    "entities": [
+                            //        {
+                            //            "RowKey": "Batman",
+                            //            "PartitionKey": "DC Comics",
+                            //            "Timestamp": "8/6/2014 4:07:06 AM +00:00",
+                            //            "Debut": "5/1/1939 12:00:00 AM",
+                            //            "SecretIdentity": "Bruce Wayne"
+                            //        },
+                            //        {
+                            //            "RowKey": "Green Lantern",
+                            //            "PartitionKey": "DC Comics",
+                            //            "Timestamp": "8/6/2014 4:10:52 AM +00:00",
+                            //            "Debut": "7/1/1940 12:00:00 AM",
+                            //            "SecretIdentity": "Hal Jordan"
+                            //        },
+                            //        ...
+                            //    ]
+                            //}
+
+                            Dictionary<String, Object> entries = null;
+
+                            // Parse the data in the JavaScriptSerializer.
+
+                            try
                             {
-                                if (ent is Dictionary<String, Object>)
+                                JavaScriptSerializer ser = new JavaScriptSerializer();
+                                entries = ser.DeserializeObject(File.ReadAllText(inputFile)) as Dictionary<String, Object>;
+                            }
+                            catch (Exception ex)
+                            {
+                                serializationError = "An error occurred deserializing the JSON file: " + ex.Message;
+                            }
+
+                            // Walk the result object graph and extract entities.
+
+                            if (entries != null)
+                            {
+                                foreach (KeyValuePair<String, Object> entry in entries)
                                 {
-                                    if (WriteEntity(tableName, ent as Dictionary<String, Object>, partitionKeyColumnName, rowKeyColumnName))
+                                    if (entry.Key == outerElementName)
+                                    {
+                                        Object[] entities = entry.Value as Object[];
+
+                                        foreach (object ent in entities)
+                                        {
+                                            if (ent is Dictionary<String, Object>)
+                                            {
+                                                if (WriteEntity(tableName, ent as Dictionary<String, Object>, partitionKeyColumnName, rowKeyColumnName))
+                                                {
+                                                    recordsAdded++;
+                                                    recordNumber++;
+                                                }
+                                                else
+                                                {
+                                                    recordErrors++;
+                                                    if (stopOnError)
+                                                    {
+                                                        recordNumber++;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    case "xml":
+                        {
+                            // XML format upload
+
+                            XmlDocument doc = null;
+
+                            try
+                            {
+                                doc = new XmlDocument();
+                                doc.LoadXml(File.ReadAllText(inputFile));
+
+                                //foreach (XmlElement entities in doc.DocumentElement.GetElementsByTagName(outerElementName))
+
+                                XmlNodeList nodes = doc.DocumentElement.SelectNodes(xpath);
+                                //foreach (XmlElement entities in doc.DocumentElement)
+                                foreach (XmlElement entities in nodes)
+                                {
+                                    //<Entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                                    //  <Entity>
+                                    //    <RowKey>Batman</RowKey>
+                                    //    <PartitionKey>DC Comics</PartitionKey>
+                                    //    <Timestamp>8/6/2014 4:07:06 AM +00:00</Timestamp>
+                                    //    <Debut>5/1/1939 12:00:00 AM</Debut>
+                                    //    <SecretIdentity>Bruce Wayne</SecretIdentity>
+                                    //  </Entity>
+
+                                    List<String> columns = new List<string>();
+                                    List<String> values = new List<string>();
+
+                                    foreach (XmlElement entity in entities.ChildNodes) // .GetElementsByTagName("Entity"))
+                                    //foreach (XmlElement entity in entities.GetElementsByTagName(outerElementName))
+                                    {
+                                        foreach (XmlNode field in entity.ChildNodes)
+                                        {
+                                            if (field is XmlText)
+                                            {
+                                                XmlText node = field as XmlText;
+                                                columns.Add(node.ParentNode.Name);
+                                                values.Add(node.Value);
+                                            }
+                                        }
+                                    }
+
+                                    if (WriteEntity(tableName, columns.ToArray(), values.ToArray(), partitionKeyColumnName, rowKeyColumnName))
                                     {
                                         recordsAdded++;
+                                        recordNumber++;
                                     }
                                     else
                                     {
@@ -4758,149 +4858,91 @@ namespace AzureStorageExplorer
                                             break;
                                         }
                                     }
-                                    recordNumber++;
                                 }
                             }
-                        }
-                    }
-                }
-                else if (format == "xml")
-                {
-                    // XML format upload
-
-                    XmlDocument doc = null;
-
-                    try
-                    {
-                        doc = new XmlDocument();
-                        doc.LoadXml(File.ReadAllText(inputFile));
-
-                        foreach (XmlElement entities in doc.DocumentElement)
-                        {
-                            //<Entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                            //  <Entity>
-                            //    <RowKey>Batman</RowKey>
-                            //    <PartitionKey>DC Comics</PartitionKey>
-                            //    <Timestamp>8/6/2014 4:07:06 AM +00:00</Timestamp>
-                            //    <Debut>5/1/1939 12:00:00 AM</Debut>
-                            //    <SecretIdentity>Bruce Wayne</SecretIdentity>
-                            //  </Entity>
-
-                            List<String> columns = new List<string>();
-                            List<String> values = new List<string>();
-
-                            foreach (XmlElement entity in entities.ChildNodes) // .GetElementsByTagName("Entity"))
+                            catch (Exception ex)
                             {
-                                foreach (XmlNode field in entity.ChildNodes)
+                                serializationError = "An error occurred parsing the XML file: " + ex.Message;
+                            }
+                        }
+                        break;
+                    case "csv":
+                        {
+                            // CSV format upload
+
+                            String[] columns = null;
+
+                            using (TextReader reader = File.OpenText(inputFile))
+                            {
+                                // Read header.
+
+                                String header = null;
+                                switch (format)
                                 {
-                                    if (field is XmlText)
+                                    case "csv":
+                                        header = reader.ReadLine();
+                                        columns = header.Split(',');
+                                        break;
+                                    case "json":
+                                    case "xml":
+                                        break;
+                                }
+
+                                int partitionIndex = -1;
+                                int rowIndex = -1;
+                                if (columns != null)
+                                {
+                                    int col = 0;
+                                    foreach (String column in columns)
                                     {
-                                        XmlText node = field as XmlText;
-                                        columns.Add(node.ParentNode.Name);
-                                        values.Add(node.Value);
-                                    }
-                                }
-                            }
-
-                            if (WriteEntity(tableName, columns.ToArray(), values.ToArray(), partitionKeyColumnName, rowKeyColumnName))
-                            {
-                                recordsAdded++;
-                            }
-                            else
-                            {
-                                recordErrors++;
-                                if (stopOnError)
-                                {
-                                    recordNumber++;
-                                    break;
-                                }
-                            }
-                            recordNumber++;
-
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        serializationError = "An error occurred parsing the XML file: " + ex.Message;
-                    }
-
-
-
-                }
-                else
-                {
-                    // CSV format upload
-
-                    String[] columns = null;
-
-                    using (TextReader reader = File.OpenText(inputFile))
-                    {
-                        // Read header.
-
-                        String header = null;
-                        switch (format)
-                        {
-                            case "csv":
-                                header = reader.ReadLine();
-                                columns = header.Split(',');
-                                break;
-                            case "json":
-                            case "xml":
-                                break;
-                        }
-
-                        int partitionIndex = -1;
-                        int rowIndex = -1;
-                        if (columns != null)
-                        {
-                            int col = 0;
-                            foreach (String column in columns)
-                            {
-                                if (column == partitionKeyColumnName)
-                                {
-                                    partitionIndex = col;
-                                }
-                                if (column == rowKeyColumnName)
-                                {
-                                    rowIndex = col;
-                                }
-                                col++;
-                            }
-                        }
-
-                        // Read content.
-
-                        String line = null;
-                        String[] values = null;
-                        while ((line = reader.ReadLine()) != null)
-                        {
-                            switch (format)
-                            {
-                                case "csv":
-                                    values = line.Split(',');
-
-                                    if (WriteEntity(tableName, columns, values, partitionKeyColumnName, rowKeyColumnName))
-                                    {
-                                        recordsAdded++;
-                                    }
-                                    else
-                                    {
-                                        recordErrors++;
-                                        if (stopOnError)
+                                        if (column == partitionKeyColumnName)
                                         {
-                                            recordNumber++;
-                                            break;
+                                            partitionIndex = col;
                                         }
+                                        if (column == rowKeyColumnName)
+                                        {
+                                            rowIndex = col;
+                                        }
+                                        col++;
                                     }
-                                    recordNumber++;
+                                }
 
-                                    break;
-                                case "xml":
-                                    break;
-                            }
+                                // Read content.
+
+                                String line = null;
+                                String[] values = null;
+                                while ((line = reader.ReadLine()) != null)
+                                {
+                                    switch (format)
+                                    {
+                                        case "csv":
+                                            values = line.Split(',');
+
+                                            if (WriteEntity(tableName, columns, values, partitionKeyColumnName, rowKeyColumnName))
+                                            {
+                                                recordsAdded++;
+                                                recordNumber++;
+                                            }
+                                            else
+                                            {
+                                                recordErrors++;
+                                                if (stopOnError)
+                                                {
+                                                    recordNumber++;
+                                                    break;
+                                                }
+                                            }
+                                            break;
+                                        case "xml":
+                                            break;
+                                    }
+                                }
+                            } // end using TextReader
                         }
-
-                    } // end using TextReader
+                        break;
+                    default:
+                        ShowError("Cannot upload - unknown format '" + format + "'");
+                        break;
                 }
 
                 Actions[action.Id].IsCompleted = true;
@@ -4920,7 +4962,7 @@ namespace AzureStorageExplorer
                     case 0:
                         break;
                     case 1:
-                        ShowError("An error occurred inserting entity nunber " + recordNumber.ToString() + ".");
+                        ShowError("An error occurred inserting entity nunber " + (recordNumber-1).ToString() + ".");
                         break;
                     default:
                         ShowError(recordErrors.ToString() + " errors occurred inserting entities.");
