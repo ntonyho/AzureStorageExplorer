@@ -16,7 +16,7 @@
             <StackPanel Orientation="Vertical">
                 <RadioButton x:Name="DownloadFormatCSV" GroupName="DownloadFormat" IsChecked="True" Margin="0,0,16,0">CSV - Comma-Separated Values file (Excel-readable)</RadioButton>
                 <RadioButton x:Name="DownloadFormatJSON" GroupName="DownloadFormat">JSON- JavaScript Object Notation file</RadioButton>
-                <RadioButton x:Name="DownloadFormatXML" GroupName="DownloadFormat">XML- eXtensible Markup Language file</RadioButton>
+                <RadioButton x:Name="DownloadFormatXML" GroupName="DownloadFormat">XML - eXtensible Markup Language file</RadioButton>
             </StackPanel>
 
             <TextBlock Margin="0,12,0,4" Text="Download to file:"></TextBlock>

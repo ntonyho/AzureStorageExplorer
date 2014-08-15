@@ -419,10 +419,6 @@ namespace AzureStorageExplorer
                 action = "insert entity";
             }
 
-            // TODO: Validation
-
-
-
             // Construct entity
 
             ElasticTableEntity entity = new ElasticTableEntity();

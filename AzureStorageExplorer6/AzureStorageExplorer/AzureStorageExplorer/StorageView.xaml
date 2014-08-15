@@ -335,12 +335,12 @@
                         </ToggleButton>
                     </ToolBar>
                     <ToolBar Band="1" BandIndex="3">
-                        <!--<Button x:Name="UploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Entities" Click="EntityUploadButton_Click" >
+                        <Button x:Name="EntityUploadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Upload Entities" Click="EntityUploadButton_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\upload-blob.png" Height="16" />
                                 <TextBlock Text="Upload"/>
                             </StackPanel>
-                        </Button>-->
+                        </Button>
                         <Button x:Name="EntityDownloadButton" Width="54" ToolBar.OverflowMode="Never" ToolTip="Download Selected Entities"  Click="EntityDownloadButton_Click" >
                             <StackPanel Orientation="Vertical">
                                 <Image Source="Images\download-blob.png" Height="16" />

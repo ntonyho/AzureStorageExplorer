@@ -75,6 +75,7 @@
     <Reference Include="System.Spatial, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Spatial.5.6.0\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -95,6 +96,9 @@
     </ApplicationDefinition>
     <Compile Include="Dialogs\ContentTypesDialog.xaml.cs">
       <DependentUpon>ContentTypesDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\UploadEntitiesDialog.xaml.cs">
+      <DependentUpon>UploadEntitiesDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Dialogs\EntityQuery.xaml.cs">
       <DependentUpon>EntityQuery.xaml</DependentUpon>
@@ -162,6 +166,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Dialogs\ContentTypesDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Dialogs\UploadEntitiesDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

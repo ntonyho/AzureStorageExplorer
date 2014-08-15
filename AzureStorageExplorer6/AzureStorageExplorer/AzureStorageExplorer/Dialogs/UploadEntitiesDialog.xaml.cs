@@ -16,11 +16,11 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 namespace AzureStorageExplorer
 {
     /// <summary>
-    /// Interaction logic for NewContainerDialog.xaml
+    /// Interaction logic for UploadEntitiesDialog.xaml
     /// </summary>
-    public partial class DownloadEntitiesDialog : Window
+    public partial class UploadEntitiesDialog : Window
     {
-        public DownloadEntitiesDialog()
+        public UploadEntitiesDialog()
         {
             InitializeComponent();
             CenterWindowOnScreen();
@@ -45,17 +45,6 @@ namespace AzureStorageExplorer
 
         public void SetEntityCounts(int totalCount, int selectedCount)
         {
-            DownloadSelectedEntities.Content = "Download Selected Entities (" + selectedCount.ToString() + ")";
-            DownloadAllEntities.Content = "Download All Entities (" + totalCount.ToString() + ")";
-
-            if (selectedCount > 0)
-            {
-                DownloadSelectedEntities.IsChecked = true;
-            }
-            else
-            {
-                DownloadAllEntities.IsChecked = true;
-            }
         }
 
         private void CmdCancel_Click(object sender, RoutedEventArgs e)
@@ -63,19 +52,19 @@ namespace AzureStorageExplorer
             DialogResult = false;
         }
 
-        // Browse to select output file.
+        // Browse to select input file.
 
-        private void CmdSelectOutputFile_Click(object sender, RoutedEventArgs e)
+        private void CmdSelectInputFile_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CommonOpenFileDialog();
-            dlg.Title = "Choose Entity Download File";
+            dlg.Title = "Choose Entity Upload File";
             dlg.IsFolderPicker = false;
             //dlg.InitialDirectory = currentDirectory;
 
             dlg.AddToMostRecentlyUsedList = false;
             dlg.AllowNonFileSystemItems = false;
             //dlg.DefaultDirectory = currentDirectory;
-            dlg.EnsureFileExists = false;
+            dlg.EnsureFileExists = true;
             dlg.EnsurePathExists = true;
             dlg.EnsureReadOnly = false;
             dlg.EnsureValidNames = true;
@@ -88,15 +77,32 @@ namespace AzureStorageExplorer
 
             if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                OutputFile.Focus();
-                OutputFile.Text = dlg.FileName;
+                InputFile.Focus();
+                InputFile.Text = dlg.FileName;
             }
         }
 
         // Start download. Handled in StorageView class.
 
-        private void CmdDownload_Click(object sender, RoutedEventArgs e)
+        private void CmdUpload_Click(object sender, RoutedEventArgs e)
         {
+            if (String.IsNullOrEmpty(PartitionKeyColumnName.Text))
+            {
+                PartitionKeyColumnName.Text = "PartitionKey";
+            }
+
+            if (String.IsNullOrEmpty(RowKeyColumnName.Text))
+            {
+                PartitionKeyColumnName.Text = "RowKey";
+            }
+
+            if (PartitionKeyColumnName.Text == RowKeyColumnName.Text)
+            {
+                MessageBox.Show("PartitionKey and RowKey must have distinct column names.", "Invalid Column Names");
+                return;
+            }
+
+
             DialogResult = true;
         }
     }

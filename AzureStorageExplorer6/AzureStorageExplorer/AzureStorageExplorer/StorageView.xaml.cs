@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -27,6 +29,7 @@ using Microsoft.Data.OData;
 using System.ComponentModel;
 using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Web.Script.Serialization;
 
 namespace AzureStorageExplorer
 {
@@ -425,6 +428,7 @@ namespace AzureStorageExplorer
 
             ButtonDeleteTable.Visibility = Visibility.Collapsed;
             EntityDownloadButton.Visibility = Visibility.Collapsed;
+            EntityUploadButton.Visibility = Visibility.Collapsed;
         }
 
         //*****************************************
@@ -510,6 +514,7 @@ namespace AzureStorageExplorer
                     TableToolbarPanel.Visibility = Visibility.Visible;
                     ButtonDeleteTable.Visibility = Visibility.Visible;
                     EntityDownloadButton.Visibility = Visibility.Visible;
+                    EntityUploadButton.Visibility = Visibility.Visible;
 
                     ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_table.png"));
                     ContainerPanel.Visibility = Visibility.Visible;
@@ -2712,6 +2717,69 @@ namespace AzureStorageExplorer
         }
 
 
+        //*****************************
+        //*                           *
+        //* EntityUploadButton_Click  *
+        //*                           *
+        //*****************************
+        // Upload selected entities to a local file.
+
+        private void EntityUploadButton_Click(object sender, RoutedEventArgs e)
+        {
+            NewAction();
+
+            UploadEntitiesDialog dlg = new UploadEntitiesDialog();
+
+            bool stopOnError = dlg.StopOnError.IsChecked.Value;
+
+            dlg.InputFile.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\" + Account.Name + "_" + SelectedTableContainer;
+
+            if (dlg.ShowDialog().Value)
+            {
+                String format = "csv";
+                if (dlg.UploadFormatCSV.IsChecked.Value)
+                {
+                    format = "csv";
+                }
+                else if (dlg.UploadFormatJSON.IsChecked.Value)
+                {
+                    format = "json";
+                }
+                if (dlg.UploadFormatXML.IsChecked.Value)
+                {
+                    format = "xml";
+                }
+
+                // Get input file. If a file extension was not specified, add one based on the format selection.
+
+                String inputFile = dlg.InputFile.Text;
+
+                String name = inputFile;
+                int index = name.LastIndexOf("\\");
+                if (index != -1)
+                {
+                    name = name.Substring(index);
+                }
+                if (!name.Contains("."))
+                {
+                    inputFile = inputFile + "." + format;
+                }
+
+                if (!File.Exists(inputFile))
+                {
+                    MessageBox.Show("Input file " + inputFile + " not found.", "File Not Found");
+                    return;
+                }
+
+                String partitionKeyColumnName = dlg.PartitionKeyColumnName.Text;
+                String rowKeyColumnName = dlg.RowKeyColumnName.Text;
+
+                UploadEntities(SelectedTableContainer, format, inputFile, partitionKeyColumnName, rowKeyColumnName, stopOnError);
+            }
+
+        }
+
+
         //*************************
         //*                       *
         //*  EntityRefresh_Click  *
@@ -4612,6 +4680,362 @@ namespace AzureStorageExplorer
 
         }
 
+
+        //********************
+        //*                  *
+        //*  UploadEntities  *
+        //*                  *
+        //********************
+        // Upload a collection of entities from a local file in a selected download format.
+
+        private void UploadEntities(String tableName, String format, String inputFile, String partitionKeyColumnName, String rowKeyColumnName, bool stopOnError)
+        {
+            int recordNumber = 1;
+            int recordsAdded = 0;
+            int recordErrors = 0;
+            String serializationError = null;
+
+            // Create task action.
+
+            String message = null;
+
+            message = "Uploading entities to table " + tableName + " from file " + inputFile;
+
+            Action action = new Action()
+            {
+                Id = NextAction++,
+                ActionType = Action.ACTION_DOWNLOAD_ENTITIES,
+                IsCompleted = false,
+                Message = message
+            };
+            Actions.Add(action.Id, action);
+
+            UpdateStatus();
+
+            // Execute background task to perform the downloading.
+
+            Task task = Task.Factory.StartNew(() =>
+            {
+                CloudTable table = tableClient.GetTableReference(tableName);
+                //table.CreateIfNotExists();
+
+                if (format == "json")
+                {
+                    // JSON format upload
+
+                    Dictionary<String, Object> entries = null;
+
+                    try
+                    {
+                        JavaScriptSerializer ser = new JavaScriptSerializer();
+                        entries = ser.DeserializeObject(File.ReadAllText(inputFile)) as Dictionary<String, Object>;
+                    }
+                    catch(Exception ex)
+                    {
+                        serializationError = "An error occurred deserializing the JSON file: " + ex.Message;
+                    }
+
+                    if (entries != null)
+                    {
+                        foreach (KeyValuePair<String, Object> entry in entries)
+                        {
+                            Object[] entities = entry.Value as Object[];
+
+                            foreach (object ent in entities)
+                            {
+                                if (ent is Dictionary<String, Object>)
+                                {
+                                    if (WriteEntity(tableName, ent as Dictionary<String, Object>, partitionKeyColumnName, rowKeyColumnName))
+                                    {
+                                        recordsAdded++;
+                                    }
+                                    else
+                                    {
+                                        recordErrors++;
+                                        if (stopOnError)
+                                        {
+                                            recordNumber++;
+                                            break;
+                                        }
+                                    }
+                                    recordNumber++;
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (format == "xml")
+                {
+                    // XML format upload
+
+                    XmlDocument doc = null;
+
+                    try
+                    {
+                        doc = new XmlDocument();
+                        doc.LoadXml(File.ReadAllText(inputFile));
+
+                        foreach (XmlElement entities in doc.DocumentElement)
+                        {
+                            //<Entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            //  <Entity>
+                            //    <RowKey>Batman</RowKey>
+                            //    <PartitionKey>DC Comics</PartitionKey>
+                            //    <Timestamp>8/6/2014 4:07:06 AM +00:00</Timestamp>
+                            //    <Debut>5/1/1939 12:00:00 AM</Debut>
+                            //    <SecretIdentity>Bruce Wayne</SecretIdentity>
+                            //  </Entity>
+
+                            List<String> columns = new List<string>();
+                            List<String> values = new List<string>();
+
+                            foreach (XmlElement entity in entities.ChildNodes) // .GetElementsByTagName("Entity"))
+                            {
+                                foreach (XmlNode field in entity.ChildNodes)
+                                {
+                                    if (field is XmlText)
+                                    {
+                                        XmlText node = field as XmlText;
+                                        columns.Add(node.ParentNode.Name);
+                                        values.Add(node.Value);
+                                    }
+                                }
+                            }
+
+                            if (WriteEntity(tableName, columns.ToArray(), values.ToArray(), partitionKeyColumnName, rowKeyColumnName))
+                            {
+                                recordsAdded++;
+                            }
+                            else
+                            {
+                                recordErrors++;
+                                if (stopOnError)
+                                {
+                                    recordNumber++;
+                                    break;
+                                }
+                            }
+                            recordNumber++;
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        serializationError = "An error occurred parsing the XML file: " + ex.Message;
+                    }
+
+
+
+                }
+                else
+                {
+                    // CSV format upload
+
+                    String[] columns = null;
+
+                    using (TextReader reader = File.OpenText(inputFile))
+                    {
+                        // Read header.
+
+                        String header = null;
+                        switch (format)
+                        {
+                            case "csv":
+                                header = reader.ReadLine();
+                                columns = header.Split(',');
+                                break;
+                            case "json":
+                            case "xml":
+                                break;
+                        }
+
+                        int partitionIndex = -1;
+                        int rowIndex = -1;
+                        if (columns != null)
+                        {
+                            int col = 0;
+                            foreach (String column in columns)
+                            {
+                                if (column == partitionKeyColumnName)
+                                {
+                                    partitionIndex = col;
+                                }
+                                if (column == rowKeyColumnName)
+                                {
+                                    rowIndex = col;
+                                }
+                                col++;
+                            }
+                        }
+
+                        // Read content.
+
+                        String line = null;
+                        String[] values = null;
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            switch (format)
+                            {
+                                case "csv":
+                                    values = line.Split(',');
+
+                                    if (WriteEntity(tableName, columns, values, partitionKeyColumnName, rowKeyColumnName))
+                                    {
+                                        recordsAdded++;
+                                    }
+                                    else
+                                    {
+                                        recordErrors++;
+                                        if (stopOnError)
+                                        {
+                                            recordNumber++;
+                                            break;
+                                        }
+                                    }
+                                    recordNumber++;
+
+                                    break;
+                                case "xml":
+                                    break;
+                            }
+                        }
+
+                    } // end using TextReader
+                }
+
+                Actions[action.Id].IsCompleted = true;
+            });
+
+            // Task complete - update UI.
+
+            task.ContinueWith((t) =>
+            {
+                if (serializationError != null)
+                {
+                    ShowError(serializationError);
+                }
+
+                switch (recordErrors)
+                {
+                    case 0:
+                        break;
+                    case 1:
+                        ShowError("An error occurred inserting entity nunber " + recordNumber.ToString() + ".");
+                        break;
+                    default:
+                        ShowError(recordErrors.ToString() + " errors occurred inserting entities.");
+                        break;
+                }
+                UpdateStatus();
+                ShowTableContainer(SelectedTableContainer);
+
+            }, TaskScheduler.FromCurrentSynchronizationContext());
+
+        }
+
+
+        //*****************
+        //*               *
+        //*  WriteEntity  *
+        //*               *
+        //*****************
+        // Write an entity, source from an array of column names and an array of values.
+
+        private bool WriteEntity(string tableName, String[] columns, String[] values, String partitionKeyColumnName, String rowKeyColumnName)
+        {
+            try
+            {
+                ElasticTableEntity entity = new ElasticTableEntity();
+
+                String fieldName, fieldValue;
+
+                int col = 0;
+                foreach (String value in values)
+                {
+                    fieldName = columns[col];
+                    fieldValue = values[col];
+
+                    if (fieldName == partitionKeyColumnName)
+                    {
+                        entity.PartitionKey = fieldValue;
+                    }
+                    else if (fieldName == rowKeyColumnName)
+                    {
+                        entity.RowKey = fieldValue;
+                    }
+                    else if (fieldName == "Timestamp")
+                    {
+
+                    }
+                    else
+                    {
+                        entity[fieldName] = fieldValue;
+                    }
+
+                    col++;
+                } // next field
+
+                CloudTable table = tableClient.GetTableReference(tableName);
+                table.Execute(TableOperation.Insert(entity));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+
+        }
+
+
+        //*****************
+        //*               *
+        //*  WriteEntity  *
+        //*               *
+        //*****************
+        // Write an entity, source from a dictionary of column names and values.
+
+        private bool WriteEntity(string tableName, Dictionary<String, Object> dict, String partitionKeyColumnName, String rowKeyColumnName)
+        {
+            try
+            {
+                ElasticTableEntity entity = new ElasticTableEntity();
+
+                String fieldName, fieldValue;
+
+                foreach (KeyValuePair<String, Object> field in dict)
+                {
+                    fieldName = field.Key;
+                    fieldValue = field.Value as string;
+
+                    if (fieldName == partitionKeyColumnName)
+                    {
+                        entity.PartitionKey = fieldValue;
+                    }
+                    else if (fieldName == rowKeyColumnName)
+                    {
+                        entity.RowKey = fieldValue;
+                    }
+                    else if (fieldName == "Timestamp")
+                    {
+
+                    }
+                    else
+                    {
+                        entity[fieldName] = fieldValue;
+                    }
+                } // next field
+
+                CloudTable table = tableClient.GetTableReference(tableName);
+                table.Execute(TableOperation.Insert(entity));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+
+        }
+
         #endregion
 
         #region Helper Functions
@@ -4843,6 +5267,7 @@ namespace AzureStorageExplorer
         }
 
         #endregion
+
 
     }
 }
