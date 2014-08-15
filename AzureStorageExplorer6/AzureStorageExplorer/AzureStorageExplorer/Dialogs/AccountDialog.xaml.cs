@@ -30,7 +30,7 @@ namespace AzureStorageExplorer
         public bool IsEdit = false;
 
         public const String DefaultEndpoint = "core.windows.net";
-        public const String ChinaEndpoint = "core.chinacloud.cn";
+        public const String ChinaEndpoint = "core.chinacloudapi.cn";
 
         public AccountDialog()
         {
