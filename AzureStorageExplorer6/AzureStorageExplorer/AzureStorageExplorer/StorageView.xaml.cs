@@ -4733,7 +4733,7 @@ namespace AzureStorageExplorer
                             // JSON format upload
 
                             //  {
-                            //    "entities": [
+                            //    "Entities": [
                             //        {
                             //            "RowKey": "Batman",
                             //            "PartitionKey": "DC Comics",
@@ -4868,76 +4868,59 @@ namespace AzureStorageExplorer
                         break;
                     case "csv":
                         {
-                            // CSV format upload
+                            // CSV format upload. Uses CsvHelper from http://joshclose.github.io/CsvHelper/.
 
-                            String[] columns = null;
-
+                            try
+                            { 
                             using (TextReader reader = File.OpenText(inputFile))
                             {
-                                // Read header.
+                                var csv = new CsvHelper.CsvReader(reader);
+                                String[] columns = null;
+                                String[] values = null;
 
-                                String header = null;
-                                switch (format)
+                                while(csv.Read())
                                 {
-                                    case "csv":
-                                        header = reader.ReadLine();
-                                        columns = header.Split(',');
-                                        break;
-                                    case "json":
-                                    case "xml":
-                                        break;
-                                }
+                                    // If first pass, retrieve column names.
 
-                                int partitionIndex = -1;
-                                int rowIndex = -1;
-                                if (columns != null)
-                                {
+                                    if (recordNumber == 1)
+                                    {
+                                        columns = csv.FieldHeaders;
+                                        values = new String[columns.Length];
+                                    }
+                                    recordNumber++;
+
+                                    // Retrieve record values.
+
                                     int col = 0;
                                     foreach (String column in columns)
                                     {
-                                        if (column == partitionKeyColumnName)
-                                        {
-                                            partitionIndex = col;
-                                        }
-                                        if (column == rowKeyColumnName)
-                                        {
-                                            rowIndex = col;
-                                        }
+                                        values[col] = csv.GetField(column);
                                         col++;
                                     }
-                                }
 
-                                // Read content.
+                                    // Write entity.
 
-                                String line = null;
-                                String[] values = null;
-                                while ((line = reader.ReadLine()) != null)
-                                {
-                                    switch (format)
+                                    if (WriteEntity(tableName, columns, values, partitionKeyColumnName, rowKeyColumnName))
                                     {
-                                        case "csv":
-                                            values = line.Split(',');
-
-                                            if (WriteEntity(tableName, columns, values, partitionKeyColumnName, rowKeyColumnName))
-                                            {
-                                                recordsAdded++;
-                                                recordNumber++;
-                                            }
-                                            else
-                                            {
-                                                recordErrors++;
-                                                if (stopOnError)
-                                                {
-                                                    recordNumber++;
-                                                    break;
-                                                }
-                                            }
+                                        recordsAdded++;
+                                        recordNumber++;
+                                    }
+                                    else
+                                    {
+                                        recordErrors++;
+                                        if (stopOnError)
+                                        {
+                                            recordNumber++;
                                             break;
-                                        case "xml":
-                                            break;
+                                        }
                                     }
                                 }
-                            } // end using TextReader
+                            }
+                            }
+                            catch (Exception ex)
+                            {
+                                serializationError = "An error occurred parsing the CSV file: " + ex.Message;
+                            }
                         }
                         break;
                     default:
@@ -5023,6 +5006,7 @@ namespace AzureStorageExplorer
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return false;
             }
 
