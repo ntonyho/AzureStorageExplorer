@@ -479,7 +479,7 @@ namespace AzureStorageExplorer
 
         private void MainMenu_About(object sender, System.Windows.RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("Azure Storage Explorer 6 Preview 3 (6.0.3.0)", "About");
+            System.Windows.MessageBox.Show("Azure Storage Explorer 6 Preview 3 (6.0.3.1)", "About");
         }
 
 

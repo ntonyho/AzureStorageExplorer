@@ -4046,18 +4046,47 @@ namespace AzureStorageExplorer
                             {
                                 blobName = blobName.Substring(index + 1);
                             }
-                            CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
 
-                            blob.UploadFromFile(file, System.IO.FileMode.Open);
-
-                            foreach(KeyValuePair<String, String> ct in contentTypes)
+                            bool isPageBlob = false;
+                            
+                            if (blobName.ToLower().EndsWith(".vhd"))
                             {
-                                if (blob.Name.EndsWith(ct.Key))
+                                isPageBlob = true;
+                            }
+
+                            if (isPageBlob)
+                            {
+                                CloudPageBlob blob = container.GetPageBlobReference(blobName);
+
+                                blob.UploadFromFile(file, System.IO.FileMode.Open);
+
+                                foreach(KeyValuePair<String, String> ct in contentTypes)
                                 {
-                                    blob.Properties.ContentType = ct.Value;
-                                    blob.SetProperties();
-                                    break;
+                                    if (blob.Name.EndsWith(ct.Key))
+                                    {
+                                        blob.Properties.ContentType = ct.Value;
+                                        blob.SetProperties();
+                                        break;
+                                    }
                                 }
+                            }
+                            else
+                            {
+                                                            {
+                                CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
+
+                                blob.UploadFromFile(file, System.IO.FileMode.Open);
+
+                                foreach(KeyValuePair<String, String> ct in contentTypes)
+                                {
+                                    if (blob.Name.EndsWith(ct.Key))
+                                    {
+                                        blob.Properties.ContentType = ct.Value;
+                                        blob.SetProperties();
+                                        break;
+                                    }
+                                }
+                            }
                             }
                         }
                     }
