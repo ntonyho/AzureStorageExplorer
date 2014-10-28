@@ -2,11 +2,23 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:AzureStorageExplorer"
              mc:Ignorable="d" 
              d:DesignHeight="1024" d:DesignWidth="768"
-             DataContext="{Binding RelativeSource={RelativeSource Self}}"
-             >
+             DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <UserControl.Resources>
+        <DataTemplate x:Key="StorageItemTemplate" DataType="{x:Type local:OutlineItem}">
+            <TreeViewItem>
+                <TreeViewItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/AzureStorageExplorer;component/Images/cloud_folder.png" Height="24" />
+                        <Label Content="{Binding Container}" />
+                    </StackPanel>
+                </TreeViewItem.Header>
+            </TreeViewItem>
+        </DataTemplate>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -129,7 +141,37 @@
                 </ToolBarTray>
             </StackPanel>
 
-            <TreeView Grid.Row="2"  x:Name="AccountTreeView" SelectedItemChanged="AccountTreeView_SelectedItemChanged" >
+            <TreeView Grid.Row="2"  x:Name="AccountTreeView" SelectedItemChanged="AccountTreeView_SelectedItemChanged">
+                <TreeViewItem x:Name="blobSection"
+                              Header="Blob Containers"
+                              ItemsSource="{Binding blobSectionItems}"
+                              ItemTemplate="{DynamicResource StorageItemTemplate}"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    <TreeViewItem.Tag>
+                        <local:OutlineItem ItemType="{x:Static local:ItemType.BLOB_SERVICE}" />
+                    </TreeViewItem.Tag>
+                </TreeViewItem>
+                <TreeViewItem x:Name="queueSection"
+                              Header="Queues"
+                              ItemsSource="{Binding queueSectionItems}"
+                              ItemTemplate="{DynamicResource StorageItemTemplate}"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    <TreeViewItem.Tag>
+                        <local:OutlineItem ItemType="{x:Static local:ItemType.QUEUE_SERVICE}" />
+                    </TreeViewItem.Tag>
+                </TreeViewItem>
+                <TreeViewItem x:Name="tableSection"
+                              Header="Tables"
+                              ItemsSource="{Binding tableSectionItems}"
+                              ItemTemplate="{DynamicResource StorageItemTemplate}"
+                              VirtualizingStackPanel.IsVirtualizing="True"
+                              VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    <TreeViewItem.Tag>
+                        <local:OutlineItem ItemType="{x:Static local:ItemType.TABLE_SERVICE}" />
+                    </TreeViewItem.Tag>
+                </TreeViewItem>
                 <TreeView.Resources>
                     <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
                 </TreeView.Resources>

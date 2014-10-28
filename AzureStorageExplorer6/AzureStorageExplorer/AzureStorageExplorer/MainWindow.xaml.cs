@@ -69,7 +69,7 @@ namespace AzureStorageExplorer
         //**********************
         // Display dialog for adding a storage account.
 
-        private void AddAccount_Click(object sender, RoutedEventArgs e)
+        private async void AddAccount_Click(object sender, RoutedEventArgs e)
         {
             AccountDialog dlg = new AccountDialog();
             dlg.Title = "Add Storage Account";
@@ -104,7 +104,7 @@ namespace AzureStorageExplorer
 
                 DisplayAccountList();
 
-                AddStorageView(accountName);
+                await AddStorageViewAsync(accountName);
 
             }
         }
@@ -164,7 +164,7 @@ namespace AzureStorageExplorer
         //***********************
         // Add a storage view tab.
 
-        private void AddStorageView(String accountName)
+        private async Task AddStorageViewAsync(String accountName)
         {
             AccountSelector.Visibility = Visibility.Collapsed;
             AccountMessage.Text = "Loading Storage Account " + accountName;
@@ -202,42 +202,31 @@ namespace AzureStorageExplorer
                 }
             }
 
-            Task task = Task.Factory.StartNew(() =>
-            {
-            });
+            TabItem newitem = new TabItem();
+            //item.Header = account.Name;
 
-            task.ContinueWith((t) =>
-            {
-                TabItem item = new TabItem();
-                //item.Header = account.Name;
+            StackPanel panel = new StackPanel();
+            panel.Orientation = System.Windows.Controls.Orientation.Horizontal;
+            TextBlock title = new TextBlock() { Text = account.Name + " " };
+            panel.Children.Add(title);
+            TextBlock closeBox = new TextBlock() { Text = "×" };
+            closeBox.Tag = account.Name;
+            closeBox.Cursor = System.Windows.Input.Cursors.Hand;
+            closeBox.MouseDown += new MouseButtonEventHandler(CloseStorageView);
+            panel.Children.Add(closeBox);
+            newitem.Header = panel;
+            StorageView storageView = new StorageView();
 
-                StackPanel panel = new StackPanel();
-                panel.Orientation = System.Windows.Controls.Orientation.Horizontal;
-                TextBlock title = new TextBlock() { Text = account.Name + " " };
-                panel.Children.Add(title);
-                TextBlock closeBox = new TextBlock() { Text = "×" };
-                closeBox.Tag = account.Name;
-                closeBox.Cursor = System.Windows.Input.Cursors.Hand;
-                closeBox.MouseDown += new MouseButtonEventHandler(CloseStorageView);
-                panel.Children.Add(closeBox);
-                item.Header = panel;
-                StorageView storageView = new StorageView();
+            storageView.Account = account;
+            newitem.Content = storageView;
 
-                storageView.Account = account;
-                item.Content = storageView;
+            StorageViews.Items.Add(newitem);
+            StorageViews.SelectedItem = newitem;
 
-                storageView.LoadLeftPane();
+            await storageView.LoadLeftPaneAsync();
 
-                item.Content = storageView; ;
-
-                StorageViews.Items.Add(item);
-
-                StorageViews.SelectedItem = item;
-
-                AccountAction.Visibility = Visibility.Collapsed;
-                AccountSelector.Visibility = Visibility.Visible;
-
-            }, TaskScheduler.FromCurrentSynchronizationContext());
+            AccountAction.Visibility = Visibility.Collapsed;
+            AccountSelector.Visibility = Visibility.Visible;
         }
 
         private void CloseStorageView(object sender, MouseButtonEventArgs e)
@@ -420,7 +409,7 @@ namespace AzureStorageExplorer
         //**********************************
         // An account selection was made. Add a storage view tab. If (all) is selected, open a storage view tab for each account.
 
-        private void AccountList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void AccountList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             String name = AccountList.SelectedValue as String;
             if (name != "--- Select a Storage Account ---")
@@ -441,7 +430,7 @@ namespace AzureStorageExplorer
                     {
                         if (index > 1)
                         {
-                            AddStorageView(item);
+                            await AddStorageViewAsync(item);
                         }
                         index++;
                     }
@@ -450,7 +439,7 @@ namespace AzureStorageExplorer
                 { 
                     // Open a tab for the selected storage account.
 
-                    AddStorageView(name);
+                    await AddStorageViewAsync(name);
                 }
             }
         }

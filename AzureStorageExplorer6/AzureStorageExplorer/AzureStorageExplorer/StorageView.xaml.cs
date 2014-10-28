@@ -20,7 +20,6 @@ using System.Windows.Shapes;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-using Microsoft.WindowsAzure.Storage.Analytics;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
@@ -54,6 +53,13 @@ namespace AzureStorageExplorer
 
         public ObservableCollection<BlobItem> _BlobCollection = new ObservableCollection<BlobItem>();
         public ObservableCollection<BlobItem> BlobCollection { get { return _BlobCollection; } }
+
+        private ObservableCollection<OutlineItem> _BlobSectionItems = new ObservableCollection<OutlineItem>();
+        public ObservableCollection<OutlineItem> blobSectionItems { get { return _BlobSectionItems; } }
+        private ObservableCollection<OutlineItem> _QueueSectionItems = new ObservableCollection<OutlineItem>();
+        public ObservableCollection<OutlineItem> queueSectionItems { get { return _QueueSectionItems; } }
+        private ObservableCollection<OutlineItem> _TableSectionItems = new ObservableCollection<OutlineItem>();
+        public ObservableCollection<OutlineItem> tableSectionItems { get { return _TableSectionItems; } }
 
         public ObservableCollection<MessageItem> _MessageCollection = new ObservableCollection<MessageItem>();
         public ObservableCollection<MessageItem> MessageCollection { get { return _MessageCollection; } }
@@ -123,7 +129,7 @@ namespace AzureStorageExplorer
         //******************
         // Load a list of storage containers/queues/tables into the left pane of the storage view.
 
-        public void LoadLeftPane()
+        public async Task LoadLeftPaneAsync()
         {
             Cursor = Cursors.Wait;
 
@@ -133,42 +139,6 @@ namespace AzureStorageExplorer
 
             ClearMainPane();
 
-            TreeViewItem blobSection = new TreeViewItem()
-            {
-                Header = "Blob Containers",
-                Tag = new OutlineItem()
-                {
-                    ItemType = ItemType.BLOB_SERVICE /* 100 */,
-                    Container = null
-                }
-            };
-
-            TreeViewItem queueSection = new TreeViewItem()
-            {
-                Header = "Queues",
-                Tag = new OutlineItem()
-                {
-                    ItemType = ItemType.QUEUE_SERVICE /* 200 */,
-                    Container = null
-                }
-            };
-
-            TreeViewItem tableSection = new TreeViewItem()
-            {
-                Header = "Tables",
-                Tag = new OutlineItem()
-                {
-                    ItemType = ItemType.TABLE_SERVICE /* 300 */,
-                    Container = null
-                }
-            };
-
-            AccountTreeView.Items.Clear();
-
-            AccountTreeView.Items.Add(blobSection);
-            AccountTreeView.Items.Add(queueSection);
-            AccountTreeView.Items.Add(tableSection);
-
             CloudStorageAccount account = OpenStorageAccount();
 
             blobClient = account.CreateCloudBlobClient();
@@ -177,7 +147,7 @@ namespace AzureStorageExplorer
 
             try
             { 
-                var serviceProperties = blobClient.GetServiceProperties();
+                var serviceProperties = await blobClient.GetServicePropertiesAsync();
 
                 if (serviceProperties.Cors.CorsRules.Count == 0)
                 {
@@ -197,74 +167,11 @@ namespace AzureStorageExplorer
 
             try
             {
-                // Check for $logs container and add it if present ($logs is not included in the general ListContainers call).
-                
-                CloudBlobContainer logsContainer = blobClient.GetContainerReference("$logs");
-                if (logsContainer.Exists())
-                {
-                    StackPanel stack = new StackPanel();
-                    stack.Orientation = Orientation.Horizontal;
+                //var tasks = new Task[] { LoadLogsContainerAsync(), LoadBlobContainersAsync(), LoadQueuesAsync(), LoadTablesAsync() };
+                var tasks = new Task[] { LoadLogsContainerAsync(), LoadQueuesAsync(), LoadTablesAsync() };
+                await Task.WhenAll(tasks);
 
-                    Image cloudFolderImage = new Image();
-                    cloudFolderImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_folder.png"));
-                    cloudFolderImage.Height = 24;
-
-                    Label label = new Label();
-                    label.Content = logsContainer.Name;
-
-                    stack.Children.Add(cloudFolderImage);
-                    stack.Children.Add(label);
-
-                    TreeViewItem blobItem = new TreeViewItem()
-                    {
-                        Header = stack,
-                        Tag = new OutlineItem()
-                        {
-                            ItemType = ItemType.BLOB_CONTAINER,
-                            Container = logsContainer.Name,
-                            Permissions = logsContainer.GetPermissions()
-                        }
-                    };
-                    blobSection.Items.Add(blobItem);
-                }
-
-                IEnumerable<CloudBlobContainer> containers = blobClient.ListContainers();
-                if (containers != null)
-                {
-                    if (containers != null)
-                    {
-                        foreach (CloudBlobContainer container in containers)
-                        {
-                            StackPanel stack = new StackPanel();
-                            stack.Orientation = Orientation.Horizontal;
-
-                            Image cloudFolderImage = new Image();
-                            cloudFolderImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_folder.png"));
-                            cloudFolderImage.Height = 24;
-
-                            Label label = new Label();
-                            label.Content = container.Name;
-
-                            stack.Children.Add(cloudFolderImage);
-                            stack.Children.Add(label);
-
-                            TreeViewItem blobItem = new TreeViewItem()
-                            {
-                                Header = stack,
-                                Tag = new OutlineItem()
-                                {
-                                    ItemType = ItemType.BLOB_CONTAINER,
-                                    Container = container.Name,
-                                    Permissions = container.GetPermissions()
-                                }
-                            };
-                            blobSection.Items.Add(blobItem);
-                        }
-                    }
-                }
-                blobSection.Header = "Blob Containers (" + containers.Count().ToString() + ")";
-
-                switch(LastItemType)
+                switch (LastItemType)
                 {
                     case ItemType.BLOB_SERVICE:
                     case ItemType.BLOB_CONTAINER:
@@ -282,95 +189,83 @@ namespace AzureStorageExplorer
                         blobSection.IsExpanded = true;
                         break;
                 }
-
-
             }
             catch (Exception ex)
             {
-                ShowError("Error enumering blob containers in the storage account: " + ex.Message);
-            }
-
-            try
-            { 
-                IEnumerable<CloudQueue> queues = queueClient.ListQueues();
-
-                if (queues != null)
-                {
-                    foreach (CloudQueue queue in queues)
-                    {
-                        StackPanel stack = new StackPanel();
-                        stack.Orientation = Orientation.Horizontal;
-
-                        Image cloudFolderImage = new Image();
-                        cloudFolderImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_queue.png"));
-                        cloudFolderImage.Height = 24;
-
-                        Label label = new Label();
-                        label.Content = queue.Name;
-
-                        stack.Children.Add(cloudFolderImage);
-                        stack.Children.Add(label);
-
-                        queueSection.Items.Add(new TreeViewItem()
-                        {
-                            Header = stack,
-                            Tag = new OutlineItem()
-                            {
-                                ItemType = ItemType.QUEUE_CONTAINER,
-                                Container = queue.Name
-                            }
-                        });
-                    }
-                }
-                queueSection.Header = "Queues (" + queues.Count().ToString() + ")";
-            }
-            catch (Exception ex)
-            {
-                ShowError("Error enumering queues in storage account: " + ex.Message);
-            }
-
-            // OData version number occurs here:
-            // Could not load file or assembly 'Microsoft.Data.OData, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35' or one of its dependencies. The system cannot find the file specified.
-
-            try
-            {
-                IEnumerable<CloudTable> tables = tableClient.ListTables();
-                if (tables != null)
-                {
-                    foreach (CloudTable table in tables)
-                    {
-                        StackPanel stack = new StackPanel();
-                        stack.Orientation = Orientation.Horizontal;
-
-                        Image cloudFolderImage = new Image();
-                        cloudFolderImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_table.png"));
-                        cloudFolderImage.Height = 24;
-
-                        Label label = new Label();
-                        label.Content = table.Name;
-
-                        stack.Children.Add(cloudFolderImage);
-                        stack.Children.Add(label);
-
-                        tableSection.Items.Add(new TreeViewItem()
-                        {
-                            Header = stack,
-                            Tag = new OutlineItem()
-                            {
-                                ItemType = ItemType.TABLE_CONTAINER,
-                                Container = table.Name
-                            }
-                        });
-                    }
-                }
-                tableSection.Header = "Tables (" + tables.Count().ToString() + ")";
-            }
-            catch(Exception ex)
-            {
-                ShowError("Error enumerating tables in storage account: " + ex.Message);
+                ShowError("Error enumerating in storage account: " + ex.Message);
             }
 
             Cursor = Cursors.Arrow;
+        }
+
+        private async Task LoadLogsContainerAsync()
+        {
+            // Check for $logs container and add it if present ($logs is not included in the general ListContainers call).
+            CloudBlobContainer logsContainer = blobClient.GetContainerReference("$logs");
+            if (await logsContainer.ExistsAsync())
+            {
+                blobSectionItems.Add(new OutlineItem()
+                {
+                    ItemType = ItemType.BLOB_CONTAINER,
+                    Container = logsContainer.Name,
+                    Permissions = await logsContainer.GetPermissionsAsync()
+                });
+            }
+        }
+
+        private async Task LoadBlobContainersAsync()
+        {
+            var containersSegment = await blobClient.ListContainersSegmentedAsync(new BlobContinuationToken());
+            //var containersCount = 0;
+            while (containersSegment.Results != null)
+            {
+                var tasks = containersSegment.Results.Select(async container =>
+                    blobSectionItems.Add(new OutlineItem()
+                    {
+                        ItemType = ItemType.BLOB_CONTAINER,
+                        Container = container.Name,
+                        Permissions = await container.GetPermissionsAsync()
+                    }));
+                await Task.WhenAll(tasks);
+                //containersCount += containersSegment.Results.Count();
+                containersSegment = await blobClient.ListContainersSegmentedAsync(containersSegment.ContinuationToken);
+            }
+            //blobSection.Header = "Blob Containers (" + containersCount.ToString() + ")";
+        }
+
+        private async Task LoadTablesAsync()
+        {
+            IEnumerable<CloudTable> tables = tableClient.ListTables();
+            if (tables != null)
+            {
+                foreach (CloudTable table in tables)
+                {
+                    tableSectionItems.Add(new OutlineItem()
+                    {
+                        ItemType = ItemType.TABLE_CONTAINER,
+                        Container = table.Name
+                    });
+                }
+            }
+            //tableSectionHeader = "Tables (" + tables.Count().ToString() + ")";
+        }
+
+        private async Task LoadQueuesAsync()
+        {
+            IEnumerable<CloudQueue> queues = queueClient.ListQueues();
+
+            if (queues != null)
+            {
+                foreach (CloudQueue queue in queues)
+                {
+                    queueSectionItems.Add(new OutlineItem()
+                    {
+                        ItemType = ItemType.QUEUE_CONTAINER,
+                        Container = queue.Name
+                    });
+                }
+            }
+            //queueSectionHeader = "Queues (" + queues.Count().ToString() + ")";
         }
 
 
@@ -448,7 +343,7 @@ namespace AzureStorageExplorer
 
             ClearMainPane();
 
-            if (item == null || !(item.Tag is OutlineItem)) return;
+            if (item == null || !(item.Tag is OutlineItem || AccountTreeView.SelectedItem is OutlineItem)) return;
 
             ContainerTitle.Text = String.Empty;
 
@@ -859,13 +754,13 @@ namespace AzureStorageExplorer
         //**************************
         // Refresh storage account.
 
-        private void AccountRefresh_Click(object sender, RoutedEventArgs e)
+        private async void AccountRefresh_Click(object sender, RoutedEventArgs e)
         {
             Cursor = Cursors.Wait;
 
             NewAction();
 
-            LoadLeftPane();
+            await LoadLeftPaneAsync();
 
             Cursor = Cursors.Arrow;
         }
@@ -946,9 +841,9 @@ namespace AzureStorageExplorer
 
                 // Task complete - update UI.
 
-                task.ContinueWith((t) =>
+                task.ContinueWith(async t =>
                 {
-                    LoadLeftPane();
+                    await LoadLeftPaneAsync();
                     UpdateStatus();
 
                     if (isError)
@@ -1038,9 +933,9 @@ namespace AzureStorageExplorer
 
                 // Task complete - update UI.
 
-                task.ContinueWith((t) =>
+                task.ContinueWith(async t =>
                 {
-                    LoadLeftPane();
+                    await LoadLeftPaneAsync();
                     UpdateStatus();
 
                     if (isError)
@@ -2170,9 +2065,9 @@ namespace AzureStorageExplorer
 
                 // Task complete - update UI.
 
-                task.ContinueWith((t) =>
+                task.ContinueWith(async t =>
                 {
-                    LoadLeftPane();
+                    await LoadLeftPaneAsync();
                     UpdateStatus();
 
                     if (isError)
@@ -2263,9 +2158,9 @@ namespace AzureStorageExplorer
 
                 // Task complete - update UI.
 
-                task.ContinueWith((t) =>
+                task.ContinueWith(async t =>
                 {
-                    LoadLeftPane();
+                    await LoadLeftPaneAsync();
                     UpdateStatus();
 
                     if (isError)
@@ -2528,9 +2423,9 @@ namespace AzureStorageExplorer
 
                 // Task complete - update UI.
 
-                task.ContinueWith((t) =>
+                task.ContinueWith(async t =>
                 {
-                    LoadLeftPane();
+                    await LoadLeftPaneAsync();
                     UpdateStatus();
 
                     if (isError)
@@ -2619,9 +2514,9 @@ namespace AzureStorageExplorer
 
                 // Task complete - update UI.
 
-                task.ContinueWith((t) =>
+                task.ContinueWith(async t =>
                 {
-                    LoadLeftPane();
+                    await LoadLeftPaneAsync();
                     UpdateStatus();
 
                     if (isError)
