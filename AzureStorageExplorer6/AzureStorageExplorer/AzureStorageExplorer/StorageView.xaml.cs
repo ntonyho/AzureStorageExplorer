@@ -54,13 +54,6 @@ namespace AzureStorageExplorer
         public ObservableCollection<BlobItem> _BlobCollection = new ObservableCollection<BlobItem>();
         public ObservableCollection<BlobItem> BlobCollection { get { return _BlobCollection; } }
 
-        private ObservableCollection<OutlineItem> _BlobSectionItems = new ObservableCollection<OutlineItem>();
-        public ObservableCollection<OutlineItem> blobSectionItems { get { return _BlobSectionItems; } }
-        private ObservableCollection<OutlineItem> _QueueSectionItems = new ObservableCollection<OutlineItem>();
-        public ObservableCollection<OutlineItem> queueSectionItems { get { return _QueueSectionItems; } }
-        private ObservableCollection<OutlineItem> _TableSectionItems = new ObservableCollection<OutlineItem>();
-        public ObservableCollection<OutlineItem> tableSectionItems { get { return _TableSectionItems; } }
-
         public ObservableCollection<MessageItem> _MessageCollection = new ObservableCollection<MessageItem>();
         public ObservableCollection<MessageItem> MessageCollection { get { return _MessageCollection; } }
 
@@ -118,8 +111,8 @@ namespace AzureStorageExplorer
         public StorageView()
         {
             InitializeComponent();
-            LoadDefaultBlobFilter();
-            LoadDefaultEntityFilter();
+            LoadDefaultBlobFilterAsync().Wait();
+            LoadDefaultEntityFilterAsync().Wait();
         }
 
         //******************
@@ -167,28 +160,27 @@ namespace AzureStorageExplorer
 
             try
             {
-                //var tasks = new Task[] { LoadLogsContainerAsync(), LoadBlobContainersAsync(), LoadQueuesAsync(), LoadTablesAsync() };
-                var tasks = new Task[] { LoadLogsContainerAsync(), LoadQueuesAsync(), LoadTablesAsync() };
+                var tasks = new Task[] { LoadLogsContainerAsync(), LoadBlobContainersAsync(), LoadQueuesAsync(), LoadTablesAsync() };
                 await Task.WhenAll(tasks);
 
-                switch (LastItemType)
-                {
-                    case ItemType.BLOB_SERVICE:
-                    case ItemType.BLOB_CONTAINER:
-                        blobSection.IsExpanded = true;
-                        break;
-                    case ItemType.QUEUE_SERVICE:
-                    case ItemType.QUEUE_CONTAINER:
-                        queueSection.IsExpanded = true;
-                        break;
-                    case ItemType.TABLE_SERVICE:
-                    case ItemType.TABLE_CONTAINER:
-                        tableSection.IsExpanded = true;
-                        break;
-                    default:
-                        blobSection.IsExpanded = true;
-                        break;
-                }
+                //switch (itemType)
+                //{
+                //    case ItemType.BLOB_SERVICE:
+                //    case ItemType.BLOB_CONTAINER:
+                //        blobSection.IsExpanded = true;
+                //        break;
+                //    case ItemType.QUEUE_SERVICE:
+                //    case ItemType.QUEUE_CONTAINER:
+                //        queueSection.IsExpanded = true;
+                //        break;
+                //    case ItemType.TABLE_SERVICE:
+                //    case ItemType.TABLE_CONTAINER:
+                //        tableSection.IsExpanded = true;
+                //        break;
+                //    default:
+                //        blobSection.IsExpanded = true;
+                //        break;
+                //}
             }
             catch (Exception ex)
             {
@@ -204,7 +196,7 @@ namespace AzureStorageExplorer
             CloudBlobContainer logsContainer = blobClient.GetContainerReference("$logs");
             if (await logsContainer.ExistsAsync())
             {
-                blobSectionItems.Add(new OutlineItem()
+                blobSection.Items.Add(new OutlineItem()
                 {
                     ItemType = ItemType.BLOB_CONTAINER,
                     Container = logsContainer.Name,
@@ -220,7 +212,7 @@ namespace AzureStorageExplorer
             while (containersSegment.Results != null)
             {
                 var tasks = containersSegment.Results.Select(async container =>
-                    blobSectionItems.Add(new OutlineItem()
+                    blobSection.Items.Add(new OutlineItem()
                     {
                         ItemType = ItemType.BLOB_CONTAINER,
                         Container = container.Name,
@@ -240,7 +232,7 @@ namespace AzureStorageExplorer
             {
                 foreach (CloudTable table in tables)
                 {
-                    tableSectionItems.Add(new OutlineItem()
+                    tableSection.Items.Add(new OutlineItem()
                     {
                         ItemType = ItemType.TABLE_CONTAINER,
                         Container = table.Name
@@ -258,7 +250,7 @@ namespace AzureStorageExplorer
             {
                 foreach (CloudQueue queue in queues)
                 {
-                    queueSectionItems.Add(new OutlineItem()
+                    queueSection.Items.Add(new OutlineItem()
                     {
                         ItemType = ItemType.QUEUE_CONTAINER,
                         Container = queue.Name
@@ -333,97 +325,103 @@ namespace AzureStorageExplorer
         //*****************************************
         // An item in the left pane was selected. Update the main pane.
 
-        private void AccountTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        private async void AccountTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             if (AccountTreeView.SelectedItem == null) return;
 
             NewAction();
-
-            TreeViewItem item = AccountTreeView.SelectedItem as TreeViewItem;
-
             ClearMainPane();
 
-            if (item == null || !(item.Tag is OutlineItem || AccountTreeView.SelectedItem is OutlineItem)) return;
+            StorageServiceItem storageItem = AccountTreeView.SelectedItem as StorageServiceItem;
+            OutlineItem outlineItem = AccountTreeView.SelectedItem as OutlineItem;
 
             ContainerTitle.Text = String.Empty;
-
             _BlobCollection.Clear();
-            
-            OutlineItem outlineItem = item.Tag as OutlineItem;
 
-            LastItemType = outlineItem.ItemType;
-
-            switch (outlineItem.ItemType)
+            if (storageItem != null)
             {
-                case ItemType.BLOB_SERVICE:   // Blob Containers section
-                    ContainerToolbarPanel.Visibility = Visibility.Visible;
-                    ButtonBlobServiceCORS.Visibility = Visibility.Visible;
-                    break;
-                case ItemType.BLOB_CONTAINER:   // Blob container
-                    ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_folder.png"));
-                    ContainerPanel.Visibility = Visibility.Visible;
-                    ContainerTitle.Text = outlineItem.Container;
-                    ContainerType.Text = "blob container";
-                    ContainerDetails.Text = String.Empty;
-                    SelectedBlobContainer = outlineItem.Container;
+                switch (storageItem.ItemType)
+                {
+                    case ItemType.BLOB_SERVICE:   // Blob Containers section
+                        ContainerToolbarPanel.Visibility = Visibility.Visible;
+                        ButtonBlobServiceCORS.Visibility = Visibility.Visible;
+                        break;
+                    case ItemType.QUEUE_SERVICE:   // Queues section
+                        QueueToolbarPanel.Visibility = Visibility.Visible;
+                        break;
+                    case ItemType.TABLE_SERVICE:   // Tables section
+                        TableToolbarPanel.Visibility = Visibility.Visible;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else if (outlineItem != null)
+            {
+                LastItemType = outlineItem.ItemType;
 
-                    ButtonDeleteContainer.Visibility = Visibility.Visible;
-                    ButtonContainerAccess.Visibility = Visibility.Visible;
+                switch (outlineItem.ItemType)
+                {
+                    case ItemType.BLOB_CONTAINER:   // Blob container
+                        ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_folder.png"));
+                        ContainerPanel.Visibility = Visibility.Visible;
+                        ContainerTitle.Text = outlineItem.Container;
+                        ContainerType.Text = "blob container";
+                        ContainerDetails.Text = String.Empty;
+                        SelectedBlobContainer = outlineItem.Container;
 
-                    if (outlineItem.Permissions.PublicAccess ==  BlobContainerPublicAccessType.Container)
-                    {
-                        ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
-                    }
-                    else if (outlineItem.Permissions.PublicAccess ==  BlobContainerPublicAccessType.Blob)
-                    {
-                        ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
-                    }
-                    else
-                    {
-                        ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/private.png"));
-                    }
+                        ButtonDeleteContainer.Visibility = Visibility.Visible;
+                        ButtonContainerAccess.Visibility = Visibility.Visible;
 
-                    ShowBlobContainer(SelectedBlobContainer);
-                    break;
-                case ItemType.QUEUE_SERVICE:   // Queues section
-                    QueueToolbarPanel.Visibility = Visibility.Visible;
-                    break;
-                case ItemType.QUEUE_CONTAINER:   // Queue
-                    ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_queue.png"));
-                    ContainerPanel.Visibility = Visibility.Visible;
-                    ContainerTitle.Text = outlineItem.Container;
-                    ContainerType.Text = "queue";
-                    ContainerDetails.Text = String.Empty;
-                    SelectedTableContainer = outlineItem.Container;
+                        if (outlineItem.Permissions.PublicAccess == BlobContainerPublicAccessType.Container)
+                        {
+                            ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
+                        }
+                        else if (outlineItem.Permissions.PublicAccess == BlobContainerPublicAccessType.Blob)
+                        {
+                            ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/public.png"));
+                        }
+                        else
+                        {
+                            ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/private.png"));
+                        }
 
-                    QueueToolbarPanel.Visibility = Visibility.Visible;
-                    ButtonDeleteQueue.Visibility = Visibility.Visible;
+                        await ShowBlobContainerAsync(SelectedBlobContainer);
+                        break;
+                    case ItemType.QUEUE_CONTAINER:   // Queue
+                        ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_queue.png"));
+                        ContainerPanel.Visibility = Visibility.Visible;
+                        ContainerTitle.Text = outlineItem.Container;
+                        ContainerType.Text = "queue";
+                        ContainerDetails.Text = String.Empty;
+                        SelectedTableContainer = outlineItem.Container;
 
-                    SelectedQueueContainer = outlineItem.Container;
-                    ShowQueueContainer(SelectedQueueContainer);
-                    break;
-                case ItemType.TABLE_SERVICE:   // Tables section
-                    TableToolbarPanel.Visibility = Visibility.Visible;
-                    break;
-                case ItemType.TABLE_CONTAINER:   // Table
-                    TableToolbarPanel.Visibility = Visibility.Visible;
-                    ButtonDeleteTable.Visibility = Visibility.Visible;
-                    EntityDownloadButton.Visibility = Visibility.Visible;
-                    EntityUploadButton.Visibility = Visibility.Visible;
+                        QueueToolbarPanel.Visibility = Visibility.Visible;
+                        ButtonDeleteQueue.Visibility = Visibility.Visible;
 
-                    ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_table.png"));
-                    ContainerPanel.Visibility = Visibility.Visible;
-                    ContainerTitle.Text = outlineItem.Container;
-                    ContainerType.Text = "table";
-                    ContainerDetails.Text = String.Empty;
-                    SelectedTableContainer = outlineItem.Container;
+                        SelectedQueueContainer = outlineItem.Container;
+                        await ShowQueueContainerAsync(SelectedQueueContainer);
+                        break;
+                    case ItemType.TABLE_CONTAINER:   // Table
+                        TableToolbarPanel.Visibility = Visibility.Visible;
+                        ButtonDeleteTable.Visibility = Visibility.Visible;
+                        EntityDownloadButton.Visibility = Visibility.Visible;
+                        EntityUploadButton.Visibility = Visibility.Visible;
 
-                    TableColumnNames.Clear();
+                        ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_table.png"));
+                        ContainerPanel.Visibility = Visibility.Visible;
+                        ContainerTitle.Text = outlineItem.Container;
+                        ContainerType.Text = "table";
+                        ContainerDetails.Text = String.Empty;
+                        SelectedTableContainer = outlineItem.Container;
 
-                    ShowTableContainer(SelectedTableContainer);
-                    break;
-                default:
-                    break;
+                        TableColumnNames.Clear();
+
+                        await ShowTableContainerAsync(SelectedTableContainer);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -862,27 +860,19 @@ namespace AzureStorageExplorer
         //***************************
         // Delete selected blob container.
 
-        private void DeleteContainer_Click(object sender, RoutedEventArgs e)
+        private async void DeleteContainer_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
             String message = "To delete a blob container, select a container and then clck the Delete Container button.";
 
-            if (AccountTreeView.SelectedItem == null || !(AccountTreeView.SelectedItem is TreeViewItem))
+            if (AccountTreeView.SelectedItem == null || !(AccountTreeView.SelectedItem is StorageServiceItem))
             {
                 MessageBox.Show(message, "Container Selection Required");
                 return;
             }
 
-            TreeViewItem tvi = AccountTreeView.SelectedItem as TreeViewItem;
-
-            if (!(tvi.Tag is OutlineItem))
-            {
-                MessageBox.Show(message, "Container Selection Required");
-                return;
-            }
-
-            OutlineItem item = tvi.Tag as OutlineItem;
+            StorageServiceItem item = AccountTreeView.SelectedItem as StorageServiceItem;
 
             if (item.ItemType != ItemType.BLOB_CONTAINER)
             {
@@ -893,62 +883,49 @@ namespace AzureStorageExplorer
             String containerName = SelectedBlobContainer;
 
             if (MessageBox.Show("Are you SURE you want to delete blob container " + SelectedBlobContainer + "?\n\nThe container and all blobs it contains will be permanently deleted",
-                "Confirm Container Delete", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                "Confirm Container Delete", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
             {
-                bool isError = false;
-                String errorMessage = null;
-
-                Action action = new Action()
-                {
-                    Id = NextAction++,
-                    ActionType = Action.ACTION_DELETE_CONTAINER,
-                    IsCompleted = false,
-                    Message = "Deleting container " + containerName
-                };
-                Actions.Add(action.Id, action);
-
-                UpdateStatus();
-
-                // Execute background task to delete the container.
-
-                Task task = Task.Factory.StartNew(() =>
-                {
-                    try
-                    {
-                        if (blobClient == null)
-                        {
-                            CloudStorageAccount account = OpenStorageAccount();
-                            blobClient = account.CreateCloudBlobClient();
-                        }
-                        CloudBlobContainer container = blobClient.GetContainerReference(containerName);
-                        container.DeleteIfExists();
-                    }
-                    catch (Exception ex)
-                    {
-                        isError = true;
-                        errorMessage = ex.Message;
-                    }
-                    Actions[action.Id].IsCompleted = true;
-                });
-
-                // Task complete - update UI.
-
-                task.ContinueWith(async t =>
-                {
-                    await LoadLeftPaneAsync();
-                    UpdateStatus();
-
-                    if (isError)
-                    {
-                        ShowError("Error Deleting Blob Container " + containerName + ": " + errorMessage);
-                    }
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+                return;
             }
-        }
 
-        private void ContainerListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            BlobViewProperties_Click(this, null);
+            bool isError = false;
+            String errorMessage = null;
+
+            Action action = new Action()
+            {
+                Id = NextAction++,
+                ActionType = Action.ACTION_DELETE_CONTAINER,
+                IsCompleted = false,
+                Message = "Deleting container " + containerName
+            };
+            Actions.Add(action.Id, action);
+
+            UpdateStatus();
+
+            try
+            {
+                if (blobClient == null)
+                {
+                    CloudStorageAccount account = OpenStorageAccount();
+                    blobClient = account.CreateCloudBlobClient();
+                }
+                CloudBlobContainer container = blobClient.GetContainerReference(containerName);
+                await container.DeleteIfExistsAsync();
+            }
+            catch (Exception ex)
+            {
+                isError = true;
+                errorMessage = ex.Message;
+            }
+            Actions[action.Id].IsCompleted = true;
+
+            await LoadLeftPaneAsync();
+            UpdateStatus();
+
+            if (isError)
+            {
+                ShowError("Error Deleting Blob Container " + containerName + ": " + errorMessage);
+            }
         }
 
         //**********************
@@ -958,7 +935,7 @@ namespace AzureStorageExplorer
         //**********************
         // Display the blob filter dialog.
 
-        private void BlobFilter_Click(object sender, RoutedEventArgs e)
+        private async void BlobFilter_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -1081,12 +1058,12 @@ namespace AzureStorageExplorer
 
                 if (dlg.SaveAsDefaultFilter.IsChecked.Value)
                 {
-                    SaveDefaultBlobFilter();
+                    await SaveDefaultBlobFilterAsync();
                 }
 
                 // Refresh the blob list display with the new filter settings.
 
-                ShowBlobContainer(SelectedBlobContainer);
+                await ShowBlobContainerAsync(SelectedBlobContainer);
             }
         }
 
@@ -1097,7 +1074,7 @@ namespace AzureStorageExplorer
         //****************************
         //Upload file(s) to current blob container.
 
-        private void BlobUploadButton_Click(object sender, RoutedEventArgs e)
+        private async void BlobUploadButton_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -1116,7 +1093,7 @@ namespace AzureStorageExplorer
                 String[] files = dlg.FileNames;
                 if (files != null)
                 {
-                    UploadFiles(files, SelectedBlobContainer);
+                    await UploadFilesAsync(files, SelectedBlobContainer);
                 }
             }
         }
@@ -1128,7 +1105,7 @@ namespace AzureStorageExplorer
         //**********************
         // Delete selected blobs
 
-        private void BlobDelete_Click(object sender, RoutedEventArgs e)
+        private async void BlobDelete_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -1194,43 +1171,37 @@ namespace AzureStorageExplorer
 
                 Cursor = Cursors.Wait;
 
-                Task task = Task.Factory.StartNew(() =>
-                {
-                    CloudBlobContainer container = blobClient.GetContainerReference(SelectedBlobContainer);
+                CloudBlobContainer container = blobClient.GetContainerReference(SelectedBlobContainer);
 
-                    int deletedCount = 0;
-                    foreach (String blobName in blobs)
+                int deletedCount = 0;
+                foreach (String blobName in blobs)
+                {
+                    ICloudBlob blob = await container.GetBlobReferenceFromServerAsync(blobName);
+                    if (blob.BlobType == BlobType.BlockBlob)
                     {
-                        ICloudBlob blob = container.GetBlobReferenceFromServer(blobName);
-                        if (blob.BlobType == BlobType.BlockBlob)
+                        CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
+                        if (await blockBlob.DeleteIfExistsAsync())
                         {
-                            CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
-                            if (blockBlob.DeleteIfExists())
-                            {
-                                deletedCount++;
-                            }
-                        }
-                        else if (blob.BlobType == BlobType.PageBlob)
-                        {
-                            CloudPageBlob pageBlob = container.GetPageBlobReference(blobName);
-                            if (pageBlob.DeleteIfExists())
-                            {
-                                deletedCount++;
-                            }
+                            deletedCount++;
                         }
                     }
+                    else if (blob.BlobType == BlobType.PageBlob)
+                    {
+                        CloudPageBlob pageBlob = container.GetPageBlobReference(blobName);
+                        if (await pageBlob.DeleteIfExistsAsync())
+                        {
+                            deletedCount++;
+                        }
+                    }
+                }
 
-                    Actions[action.Id].IsCompleted = true;
-                });
+                Actions[action.Id].IsCompleted = true;
 
-                task.ContinueWith((t) =>
-                {
-                    UpdateStatus();
+                UpdateStatus();
 
-                    Cursor = Cursors.Arrow;
+                Cursor = Cursors.Arrow;
 
-                    ShowBlobContainer(SelectedBlobContainer);
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+                await ShowBlobContainerAsync(SelectedBlobContainer);
             }
         }
 
@@ -1316,7 +1287,7 @@ namespace AzureStorageExplorer
         // Make a copy of the selected blob under a new name - in the same container, in a different container, or in a different storage account.
         // IN PROGRESS
 
-        private void BlobCopy_Click(object sender, RoutedEventArgs e)
+        private async void BlobCopy_Click(object sender, RoutedEventArgs e)
         {
             bool Success = false;
             String ErrorMessage = null;
@@ -1413,7 +1384,7 @@ namespace AzureStorageExplorer
                     CloudBlobContainer destContainer = destBlobClient.GetContainerReference(destContainerName);
 
                     ICloudBlob sourceBlob = sourceContainer.GetBlobReferenceFromServer(blobName);
-                    
+
                     bool proceedWithCopy = true;
 
                     try
@@ -1459,7 +1430,7 @@ namespace AzureStorageExplorer
 
                         if (proceedWithCopy)
                         {
-                            if (sourceBlob.BlobType==BlobType.BlockBlob)
+                            if (sourceBlob.BlobType == BlobType.BlockBlob)
                             {
                                 CloudBlockBlob sourceBlockBlob = sourceContainer.GetBlockBlobReference(blobName);
                                 CloudBlockBlob targetBlockBlob = destContainer.GetBlockBlobReference(destName);
@@ -1486,19 +1457,18 @@ namespace AzureStorageExplorer
                     Actions[action.Id].IsCompleted = true;
                 });
 
-                task.ContinueWith((t) =>
+                await task;
+
+                UpdateStatus();
+
+                if (!Success)
                 {
-                    UpdateStatus();
+                    ShowError("Error copying blob: " + ErrorMessage);
+                }
 
-                    if (!Success)
-                    {
-                        ShowError("Error copying blob: "+ ErrorMessage);
-                    }
+                Cursor = Cursors.Arrow;
 
-                    Cursor = Cursors.Arrow;
-
-                    ShowBlobContainer(SelectedBlobContainer);
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+                await ShowBlobContainerAsync(SelectedBlobContainer);
             }
         }
 
@@ -1509,12 +1479,12 @@ namespace AzureStorageExplorer
         //***********************
         // Refresh the list of blobs.
 
-        private void BlobRefresh_Click(object sender, RoutedEventArgs e)
+        private async void BlobRefresh_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
             ContainerListView.ItemsSource = null;
-            ShowBlobContainer(SelectedBlobContainer);
+            await ShowBlobContainerAsync(SelectedBlobContainer);
         }
 
         //***************************
@@ -1748,7 +1718,7 @@ namespace AzureStorageExplorer
         //*******************
         // Create a new blob.
 
-        private void BlobNew_Click(object sender, RoutedEventArgs e)
+        private async void BlobNew_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -1785,7 +1755,7 @@ namespace AzureStorageExplorer
 
                         blob.UploadText(blobText);
 
-                        ShowBlobContainer(SelectedBlobContainer);
+                        await ShowBlobContainerAsync(SelectedBlobContainer);
                     }
                     else
                     {
@@ -1804,7 +1774,7 @@ namespace AzureStorageExplorer
                         var options = new BlobRequestOptions();
                         blob.Create(dlg.PageBlobSize, null, options);
 
-                        ShowBlobContainer(SelectedBlobContainer);
+                        await ShowBlobContainerAsync(SelectedBlobContainer);
                     }
                 }
                 catch(Exception ex)
@@ -2087,7 +2057,7 @@ namespace AzureStorageExplorer
         //***********************
         // Delete selected queue.
         
-        private void DeleteQueue_Click(object sender, RoutedEventArgs e)
+        private async void DeleteQueue_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -2179,12 +2149,12 @@ namespace AzureStorageExplorer
         //**************************
         // Refresh queue message list.
 
-        private void MessageRefresh_Click(object sender, RoutedEventArgs e)
+        private async void MessageRefresh_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
             MessageListView.ItemsSource = null;
-            ShowQueueContainer(SelectedQueueContainer);
+            await ShowQueueContainerAsync(SelectedQueueContainer);
         }
 
 
@@ -2195,7 +2165,7 @@ namespace AzureStorageExplorer
         //**********************
         // Create a new queue message.
 
-        private void MessageNew_Click(object sender, RoutedEventArgs e)
+        private async void MessageNew_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -2219,9 +2189,9 @@ namespace AzureStorageExplorer
                     // Create queue message.
 
                     CloudQueueMessage message = new CloudQueueMessage(messageText);
-                    container.AddMessage(message);
+                    await container.AddMessageAsync(message);
 
-                    ShowQueueContainer(SelectedQueueContainer);
+                    await ShowQueueContainerAsync(SelectedQueueContainer);
 
                 }
                 catch (Exception ex)
@@ -2243,7 +2213,7 @@ namespace AzureStorageExplorer
         //***********************
         // Copy selected queue message.
 
-        private void MessageCopy_Click(object sender, RoutedEventArgs e)
+        private async void MessageCopy_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -2283,9 +2253,9 @@ namespace AzureStorageExplorer
                     // Create queue message.
 
                     CloudQueueMessage message = new CloudQueueMessage(messageText);
-                    container.AddMessage(message);
+                    await container.AddMessageAsync(message);
 
-                    ShowQueueContainer(SelectedQueueContainer);
+                    await ShowQueueContainerAsync(SelectedQueueContainer);
 
                 }
                 catch (Exception ex)
@@ -2308,7 +2278,7 @@ namespace AzureStorageExplorer
         //**********************
         // Pop top message off the current queue.
 
-        private void MessagePop_Click(object sender, RoutedEventArgs e)
+        private async void MessagePop_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -2339,27 +2309,20 @@ namespace AzureStorageExplorer
 
                 Cursor = Cursors.Wait;
 
-                Task task = Task.Factory.StartNew(() =>
-                {
-                    CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
+                CloudQueue container = queueClient.GetQueueReference(SelectedQueueContainer);
 
-                    int deletedCount = 0;
-                    CloudQueueMessage msg = container.GetMessage();
-                    deletedCount++;
+                int deletedCount = 0;
+                CloudQueueMessage msg = await container.GetMessageAsync();
+                deletedCount++;
 
-                    Actions[action.Id].IsCompleted = true;
-                });
+                Actions[action.Id].IsCompleted = true;
 
-                task.ContinueWith((t) =>
-                {
-                    UpdateStatus();
+                UpdateStatus();
 
-                    Cursor = Cursors.Arrow;
+                Cursor = Cursors.Arrow;
 
-                    ShowQueueContainer(SelectedQueueContainer);
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+                await ShowQueueContainerAsync(SelectedQueueContainer);
             }
-
         }
 
 
@@ -2619,7 +2582,7 @@ namespace AzureStorageExplorer
         //*****************************
         // Upload selected entities to a local file.
 
-        private void EntityUploadButton_Click(object sender, RoutedEventArgs e)
+        private async void EntityUploadButton_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -2672,7 +2635,7 @@ namespace AzureStorageExplorer
                 String partitionKeyColumnName = dlg.PartitionKeyColumnName.Text;
                 String rowKeyColumnName = dlg.RowKeyColumnName.Text;
 
-                UploadEntities(SelectedTableContainer, format, inputFile, outerElementName, partitionKeyColumnName, rowKeyColumnName, stopOnError);
+                await UploadEntitiesAsync(SelectedTableContainer, format, inputFile, outerElementName, partitionKeyColumnName, rowKeyColumnName, stopOnError);
             }
 
         }
@@ -2685,11 +2648,11 @@ namespace AzureStorageExplorer
         //*************************
         // Refresh the list of entities.
 
-        private void EntityRefresh_Click(object sender, RoutedEventArgs e)
+        private async void EntityRefresh_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
             TableListView.ItemsSource = null;
-            ShowTableContainer(SelectedTableContainer);
+            await ShowTableContainerAsync(SelectedTableContainer);
         }
 
         //***************************
@@ -2725,7 +2688,7 @@ namespace AzureStorageExplorer
         //***********************
         // Display the entity query dialog.
 
-        private void EntityQuery_Click(object sender, RoutedEventArgs e)
+        private async void EntityQuery_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -2815,7 +2778,7 @@ namespace AzureStorageExplorer
                             col++;
                         }
                     }
-                    ShowTableContainer(SelectedTableContainer);
+                    await ShowTableContainerAsync(SelectedTableContainer);
                 }
             }
             catch(Exception ex)
@@ -2831,7 +2794,7 @@ namespace AzureStorageExplorer
         //************************
         // Display the entity filter dialog.
 
-        private void EntityFilter_Click(object sender, RoutedEventArgs e)
+        private async void EntityFilter_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -2917,12 +2880,12 @@ namespace AzureStorageExplorer
 
                 if (dlg.SaveAsDefaultFilter.IsChecked.Value)
                 {
-                    SaveDefaultEntityFilter();
+                    await SaveDefaultEntityFilterAsync();
                 }
 
                 // Refresh the blob list display with the new filter settings.
 
-                ShowTableContainer(SelectedTableContainer);
+                await ShowTableContainerAsync(SelectedTableContainer);
             }
         }
 
@@ -2930,21 +2893,7 @@ namespace AzureStorageExplorer
 
         private bool AllTableColumnNamesChecked()
         {
-            bool result = true;
-
-            if (TableColumnNames != null)
-            {
-                foreach (KeyValuePair<String, bool> col in TableColumnNames)
-                {
-                    if (!col.Value)
-                    {
-                        result = false;
-                        break;
-                    }
-                }
-            }
-
-            return result;
+            return TableColumnNames != null || TableColumnNames.Values.All(b => b);
         }
         
         //*********************
@@ -2954,7 +2903,7 @@ namespace AzureStorageExplorer
         //*********************
         // Insert a new entity into the currently selected table.
 
-        private void EntityNew_Click(object sender, RoutedEventArgs e)
+        private async void EntityNew_Click(object sender, RoutedEventArgs e)
         {
             EditEntityDialog dlg = new EditEntityDialog();
 
@@ -2965,7 +2914,7 @@ namespace AzureStorageExplorer
             {
                 if (dlg.RecordsAdded > 0)
                 {
-                    ShowTableContainer(SelectedTableContainer);
+                    await ShowTableContainerAsync(SelectedTableContainer);
                 }
             }
         }
@@ -2978,7 +2927,7 @@ namespace AzureStorageExplorer
         //**********************
         // View/edit seleted entity.
 
-        private void EntityView_Click(object sender, RoutedEventArgs e)
+        private async void EntityView_Click(object sender, RoutedEventArgs e)
         {
             if (TableListView.SelectedItems.Count != 1)
             {
@@ -2998,7 +2947,7 @@ namespace AzureStorageExplorer
             {
                 if (dlg.RecordsUpdated > 0)
                 {
-                    ShowTableContainer(SelectedTableContainer);
+                    await ShowTableContainerAsync(SelectedTableContainer);
                 }
             }
         }
@@ -3011,7 +2960,7 @@ namespace AzureStorageExplorer
         //**********************
         // View/edit seleted entity.
 
-        private void EntityCopy_Click(object sender, RoutedEventArgs e)
+        private async void EntityCopy_Click(object sender, RoutedEventArgs e)
         {
             if (TableListView.SelectedItems.Count != 1)
             {
@@ -3031,7 +2980,7 @@ namespace AzureStorageExplorer
             {
                 if (dlg.RecordsAdded > 0)
                 {
-                    ShowTableContainer(SelectedTableContainer);
+                    await ShowTableContainerAsync(SelectedTableContainer);
                 }
             }
         }
@@ -3044,7 +2993,7 @@ namespace AzureStorageExplorer
         //************************
         //Delete selected entities.
 
-        private void EntityDelete_Click(object sender, RoutedEventArgs e)
+        private async void EntityDelete_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
 
@@ -3110,30 +3059,23 @@ namespace AzureStorageExplorer
 
                 Cursor = Cursors.Wait;
 
-                Task task = Task.Factory.StartNew(() =>
+                CloudTable table = tableClient.GetTableReference(SelectedTableContainer);
+
+                int deletedCount = 0;
+                foreach (EntityItem entity in entities)
                 {
-                    CloudTable table = tableClient.GetTableReference(SelectedTableContainer);
+                    await table.ExecuteAsync(TableOperation.Delete(entity));
+                    deletedCount++;
+                }
 
-                    int deletedCount = 0;
-                    foreach (EntityItem entity in entities)
-                    {
-                        table.Execute(TableOperation.Delete(entity));
-                        deletedCount++;
-                    }
+                Actions[action.Id].IsCompleted = true;
 
-                    Actions[action.Id].IsCompleted = true;
-                });
+                UpdateStatus();
 
-                task.ContinueWith((t) =>
-                {
-                    UpdateStatus();
+                Cursor = Cursors.Arrow;
 
-                    Cursor = Cursors.Arrow;
-
-                    ShowTableContainer(SelectedTableContainer);
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+                await ShowTableContainerAsync(SelectedTableContainer);
             }
-
         }
 
 
@@ -3297,7 +3239,7 @@ namespace AzureStorageExplorer
         //***********************
         // Get and show blobs in selected blob container. Call from UI thread.
 
-        public void ShowBlobContainer(String containerName) //, CancellationToken token, TaskScheduler uiTask)
+        private async Task ShowBlobContainerAsync(String containerName) //, CancellationToken token, TaskScheduler uiTask)
         {
             try
             {
@@ -3317,8 +3259,9 @@ namespace AzureStorageExplorer
                 CloudBlobContainer container = blobClient.GetContainerReference(containerName);
                 if (container != null)
                 {
-                    IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All);
-                    if (blobs != null)
+                    var segment = await container.ListBlobsSegmentedAsync(new BlobContinuationToken());
+                    IEnumerable<IListBlobItem> blobs = segment.Results;
+                    while (blobs != null)
                     {
                         foreach (IListBlobItem item in blobs)
                         {
@@ -3326,10 +3269,10 @@ namespace AzureStorageExplorer
                             {
                                 if (MaxBlobCountFilter != -1 && containerCount >= MaxBlobCountFilter) break;
 
-                                if (item.GetType() == typeof(CloudBlobDirectory))
+                                if (item is CloudBlobDirectory)
                                 {
                                 }
-                                else if (item.GetType() == typeof(CloudBlockBlob))
+                                else if (item is CloudBlockBlob)
                                 {
                                     CloudBlockBlob blockBlob = item as CloudBlockBlob;
 
@@ -3359,7 +3302,7 @@ namespace AzureStorageExplorer
                                         }
                                     }
                                 }
-                                else if (item.GetType() == typeof(CloudPageBlob))
+                                else if (item is CloudPageBlob)
                                 {
                                     CloudPageBlob pageBlob = item as CloudPageBlob;
 
@@ -3395,22 +3338,24 @@ namespace AzureStorageExplorer
 
                             }
                         } // end foreach
-
-                        ContainerListView.ItemsSource = BlobCollection;
-
-                        SortBlobList();
-
-                        if (containerCount == 1)
-                        {
-                            ContainerDetails.Text = "(1 blob, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
-                        }
-                        else
-                        {
-                            ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
-                        }
-
-                        this.Cursor = Cursors.Arrow;
+                        segment = await container.ListBlobsSegmentedAsync(segment.ContinuationToken);
+                        blobs = segment.Results;
                     }
+
+                    ContainerListView.ItemsSource = BlobCollection;
+
+                    SortBlobList();
+
+                    if (containerCount == 1)
+                    {
+                        ContainerDetails.Text = "(1 blob, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
+                    }
+                    else
+                    {
+                        ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
+                    }
+
+                    this.Cursor = Cursors.Arrow;
                 }
             }
             catch(Exception ex)
@@ -3420,6 +3365,10 @@ namespace AzureStorageExplorer
             }
         }
 
+        private async void ContainerListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            await BlobViewProperties(this, null);
+        }
 
         //******************************
         //*                            *
@@ -3428,7 +3377,12 @@ namespace AzureStorageExplorer
         //******************************
         // Display blob properties for selected blob.
 
-        private void BlobViewProperties_Click(object sender, RoutedEventArgs e)
+        private async void BlobViewProperties_Click(object sender, RoutedEventArgs e)
+        {
+            await BlobViewProperties(sender, e);
+        }
+
+        private async Task BlobViewProperties(object sender, RoutedEventArgs e)
         {
             // Validate a single blob has been selected.
 
@@ -3444,17 +3398,17 @@ namespace AzureStorageExplorer
 
             CloudBlobContainer container = blobClient.GetContainerReference(SelectedBlobContainer);
 
-            ICloudBlob blob = container.GetBlobReferenceFromServer(blobName);
+            ICloudBlob blob = await container.GetBlobReferenceFromServerAsync(blobName);
             if (blob.BlobType == BlobType.BlockBlob)
             {
                 //CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobName);
-                CloudBlockBlob blockBlob = container.GetBlobReferenceFromServer(blobName) as CloudBlockBlob;
+                CloudBlockBlob blockBlob = await container.GetBlobReferenceFromServerAsync(blobName) as CloudBlockBlob;
                 Microsoft.WindowsAzure.Storage.Blob.BlobProperties props = blockBlob.Properties;
                 dlg.ShowBlockBlob(blockBlob);
             }
             else if (blob.BlobType == BlobType.PageBlob)
             {
-                CloudPageBlob pageBlob = container.GetBlobReferenceFromServer(blobName) as CloudPageBlob;
+                CloudPageBlob pageBlob = await container.GetBlobReferenceFromServerAsync(blobName) as CloudPageBlob;
                 Microsoft.WindowsAzure.Storage.Blob.BlobProperties props = pageBlob.Properties;
                 dlg.ShowPageBlob(pageBlob);
             }
@@ -3463,7 +3417,7 @@ namespace AzureStorageExplorer
             {
                 if (dlg.IsBlobChanged)
                 {
-                    ShowBlobContainer(SelectedBlobContainer);
+                    await ShowBlobContainerAsync(SelectedBlobContainer);
                 }
             }
         }
@@ -3476,7 +3430,7 @@ namespace AzureStorageExplorer
         //************************
         // Get and show entities in selected table container. Call from UI thread.
 
-        public void ShowTableContainer(String tableName)
+        private async Task ShowTableContainerAsync(String tableName)
         {
             try
             {
@@ -3502,7 +3456,6 @@ namespace AzureStorageExplorer
                 tempTableColumnNames.Add("Timestamp", TableColumnNames["Timestamp"]);
 
                 int containerCount = 0;
-                long containerSize = 0;
                 _EntityCollection.Clear();
                 TableListView.Visibility = Visibility.Visible;
                 EntityToolbarPanel.Visibility = Visibility.Visible;
@@ -3736,11 +3689,11 @@ namespace AzureStorageExplorer
         //***************************
         // If a default blob filter configuration has been saved for this user, load it now.
 
-        private void LoadDefaultBlobFilter()
+        private async Task LoadDefaultBlobFilterAsync()
         {
             try
             {
-                String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-DefaultBlobFilter.dt1";
+                String filename = System.IO.Path.Combine(System.Windows.Forms.Application.UserAppDataPath, "AzureStorageExplorer6-DefaultBlobFilter.dt1");
                 String line, name, value;
 
                 if (File.Exists(filename))
@@ -3748,7 +3701,7 @@ namespace AzureStorageExplorer
                     using (TextReader reader = File.OpenText(filename))
                     {
                         string[] items = null;
-                        while((line = reader.ReadLine()) != null)
+                        while((line = await reader.ReadLineAsync()) != null)
                         {
                             items = line.Split('|');
                             if (items.Length >= 2)
@@ -3849,9 +3802,9 @@ namespace AzureStorageExplorer
         //***************************
         // Save default blob filter configuration.
 
-        private void SaveDefaultBlobFilter()
+        private async Task SaveDefaultBlobFilterAsync()
         {
-            String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-DefaultBlobFilter.dt1";
+            String filename = System.IO.Path.Combine(System.Windows.Forms.Application.UserAppDataPath, "AzureStorageExplorer6-DefaultBlobFilter.dt1");
 
             try
             {
@@ -3859,35 +3812,35 @@ namespace AzureStorageExplorer
                 {
                     if (MaxBlobCountFilter != -1)
                     {
-                        writer.WriteLine("MaxBlobCount|" + MaxBlobCountFilter.ToString());
+                        await writer.WriteLineAsync("MaxBlobCount|" + MaxBlobCountFilter.ToString());
                     }
 
                     if (BlobNameFilter != null)
                     {
-                        writer.WriteLine("BlobName|" + BlobNameFilter);
+                        await writer.WriteLineAsync("BlobName|" + BlobNameFilter);
                     }
 
                     if (MinBlobSize != -1)
                     {
-                        writer.WriteLine("MinBlobSize|" + MinBlobSize.ToString());
+                        await writer.WriteLineAsync("MinBlobSize|" + MinBlobSize.ToString());
                     }
 
                     if (MaxBlobSize != -1)
                     {
-                        writer.WriteLine("MaxBlobSize|" + MaxBlobSize.ToString());
+                        await writer.WriteLineAsync("MaxBlobSize|" + MaxBlobSize.ToString());
                     }
 
-                    writer.WriteLine("BlobType|" + BlobTypeFilter.ToString());
+                    await writer.WriteLineAsync("BlobType|" + BlobTypeFilter.ToString());
 
-                    writer.WriteLine("BlobSortHeader|" + BlobSortHeader);
+                    await writer.WriteLineAsync("BlobSortHeader|" + BlobSortHeader);
 
                     if (BlobSortDirection == ListSortDirection.Ascending)
                     {
-                        writer.WriteLine("BlobSortDirection|A");
+                        await writer.WriteLineAsync("BlobSortDirection|A");
                     }
                     else
                     {
-                        writer.WriteLine("BlobSortDirection|D");
+                        await writer.WriteLineAsync("BlobSortDirection|D");
                     }
                 }
             }
@@ -3904,7 +3857,7 @@ namespace AzureStorageExplorer
         //*****************
         // Upload a list of local files up to a blob container. Call from UI thread. Performs heavy lifting in a background task.
 
-        public void UploadFiles(String[] files, String containerName)
+        public async Task UploadFilesAsync(String[] files, String containerName)
         {
             Dictionary<String, String> contentTypes = MainWindow.ContentTypes;
 
@@ -3924,91 +3877,79 @@ namespace AzureStorageExplorer
             bool isError = false;
             String errorMessage = null;
 
-            Task task = Task.Factory.StartNew(() =>
+            if (files != null)
             {
-                if (files != null)
+                try
                 {
-                    try
+                    CloudBlobContainer container = blobClient.GetContainerReference(containerName);
+                    await container.CreateIfNotExistsAsync();
+
+                    foreach (String file in files)
                     {
-                        CloudBlobContainer container = blobClient.GetContainerReference(containerName);
-                        container.CreateIfNotExists();
-
-                        foreach (String file in files)
+                        String blobName = file;
+                        int index = blobName.LastIndexOf("\\");
+                        if (index != -1)
                         {
-                            String blobName = file;
-                            int index = blobName.LastIndexOf("\\");
-                            if (index != -1)
-                            {
-                                blobName = blobName.Substring(index + 1);
-                            }
+                            blobName = blobName.Substring(index + 1);
+                        }
 
-                            bool isPageBlob = false;
+                        bool isPageBlob = false;
                             
-                            if (blobName.ToLower().EndsWith(".vhd"))
+                        if (blobName.ToLower().EndsWith(".vhd"))
+                        {
+                            isPageBlob = true;
+                        }
+
+                        if (isPageBlob)
+                        {
+                            CloudPageBlob blob = container.GetPageBlobReference(blobName);
+
+                            await blob.UploadFromFileAsync(file, System.IO.FileMode.Open);
+
+                            foreach (KeyValuePair<String, String> ct in contentTypes)
                             {
-                                isPageBlob = true;
-                            }
-
-                            if (isPageBlob)
-                            {
-                                CloudPageBlob blob = container.GetPageBlobReference(blobName);
-
-                                blob.UploadFromFile(file, System.IO.FileMode.Open);
-
-                                foreach(KeyValuePair<String, String> ct in contentTypes)
+                                if (blob.Name.EndsWith(ct.Key))
                                 {
-                                    if (blob.Name.EndsWith(ct.Key))
-                                    {
-                                        blob.Properties.ContentType = ct.Value;
-                                        blob.SetProperties();
-                                        break;
-                                    }
+                                    blob.Properties.ContentType = ct.Value;
+                                    await blob.SetPropertiesAsync();
+                                    break;
                                 }
                             }
-                            else
+                        }
+                        else
+                        {
+                            CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
+
+                            await blob.UploadFromFileAsync(file, System.IO.FileMode.Open);
+
+                            foreach (KeyValuePair<String, String> ct in contentTypes)
                             {
-                                                            {
-                                CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
-
-                                blob.UploadFromFile(file, System.IO.FileMode.Open);
-
-                                foreach(KeyValuePair<String, String> ct in contentTypes)
+                                if (blob.Name.EndsWith(ct.Key))
                                 {
-                                    if (blob.Name.EndsWith(ct.Key))
-                                    {
-                                        blob.Properties.ContentType = ct.Value;
-                                        blob.SetProperties();
-                                        break;
-                                    }
+                                    blob.Properties.ContentType = ct.Value;
+                                    await blob.SetPropertiesAsync();
+                                    break;
                                 }
-                            }
                             }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        isError = true;
-                        errorMessage = ex.Message;
-                    }
                 }
-
-                Actions[action.Id].IsCompleted = true;
-            });
-
-            // Task complete - update UI.
-
-            task.ContinueWith((t) =>
-            {
-                ShowBlobContainer(containerName);
-                UpdateStatus();
-
-                if (isError)
+                catch (Exception ex)
                 {
-                    ShowError("Error uploading files: " + errorMessage);
+                    isError = true;
+                    errorMessage = ex.Message;
                 }
+            }
 
-            }, TaskScheduler.FromCurrentSynchronizationContext());
+            Actions[action.Id].IsCompleted = true;
 
+            await ShowBlobContainerAsync(containerName);
+            UpdateStatus();
+
+            if (isError)
+            {
+                ShowError("Error uploading files: " + errorMessage);
+            }
         }
 
         //*******************
@@ -4018,7 +3959,7 @@ namespace AzureStorageExplorer
         //*******************
         // Download collection of blobs to a local file folder. Call from UI thread. Performs heavy lifting in a background task.
 
-        public void DownloadFiles(String containerName, String[] blobs, string folder)
+        public async Task DownloadFiles(String containerName, String[] blobs, string folder)
         {
             // Create task action.
 
@@ -4046,46 +3987,29 @@ namespace AzureStorageExplorer
 
             // Execute background task to perform the downloading.
 
-            Task task = Task.Factory.StartNew(() =>
+            if (blobs != null)
             {
-                if (blobs != null)
+                CloudBlobContainer container = blobClient.GetContainerReference(containerName);
+                await container.CreateIfNotExistsAsync();
+
+                foreach (String name in blobs)
                 {
-                    CloudBlobContainer container = blobClient.GetContainerReference(containerName);
-                    container.CreateIfNotExists();
-
-                    foreach (String name in blobs)
+                    String blobName = name;
+                    int index = blobName.LastIndexOf("\\");
+                    if (index != -1)
                     {
-                        String blobName = name;
-                        int index = blobName.LastIndexOf("\\");
-                        if (index != -1)
-                        {
-                            blobName = blobName.Substring(index + 1);
-                        }
-                        CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
-
-                        // Upload content to the blob, which will create the blob if it does not already exist.
-                        //blob.UploadFromFileAsync(file);
-                        //blob.UploadFromFile(file, System.IO.FileMode.Open);
-
-                        String path = folder + "\\" + blobName;
-                        if (File.Exists(path))
-                        {
-                            File.Delete(path);
-                        }
-
-                        blob.DownloadToFile(path, System.IO.FileMode.CreateNew);
+                        blobName = blobName.Substring(index + 1);
                     }
+                    CloudBlockBlob blob = container.GetBlockBlobReference(blobName);
+
+                    String path = System.IO.Path.Combine(folder, blobName);
+                    await blob.DownloadToFileAsync(path, System.IO.FileMode.Create);
                 }
+            }
 
-                Actions[action.Id].IsCompleted = true;
-            });
+            Actions[action.Id].IsCompleted = true;
 
-            // Task complete - update UI.
-
-            task.ContinueWith((t) =>
-            {
-                UpdateStatus();
-            }, TaskScheduler.FromCurrentSynchronizationContext());
+            UpdateStatus();
         }
 
         #endregion
@@ -4099,7 +4023,7 @@ namespace AzureStorageExplorer
         //************************
         // Get and show messages in selected queue container. Call from UI thread.
 
-        public void ShowQueueContainer(String containerName)
+        private async Task ShowQueueContainerAsync(String containerName)
         {
             try
             {
@@ -4110,12 +4034,12 @@ namespace AzureStorageExplorer
                 MessageListView.ItemsSource = null; //  MessageCollection;
 
                 int containerCount = 0;
-                long containerSize = 0;
                 _MessageCollection.Clear();
                 MessageListView.Visibility = Visibility.Visible;
                 QueueToolbarPanel.Visibility = Visibility.Visible;
                 MessageToolbarPanel.Visibility = Visibility.Visible;
-                IEnumerable<CloudQueueMessage> messages = queueClient.GetQueueReference(containerName).PeekMessages(CloudQueueMessage.MaxNumberOfMessagesToPeek);
+                CloudQueue queue = queueClient.GetQueueReference(containerName);
+                IEnumerable<CloudQueueMessage> messages = await queue.PeekMessagesAsync(CloudQueueMessage.MaxNumberOfMessagesToPeek);
                 if (messages != null)
                 {
                     foreach (CloudQueueMessage message in messages)
@@ -4235,11 +4159,11 @@ namespace AzureStorageExplorer
         //*****************************
         // If a default entity filter configuration has been saved for this user, load it now.
 
-        private void LoadDefaultEntityFilter()
+        private async Task LoadDefaultEntityFilterAsync()
         {
             try
             {
-                String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-DefaultEntityFilter.dt1";
+                String filename = System.IO.Path.Combine(System.Windows.Forms.Application.UserAppDataPath, "AzureStorageExplorer6-DefaultEntityFilter.dt1");
                 String line, name, value;
 
                 if (File.Exists(filename))
@@ -4247,7 +4171,7 @@ namespace AzureStorageExplorer
                     using (TextReader reader = File.OpenText(filename))
                     {
                         string[] items = null;
-                        while ((line = reader.ReadLine()) != null)
+                        while ((line = await reader.ReadLineAsync()) != null)
                         {
                             items = line.Split('|');
                             if (items.Length >= 2)
@@ -4313,14 +4237,14 @@ namespace AzureStorageExplorer
 
         //*****************************
         //*                           *
-        //*  SaveDefaultEntityFilter  *
+        //*  SaveDefaultEntityFilterAsync  *
         //*                           *
         //*****************************
         // Save default entity filter configuration.
 
-        private void SaveDefaultEntityFilter()
+        private async Task SaveDefaultEntityFilterAsync()
         {
-            String filename = System.Windows.Forms.Application.UserAppDataPath + "\\AzureStorageExplorer6-DefaultEntityFilter.dt1";
+            String filename = System.IO.Path.Combine(System.Windows.Forms.Application.UserAppDataPath, "AzureStorageExplorer6-DefaultEntityFilter.dt1");
 
             try
             {
@@ -4328,23 +4252,23 @@ namespace AzureStorageExplorer
                 {
                     if (MaxEntityCountFilter != -1)
                     {
-                        writer.WriteLine("MaxEntityCount|" + MaxEntityCountFilter.ToString());
+                        await writer.WriteLineAsync("MaxEntityCount|" + MaxEntityCountFilter.ToString());
                     }
 
                     if (EntityTextFilter != null)
                     {
-                        writer.WriteLine("EntityText|" + EntityTextFilter);
+                        await writer.WriteLineAsync("EntityText|" + EntityTextFilter);
                     }
 
-                    writer.WriteLine("EntitySortHeader|" + EntitySortHeader);
+                    await writer.WriteLineAsync("EntitySortHeader|" + EntitySortHeader);
 
                     if (EntitySortDirection == ListSortDirection.Ascending)
                     {
-                        writer.WriteLine("EntitySortDirection|A");
+                        await writer.WriteLineAsync("EntitySortDirection|A");
                     }
                     else
                     {
-                        writer.WriteLine("EntitySortDirection|D");
+                        await writer.WriteLineAsync("EntitySortDirection|D");
                     }
                 }
             }
@@ -4361,7 +4285,7 @@ namespace AzureStorageExplorer
         //**********************
         // Download a collection of entities to a local file in a selected download format.
 
-        private void DownloadEntities(String tableName, IEnumerable<EntityItem> entities, String format, String outputFile, bool autoOpen)
+        private async Task DownloadEntities(String tableName, IEnumerable<EntityItem> entities, String format, String outputFile, bool autoOpen)
         {
             // Create task action.
 
@@ -4387,73 +4311,69 @@ namespace AzureStorageExplorer
 
             UpdateStatus();
 
-            // Execute background task to perform the downloading.
-
-            Task task = Task.Factory.StartNew(() =>
+            if (entities != null)
             {
-                if (entities != null)
-                {
-                    CloudTable table = tableClient.GetTableReference(tableName);
-                    //table.CreateIfNotExists();
+                CloudTable table = tableClient.GetTableReference(tableName);
+                //table.CreateIfNotExists();
 
-                    if (File.Exists(outputFile))
+                if (File.Exists(outputFile))
+                {
+                    File.Delete(outputFile);
+                }
+
+                // CSV format export
+
+                int e = 0;
+                int f = 0;
+
+                using (TextWriter writer = File.CreateText(outputFile))
+                {
+                    // Write header.
+
+                    switch (format)
                     {
-                        File.Delete(outputFile);
+                        case "csv":
+                            if (TableColumnNames != null)
+                            {
+                                foreach (KeyValuePair<String, bool> col in TableColumnNames)
+                                {
+                                    if (col.Value)
+                                    {
+                                        if (f == 0)
+                                        {
+                                            await writer.WriteAsync("\"" + col.Key + "\"");
+                                        }
+                                        else
+                                        {
+                                            await writer.WriteAsync(",\"" + col.Key + "\"");
+                                        }
+                                        f++;
+                                    } // end if
+                                } // next col
+                                await writer.WriteLineAsync();
+                            } // end if (TableColumns != null)
+                            break;
+                        case "json":
+                            await writer.WriteLineAsync("{");
+                            await writer.WriteLineAsync("    \"Entities\": [");
+                            break;
+                        case "xml":
+                            await writer.WriteLineAsync("<?xml version=\"1.0\" ?>");
+                            await writer.WriteLineAsync("<Entities xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");
+                            break;
+                        default:
+                            break;
                     }
 
-                    // CSV format export
+                    // Write entities - iterate through each entity in the collection and write out a line/record.
 
-                    int e = 0;
-                    int f = 0;
+                    String colName;
+                    String value;
 
-                    using (TextWriter writer = File.CreateText(outputFile))
+                    foreach (EntityItem entity in entities)
                     {
-                        // Write header.
-
                         switch (format)
                         {
-                            case "csv":
-                                if (TableColumnNames != null)
-                                {
-                                    foreach (KeyValuePair<String, bool> col in TableColumnNames)
-                                    {
-                                        if (col.Value)
-                                        {
-                                            if (f == 0)
-                                            {
-                                                writer.Write("\"" + col.Key + "\"");
-                                            }
-                                            else
-                                            {
-                                                writer.Write(",\"" + col.Key + "\"");
-                                            }
-                                            f++;
-                                        } // end if
-                                    } // next col
-                                    writer.WriteLine();
-                                } // end if (TableColumns != null)
-                                break;
-                            case "json":
-                                writer.WriteLine("{");
-                                writer.WriteLine("    \"Entities\": [");
-                                break;
-                            case "xml":
-                                writer.WriteLine("<?xml version=\"1.0\" ?>");
-                                writer.WriteLine("<Entities xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");
-                                break;
-                            default:
-                                break;
-                        }
-
-                        // Write entities - iterate through each entity in the collection and write out a line/record.
-
-                        String colName;
-                        String value;
-
-                        foreach (EntityItem entity in entities)
-                        {
-                            switch (format)
-                            {
                             case "csv":
                                 {
                                     f = 0;
@@ -4475,21 +4395,21 @@ namespace AzureStorageExplorer
                                             }
                                             if (f == 0)
                                             {
-                                                writer.Write(quote_csv(value));
+                                                await writer.WriteAsync(quote_csv(value));
                                             }
                                             else
                                             {
-                                                writer.Write("," + quote_csv(value));
+                                                await writer.WriteAsync("," + quote_csv(value));
                                             }
                                             f++;
                                         } // end if
                                     } // next col
-                                    writer.WriteLine();
+                                    await writer.WriteLineAsync();
                                 } // end CSV
                                 break;
                             case "xml":
                                 {
-                                    writer.WriteLine("  <Entity>");
+                                    await writer.WriteLineAsync("  <Entity>");
                                     foreach (KeyValuePair<String, bool> col in TableColumnNames)
                                     {
                                         // Write out each column that has not been turned off in a filter.
@@ -4507,17 +4427,17 @@ namespace AzureStorageExplorer
                                             }
                                             if (value == NULL_VALUE)
                                             {
-                                                writer.WriteLine("    <" + colName + " xsi:nil=\"true\" />");
+                                                await writer.WriteLineAsync("    <" + colName + " xsi:nil=\"true\" />");
                                             }
                                             else
                                             {
-                                                writer.Write("    <" + colName + ">");
-                                                writer.Write(quote_xml(value));
-                                                writer.WriteLine("</" + colName + ">");
+                                                await writer.WriteAsync("    <" + colName + ">");
+                                                await writer.WriteAsync(quote_xml(value));
+                                                await writer.WriteLineAsync("</" + colName + ">");
                                             }
                                         } // end if
                                     } // next col
-                                    writer.WriteLine("  </Entity>");
+                                    await writer.WriteLineAsync("  </Entity>");
                                 } // end XML
                                 break;
                             case "json":
@@ -4525,9 +4445,9 @@ namespace AzureStorageExplorer
                                     f = 0;
                                     if (e > 0)
                                     {
-                                        writer.WriteLine("        },");
+                                        await writer.WriteLineAsync("        },");
                                     }
-                                    writer.WriteLine("        {");
+                                    await writer.WriteLineAsync("        {");
                                     foreach (KeyValuePair<String, bool> col in TableColumnNames)
                                     {
                                         // Write out each column that has not been turned off in a filter.
@@ -4545,77 +4465,69 @@ namespace AzureStorageExplorer
                                             }
                                             if (f > 0)
                                             {
-                                                writer.WriteLine(",");
+                                                await writer.WriteLineAsync(",");
                                             }
-                                            writer.Write("            \"" + colName + "\": " + quote_json(value));
+                                            await writer.WriteAsync("            \"" + colName + "\": " + quote_json(value));
                                         } // end if
                                         f++;
                                     } // next col
-                                    //writer.WriteLine("      }");
-                                    writer.WriteLine();
+                                    //await writer.WriteLineAsync("      }");
+                                    await writer.WriteLineAsync();
                                 } // end XML
                                 break;
                             default:
                                 break;
-                            } // end switch
-                            e++;
-                            //writer.WriteLine();
-                        } // next entity
+                        } // end switch
+                        e++;
+                        //await writer.WriteLineAsync();
+                    } // next entity
 
-                        // Write footer.
+                    // Write footer.
 
-                        switch (format)
-                        {
-                            case "csv":
-                                break;
-                            case "json":
-                                writer.WriteLine();
-                                writer.WriteLine("        }");
-                                writer.WriteLine("    ]");
-                                writer.WriteLine("}");
-                                break;
-                            case "xml":
-                                writer.WriteLine("</Entities>");
-                                break;
-                        }
+                    switch (format)
+                    {
+                        case "csv":
+                            break;
+                        case "json":
+                            await writer.WriteLineAsync();
+                            await writer.WriteLineAsync("        }");
+                            await writer.WriteLineAsync("    ]");
+                            await writer.WriteLineAsync("}");
+                            break;
+                        case "xml":
+                            await writer.WriteLineAsync("</Entities>");
+                            break;
+                    }
 
-                    } // end using TextWriter
-                } // end if entities != nulll
+                } // end using TextWriter
+            } // end if entities != nulll
 
-                Actions[action.Id].IsCompleted = true;
-            });
+            Actions[action.Id].IsCompleted = true;
 
-            // Task complete - update UI.
+            UpdateStatus();
 
-            task.ContinueWith((t) =>
+            if (autoOpen)
             {
-                UpdateStatus();
-
-                if (autoOpen)
+                try
                 {
-                    try
-                    {
-                        System.Diagnostics.Process.Start(outputFile);
-                    }
-                    catch(Exception)
-                    {
-                        // File could not be opened / no app was associated with its file type.
-                    }
+                    System.Diagnostics.Process.Start(outputFile);
                 }
-
-            }, TaskScheduler.FromCurrentSynchronizationContext());
-
+                catch (Exception)
+                {
+                    // File could not be opened / no app was associated with its file type.
+                }
+            }
         }
 
 
         //********************
         //*                  *
-        //*  UploadEntities  *
+        //*  UploadEntitiesAsync  *
         //*                  *
         //********************
         // Upload a collection of entities from a local file in a selected download format.
 
-        private void UploadEntities(String tableName, String format, String inputFile, String outerElementName, String partitionKeyColumnName, String rowKeyColumnName, bool stopOnError)
+        private async Task UploadEntitiesAsync(String tableName, String format, String inputFile, String outerElementName, String partitionKeyColumnName, String rowKeyColumnName, bool stopOnError)
         {
             int recordNumber = 1;
             int recordsAdded = 0;
@@ -4643,7 +4555,7 @@ namespace AzureStorageExplorer
 
             // Execute background task to perform the downloading.
 
-            Task task = Task.Factory.StartNew(() =>
+            Task task = Task.Factory.StartNew(async () =>
             {
                 CloudTable table = tableClient.GetTableReference(tableName);
                 //table.CreateIfNotExists();
@@ -4704,7 +4616,7 @@ namespace AzureStorageExplorer
                                         {
                                             if (ent is Dictionary<String, Object>)
                                             {
-                                                if (WriteEntity(tableName, ent as Dictionary<String, Object>, partitionKeyColumnName, rowKeyColumnName))
+                                                if (await WriteEntityAsync(tableName, ent as Dictionary<String, Object>, partitionKeyColumnName, rowKeyColumnName))
                                                 {
                                                     recordsAdded++;
                                                     recordNumber++;
@@ -4768,7 +4680,7 @@ namespace AzureStorageExplorer
                                         }
                                     }
 
-                                    if (WriteEntity(tableName, columns.ToArray(), values.ToArray(), partitionKeyColumnName, rowKeyColumnName))
+                                    if (await WriteEntityAsync(tableName, columns.ToArray(), values.ToArray(), partitionKeyColumnName, rowKeyColumnName))
                                     {
                                         recordsAdded++;
                                         recordNumber++;
@@ -4795,51 +4707,51 @@ namespace AzureStorageExplorer
                             // CSV format upload. Uses CsvHelper from http://joshclose.github.io/CsvHelper/.
 
                             try
-                            { 
-                            using (TextReader reader = File.OpenText(inputFile))
                             {
-                                var csv = new CsvHelper.CsvReader(reader);
-                                String[] columns = null;
-                                String[] values = null;
-
-                                while(csv.Read())
+                                using (TextReader reader = File.OpenText(inputFile))
                                 {
-                                    // If first pass, retrieve column names.
+                                    var csv = new CsvHelper.CsvReader(reader);
+                                    String[] columns = null;
+                                    String[] values = null;
 
-                                    if (recordNumber == 1)
+                                    while (csv.Read())
                                     {
-                                        columns = csv.FieldHeaders;
-                                        values = new String[columns.Length];
-                                    }
-                                    recordNumber++;
+                                        // If first pass, retrieve column names.
 
-                                    // Retrieve record values.
-
-                                    int col = 0;
-                                    foreach (String column in columns)
-                                    {
-                                        values[col] = csv.GetField(column);
-                                        col++;
-                                    }
-
-                                    // Write entity.
-
-                                    if (WriteEntity(tableName, columns, values, partitionKeyColumnName, rowKeyColumnName))
-                                    {
-                                        recordsAdded++;
-                                        recordNumber++;
-                                    }
-                                    else
-                                    {
-                                        recordErrors++;
-                                        if (stopOnError)
+                                        if (recordNumber == 1)
                                         {
+                                            columns = csv.FieldHeaders;
+                                            values = new String[columns.Length];
+                                        }
+                                        recordNumber++;
+
+                                        // Retrieve record values.
+
+                                        int col = 0;
+                                        foreach (String column in columns)
+                                        {
+                                            values[col] = csv.GetField(column);
+                                            col++;
+                                        }
+
+                                        // Write entity.
+
+                                        if (await WriteEntityAsync(tableName, columns, values, partitionKeyColumnName, rowKeyColumnName))
+                                        {
+                                            recordsAdded++;
                                             recordNumber++;
-                                            break;
+                                        }
+                                        else
+                                        {
+                                            recordErrors++;
+                                            if (stopOnError)
+                                            {
+                                                recordNumber++;
+                                                break;
+                                            }
                                         }
                                     }
                                 }
-                            }
                             }
                             catch (Exception ex)
                             {
@@ -4857,29 +4769,26 @@ namespace AzureStorageExplorer
 
             // Task complete - update UI.
 
-            task.ContinueWith((t) =>
+            await task;
+
+            if (serializationError != null)
             {
-                if (serializationError != null)
-                {
-                    ShowError(serializationError);
-                }
+                ShowError(serializationError);
+            }
 
-                switch (recordErrors)
-                {
-                    case 0:
-                        break;
-                    case 1:
-                        ShowError("An error occurred inserting entity nunber " + (recordNumber-1).ToString() + ".");
-                        break;
-                    default:
-                        ShowError(recordErrors.ToString() + " errors occurred inserting entities.");
-                        break;
-                }
-                UpdateStatus();
-                ShowTableContainer(SelectedTableContainer);
-
-            }, TaskScheduler.FromCurrentSynchronizationContext());
-
+            switch (recordErrors)
+            {
+                case 0:
+                    break;
+                case 1:
+                    ShowError("An error occurred inserting entity nunber " + (recordNumber - 1).ToString() + ".");
+                    break;
+                default:
+                    ShowError(recordErrors.ToString() + " errors occurred inserting entities.");
+                    break;
+            }
+            UpdateStatus();
+            await ShowTableContainerAsync(SelectedTableContainer);
         }
 
 
@@ -4890,7 +4799,7 @@ namespace AzureStorageExplorer
         //*****************
         // Write an entity, source from an array of column names and an array of values.
 
-        private bool WriteEntity(string tableName, String[] columns, String[] values, String partitionKeyColumnName, String rowKeyColumnName)
+        private async Task<bool> WriteEntityAsync(string tableName, String[] columns, String[] values, String partitionKeyColumnName, String rowKeyColumnName)
         {
             try
             {
@@ -4925,8 +4834,8 @@ namespace AzureStorageExplorer
                 } // next field
 
                 CloudTable table = tableClient.GetTableReference(tableName);
-                table.Execute(TableOperation.Insert(entity));
-                return true;
+                await table.ExecuteAsync(TableOperation.Insert(entity));
+                return true; // we could check the result of the last operation
             }
             catch (Exception ex)
             {
@@ -4944,7 +4853,7 @@ namespace AzureStorageExplorer
         //*****************
         // Write an entity, source from a dictionary of column names and values.
 
-        private bool WriteEntity(string tableName, Dictionary<String, Object> dict, String partitionKeyColumnName, String rowKeyColumnName)
+        private async Task<bool> WriteEntityAsync(string tableName, Dictionary<String, Object> dict, String partitionKeyColumnName, String rowKeyColumnName)
         {
             try
             {
@@ -4976,7 +4885,7 @@ namespace AzureStorageExplorer
                 } // next field
 
                 CloudTable table = tableClient.GetTableReference(tableName);
-                table.Execute(TableOperation.Insert(entity));
+                await table.ExecuteAsync(TableOperation.Insert(entity));
                 return true;
             }
             catch (Exception ex)

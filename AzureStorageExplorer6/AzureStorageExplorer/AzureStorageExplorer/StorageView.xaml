@@ -4,21 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:AzureStorageExplorer"
+             xmlns:helpers="clr-namespace:AzureStorageExplorer.Helpers"
              mc:Ignorable="d" 
              d:DesignHeight="1024" d:DesignWidth="768"
              DataContext="{Binding RelativeSource={RelativeSource Self}}">
-    <UserControl.Resources>
-        <DataTemplate x:Key="StorageItemTemplate" DataType="{x:Type local:OutlineItem}">
-            <TreeViewItem>
-                <TreeViewItem.Header>
-                    <StackPanel Orientation="Horizontal">
-                        <Image Source="/AzureStorageExplorer;component/Images/cloud_folder.png" Height="24" />
-                        <Label Content="{Binding Container}" />
-                    </StackPanel>
-                </TreeViewItem.Header>
-            </TreeViewItem>
-        </DataTemplate>
-    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -141,40 +130,36 @@
                 </ToolBarTray>
             </StackPanel>
 
-            <TreeView Grid.Row="2"  x:Name="AccountTreeView" SelectedItemChanged="AccountTreeView_SelectedItemChanged">
-                <TreeViewItem x:Name="blobSection"
-                              Header="Blob Containers"
-                              ItemsSource="{Binding blobSectionItems}"
-                              ItemTemplate="{DynamicResource StorageItemTemplate}"
-                              VirtualizingStackPanel.IsVirtualizing="True"
-                              VirtualizingStackPanel.VirtualizationMode="Recycling">
-                    <TreeViewItem.Tag>
-                        <local:OutlineItem ItemType="{x:Static local:ItemType.BLOB_SERVICE}" />
-                    </TreeViewItem.Tag>
-                </TreeViewItem>
-                <TreeViewItem x:Name="queueSection"
-                              Header="Queues"
-                              ItemsSource="{Binding queueSectionItems}"
-                              ItemTemplate="{DynamicResource StorageItemTemplate}"
-                              VirtualizingStackPanel.IsVirtualizing="True"
-                              VirtualizingStackPanel.VirtualizationMode="Recycling">
-                    <TreeViewItem.Tag>
-                        <local:OutlineItem ItemType="{x:Static local:ItemType.QUEUE_SERVICE}" />
-                    </TreeViewItem.Tag>
-                </TreeViewItem>
-                <TreeViewItem x:Name="tableSection"
-                              Header="Tables"
-                              ItemsSource="{Binding tableSectionItems}"
-                              ItemTemplate="{DynamicResource StorageItemTemplate}"
-                              VirtualizingStackPanel.IsVirtualizing="True"
-                              VirtualizingStackPanel.VirtualizationMode="Recycling">
-                    <TreeViewItem.Tag>
-                        <local:OutlineItem ItemType="{x:Static local:ItemType.TABLE_SERVICE}" />
-                    </TreeViewItem.Tag>
-                </TreeViewItem>
-                <TreeView.Resources>
-                    <SolidColorBrush Color="#DDDDDD" x:Key="{x:Static SystemColors.HighlightBrushKey}"/>
-                </TreeView.Resources>
+            <TreeView x:Name="AccountTreeView"
+                      Grid.Row="2"
+                      SelectedItemChanged="AccountTreeView_SelectedItemChanged">
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate DataType="{x:Type local:StorageServiceItem}"
+                                              ItemsSource="{Binding Items}">
+                        <WrapPanel>
+                            <TextBlock Text="{Binding ItemName}" />
+                            <TextBlock Text="{Binding Path=Items.Count, StringFormat={} ({0})}" />
+                        </WrapPanel>
+
+                        <HierarchicalDataTemplate.ItemTemplate>
+                            <DataTemplate DataType="{x:Type local:OutlineItem}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding ItemType, Converter={helpers:ItemTypeToImageConverter}}" Height="24" />
+                                    <Label Content="{Binding Container}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </HierarchicalDataTemplate.ItemTemplate>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+                <local:StorageServiceItem x:Name="blobSection"
+                                          ItemType="{x:Static local:ItemType.BLOB_SERVICE}"
+                                          ItemName="Blob Containers"/>
+                <local:StorageServiceItem x:Name="queueSection"
+                                          ItemType="{x:Static local:ItemType.QUEUE_SERVICE}"
+                                          ItemName="Queues"/>
+                <local:StorageServiceItem x:Name="tableSection"
+                                          ItemType="{x:Static local:ItemType.TABLE_SERVICE}"
+                                          ItemName="Tables"/>
             </TreeView>
         </Grid>
         

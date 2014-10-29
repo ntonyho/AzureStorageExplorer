@@ -145,6 +145,7 @@
     <Compile Include="Dialogs\NewContainerDialog.xaml.cs">
       <DependentUpon>NewContainerDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\ItemTypeToImageConverter.cs" />
     <Compile Include="Helpers\Crypto.cs" />
     <Compile Include="Models\Action.cs" />
     <Compile Include="Models\MessageItem.cs" />
@@ -158,6 +159,7 @@
     <Compile Include="Models\ElasticTableEntity.cs" />
     <Compile Include="Models\ICustomMemberProvider.cs" />
     <Compile Include="Models\ItemType.cs" />
+    <Compile Include="Models\StorageServiceItem.cs" />
     <Compile Include="Models\OutlineItem.cs" />
     <Compile Include="StorageView.xaml.cs">
       <DependentUpon>StorageView.xaml</DependentUpon>
@@ -253,6 +255,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="StorageView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Templates\BlobItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Templates\LeftPane.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
