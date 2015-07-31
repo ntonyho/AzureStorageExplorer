@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms.VisualStyles;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -195,10 +196,9 @@ namespace AzureStorageExplorer
             }
 
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
-            IEnumerable<CloudBlobContainer> containers = blobClient.ListContainers();
-            foreach (Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer container in containers)
-            {
-            }
+
+            // This will throw exception is the credential is incorrect
+            ContainerResultSegment containersSegmented = blobClient.ListContainersSegmented(null, ContainerListingDetails.None, 1, null);
         }
 
         private void CancelAccount_Click(object sender, RoutedEventArgs e)

@@ -30,7 +30,8 @@ namespace AzureStorageExplorer
                 case "RowKey":
                     return this.RowKey;
                 default:
-                    return this.Properties[name].StringValue;
+                    EntityProperty entityProperty = this.Properties[name];
+                    return entityProperty.PropertyAsObject.ToString();
             }
         }
 

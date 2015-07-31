@@ -78,7 +78,7 @@ namespace AzureStorageExplorer
             if (dlg.ShowDialog().Value)
             {
                 String accountName = dlg.AccountName.Text;
-                
+
                 AzureAccount account = new AzureAccount()
                 {
                     IsDeveloperAccount = dlg.AccountTypeDev.IsChecked.Value,
@@ -118,25 +118,25 @@ namespace AzureStorageExplorer
 
         private void RemoveAccount_Click(object sender, RoutedEventArgs e)
         {
-            if (AccountList.SelectedIndex==-1 | AccountList.SelectedIndex==0) return;
+            if (AccountList.SelectedIndex == -1 | AccountList.SelectedIndex == 0) return;
 
-            int index = AccountList.SelectedIndex-1;
+            int index = AccountList.SelectedIndex - 2;
 
             String accountName = Accounts[index].Name;
 
             // Confirm removal of storage account.
 
-            if (System.Windows.MessageBox.Show("Are you sure you want to remove '" + accountName + "' from your list of storage accounts?", "Confirm Remove Storage Account", MessageBoxButton.YesNo)==MessageBoxResult.Yes)
-            { 
+            if (System.Windows.MessageBox.Show("Are you sure you want to remove '" + accountName + "' from your list of storage accounts?", "Confirm Remove Storage Account", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            {
                 // If account is currently displayed, removed its tab.
 
                 if (StorageViewsTabControl.Items != null)
                 {
-                    foreach(TabItem item in StorageViewsTabControl.Items)
+                    foreach (TabItem item in StorageViewsTabControl.Items)
                     {
                         StorageView view = item.Content as StorageView;
-                        if (view != null && view.Account.Name==accountName)
-                        { 
+                        if (view != null && view.Account.Name == accountName)
+                        {
                             StorageViewsTabControl.Items.Remove(item);
                             break;
                         }
@@ -321,7 +321,7 @@ namespace AzureStorageExplorer
                                 Accounts.Add(account);
                             }
                         }
-                        catch(Exception)
+                        catch (Exception)
                         {
                             // If something is wrong in the account data file, don't let that stop the rest from loading.
                         }
@@ -426,7 +426,7 @@ namespace AzureStorageExplorer
                     // Open a tab for each storage account.
 
                     int index = 0;
-                    foreach(String item in AccountList.Items)
+                    foreach (String item in AccountList.Items)
                     {
                         if (index > 1)
                         {
@@ -436,7 +436,7 @@ namespace AzureStorageExplorer
                     }
                 }
                 else
-                { 
+                {
                     // Open a tab for the selected storage account.
 
                     await AddStorageViewAsync(name);
@@ -499,7 +499,7 @@ namespace AzureStorageExplorer
             {
                 System.Diagnostics.Process.Start("http://manage.windowsazure.com");
             }
-            catch(Exception)
+            catch (Exception)
             {
             }
         }

@@ -160,6 +160,10 @@ namespace AzureStorageExplorer
 
             try
             {
+                blobSection.Items.Clear();
+                queueSection.Items.Clear();
+                tableSection.Items.Clear();
+                
                 var tasks = new Task[] { LoadLogsContainerAsync(), LoadBlobContainersAsync(), LoadQueuesAsync(), LoadTablesAsync() };
                 await Task.WhenAll(tasks);
 
@@ -207,7 +211,7 @@ namespace AzureStorageExplorer
 
         private async Task LoadBlobContainersAsync()
         {
-            var containersSegment = await blobClient.ListContainersSegmentedAsync(new BlobContinuationToken());
+            var containersSegment = await blobClient.ListContainersSegmentedAsync(null);
             //var containersCount = 0;
             while (containersSegment.Results != null)
             {
@@ -220,6 +224,13 @@ namespace AzureStorageExplorer
                     }));
                 await Task.WhenAll(tasks);
                 //containersCount += containersSegment.Results.Count();
+
+                if (containersSegment.ContinuationToken == null)
+                {
+                    // All containers have been listed
+                    break;
+                }
+
                 containersSegment = await blobClient.ListContainersSegmentedAsync(containersSegment.ContinuationToken);
             }
             //blobSection.Header = "Blob Containers (" + containersCount.ToString() + ")";
@@ -308,7 +319,7 @@ namespace AzureStorageExplorer
             
             MessageToolbarPanel.Visibility = Visibility.Collapsed;
 
-            MessageListView.Visibility = System.Windows.Visibility.Collapsed;
+            MessageListView.Visibility = Visibility.Collapsed;
 
             TableToolbarPanel.Visibility = Visibility.Collapsed;
             TableListView.Visibility = Visibility.Collapsed;
@@ -386,7 +397,7 @@ namespace AzureStorageExplorer
                             ButtonContainerAccessIcon.Source = new BitmapImage(new Uri("pack://application:,,/Images/private.png"));
                         }
 
-                        await ShowBlobContainerAsync(SelectedBlobContainer);
+                        await ShowBlobContainerAsync(SelectedBlobContainer, loadData: false);
                         break;
                     case ItemType.QUEUE_CONTAINER:   // Queue
                         ContainerImage.Source = new BitmapImage(new Uri("pack://application:,,/Images/cloud_queue.png"));
@@ -400,7 +411,7 @@ namespace AzureStorageExplorer
                         ButtonDeleteQueue.Visibility = Visibility.Visible;
 
                         SelectedQueueContainer = outlineItem.Container;
-                        await ShowQueueContainerAsync(SelectedQueueContainer);
+                        await ShowQueueContainerAsync(SelectedQueueContainer, loadData: false);
                         break;
                     case ItemType.TABLE_CONTAINER:   // Table
                         TableToolbarPanel.Visibility = Visibility.Visible;
@@ -417,7 +428,7 @@ namespace AzureStorageExplorer
 
                         TableColumnNames.Clear();
 
-                        await ShowTableContainerAsync(SelectedTableContainer);
+                        await ShowTableContainerAsync(SelectedTableContainer, loadData: false);
                         break;
                     default:
                         break;
@@ -2412,21 +2423,13 @@ namespace AzureStorageExplorer
 
             String message = "To delete a table, select a table and then clck the Delete Table button.";
 
-            if (AccountTreeView.SelectedItem == null || !(AccountTreeView.SelectedItem is TreeViewItem))
+            if (AccountTreeView.SelectedItem == null || !(AccountTreeView.SelectedItem is OutlineItem))
             {
                 MessageBox.Show(message, "Table Selection Required");
                 return;
             }
 
-            TreeViewItem tvi = AccountTreeView.SelectedItem as TreeViewItem;
-
-            if (!(tvi.Tag is OutlineItem))
-            {
-                MessageBox.Show(message, "Table Selection Required");
-                return;
-            }
-
-            OutlineItem item = tvi.Tag as OutlineItem;
+            OutlineItem item = AccountTreeView.SelectedItem as OutlineItem;
 
             if (item.ItemType != ItemType.TABLE_CONTAINER)
             {
@@ -3239,7 +3242,7 @@ namespace AzureStorageExplorer
         //***********************
         // Get and show blobs in selected blob container. Call from UI thread.
 
-        private async Task ShowBlobContainerAsync(String containerName) //, CancellationToken token, TaskScheduler uiTask)
+        private async Task ShowBlobContainerAsync(String containerName, bool loadData = true) //, CancellationToken token, TaskScheduler uiTask)
         {
             try
             {
@@ -3256,13 +3259,20 @@ namespace AzureStorageExplorer
                 ContainerToolbarPanel.Visibility = Visibility.Visible;
                 BlobToolbarPanel.Visibility = Visibility.Visible;
 
+                if (!loadData)
+                {
+                    ContainerDetails.Text = "Click Refresh to load the data";
+                    return;
+                }
+
                 CloudBlobContainer container = blobClient.GetContainerReference(containerName);
                 if (container != null)
                 {
-                    var segment = await container.ListBlobsSegmentedAsync(new BlobContinuationToken());
-                    IEnumerable<IListBlobItem> blobs = segment.Results;
-                    while (blobs != null)
+                    var segment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, null, null, null, null);
+                    
+                    while (segment != null)
                     {
+                        IEnumerable<IListBlobItem> blobs = segment.Results;
                         foreach (IListBlobItem item in blobs)
                         {
                             try
@@ -3338,8 +3348,14 @@ namespace AzureStorageExplorer
 
                             }
                         } // end foreach
-                        segment = await container.ListBlobsSegmentedAsync(segment.ContinuationToken);
-                        blobs = segment.Results;
+
+                        if (segment.ContinuationToken == null)
+                        {
+                            // All blobs have been listed
+                            break;
+                        }
+
+                        segment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, null, segment.ContinuationToken, null, null);
                     }
 
                     ContainerListView.ItemsSource = BlobCollection;
@@ -3354,14 +3370,15 @@ namespace AzureStorageExplorer
                     {
                         ContainerDetails.Text = "(" + containerCount.ToString() + " blobs, " + LengthText(containerSize) + ") as of " + DateTime.Now.ToString();
                     }
-
-                    this.Cursor = Cursors.Arrow;
                 }
             }
             catch(Exception ex)
             {
-                this.Cursor = Cursors.Wait;
                 ShowError("Error retrieving blob list: " + ex.Message);
+            }
+            finally
+            {
+                this.Cursor = Cursors.Arrow;
             }
         }
 
@@ -3430,7 +3447,7 @@ namespace AzureStorageExplorer
         //************************
         // Get and show entities in selected table container. Call from UI thread.
 
-        private async Task ShowTableContainerAsync(String tableName)
+        private async Task ShowTableContainerAsync(String tableName, bool loadData = true)
         {
             try
             {
@@ -3459,6 +3476,12 @@ namespace AzureStorageExplorer
                 _EntityCollection.Clear();
                 TableListView.Visibility = Visibility.Visible;
                 EntityToolbarPanel.Visibility = Visibility.Visible;
+
+                if (!loadData)
+                {
+                    ContainerDetails.Text = "Click Refresh to load the data";
+                    return;
+                }
 
                 CloudTable table = tableClient.GetTableReference(tableName);
 
@@ -3582,7 +3605,7 @@ namespace AzureStorageExplorer
                             }
                             else
                             {
-                                foreach(KeyValuePair<String, String> field in item.Fields)
+                                foreach (KeyValuePair<String, String> field in item.Fields)
                                 {
                                     if (field.Value.IndexOf(EntityTextFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
                                     {
@@ -3623,13 +3646,14 @@ namespace AzureStorageExplorer
                 }
 
                 TableListView.ItemsSource = EntityCollection;
-
-                this.Cursor = Cursors.Arrow;
             }
-            catch(Exception ex)
+            catch (Exception ex)
+            {
+                ShowError("Error querying table: " + ex.Message);
+            }
+            finally
             {
                 this.Cursor = Cursors.Arrow;
-                ShowError("Error querying table: " + ex.Message);
             }
         }
 
@@ -4023,7 +4047,7 @@ namespace AzureStorageExplorer
         //************************
         // Get and show messages in selected queue container. Call from UI thread.
 
-        private async Task ShowQueueContainerAsync(String containerName)
+        private async Task ShowQueueContainerAsync(String containerName, bool loadData = true)
         {
             try
             {
@@ -4038,6 +4062,13 @@ namespace AzureStorageExplorer
                 MessageListView.Visibility = Visibility.Visible;
                 QueueToolbarPanel.Visibility = Visibility.Visible;
                 MessageToolbarPanel.Visibility = Visibility.Visible;
+
+                if (!loadData)
+                {
+                    ContainerDetails.Text = "Click Refresh to load the data";
+                    return;
+                }
+
                 CloudQueue queue = queueClient.GetQueueReference(containerName);
                 IEnumerable<CloudQueueMessage> messages = await queue.PeekMessagesAsync(CloudQueueMessage.MaxNumberOfMessagesToPeek);
                 if (messages != null)
@@ -4136,14 +4167,15 @@ namespace AzureStorageExplorer
                             ContainerDetails.Text = "(" + containerCount.ToString() + " messages) as of " + DateTime.Now.ToString();
                         }
                     }
-
-                    this.Cursor = Cursors.Arrow;
                 }
             }
             catch (Exception ex)
             {
-                this.Cursor = Cursors.Wait;
                 ShowError("Error retrieving message list: " + ex.Message);
+            }
+            finally
+            {
+                this.Cursor = Cursors.Arrow;
             }
         }
 
