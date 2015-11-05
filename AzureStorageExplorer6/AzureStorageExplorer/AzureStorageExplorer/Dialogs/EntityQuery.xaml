@@ -22,11 +22,12 @@
                         <ComboBoxItem>-- None --</ComboBoxItem>
                     </ComboBox>
                     <ComboBox x:Name="Condition1" x:FieldModifier="public" Width="110" Margin="0,0,12,0" >
-                        <ComboBoxItem IsSelected="True">equals</ComboBoxItem>
-                        <ComboBoxItem>does not equal</ComboBoxItem>
-                        <ComboBoxItem>contains</ComboBoxItem>
-                        <ComboBoxItem>starts with</ComboBoxItem>
-                        <ComboBoxItem>ends with</ComboBoxItem>
+                        <ComboBoxItem IsSelected="True">==</ComboBoxItem>
+                        <ComboBoxItem>&gt;</ComboBoxItem>
+                        <ComboBoxItem>&gt;=</ComboBoxItem>
+                        <ComboBoxItem>&lt;</ComboBoxItem>
+                        <ComboBoxItem>&lt;=</ComboBoxItem>
+                        <ComboBoxItem>&lt;&gt;</ComboBoxItem>
                     </ComboBox>
                     <TextBox x:Name="Value1" x:FieldModifier="public" Margin="0,2,0,0" Width="220" HorizontalAlignment="Left" Background="LightYellow"/>
                 </StackPanel>
@@ -36,11 +37,12 @@
                         <ComboBoxItem>-- None --</ComboBoxItem>
                     </ComboBox>
                     <ComboBox x:Name="Condition2" x:FieldModifier="public" Width="110" Margin="0,0,12,0" >
-                        <ComboBoxItem IsSelected="True">equals</ComboBoxItem>
-                        <ComboBoxItem>does not equal</ComboBoxItem>
-                        <ComboBoxItem>contains</ComboBoxItem>
-                        <ComboBoxItem>starts with</ComboBoxItem>
-                        <ComboBoxItem>ends with</ComboBoxItem>
+                        <ComboBoxItem IsSelected="True">==</ComboBoxItem>
+                        <ComboBoxItem>&gt;</ComboBoxItem>
+                        <ComboBoxItem>&gt;=</ComboBoxItem>
+                        <ComboBoxItem>&lt;</ComboBoxItem>
+                        <ComboBoxItem>&lt;=</ComboBoxItem>
+                        <ComboBoxItem>&lt;&gt;</ComboBoxItem>
                     </ComboBox>
                     <TextBox x:Name="Value2" x:FieldModifier="public" Margin="0,2,0,0" Width="220" HorizontalAlignment="Left" Background="LightYellow"/>
                 </StackPanel>
@@ -50,11 +52,12 @@
                         <ComboBoxItem>-- None --</ComboBoxItem>
                     </ComboBox>
                     <ComboBox x:Name="Condition3" x:FieldModifier="public" Width="110" Margin="0,0,12,0" >
-                        <ComboBoxItem IsSelected="True">equals</ComboBoxItem>
-                        <ComboBoxItem>does not equal</ComboBoxItem>
-                        <ComboBoxItem>contains</ComboBoxItem>
-                        <ComboBoxItem>starts with</ComboBoxItem>
-                        <ComboBoxItem>ends with</ComboBoxItem>
+                        <ComboBoxItem IsSelected="True">==</ComboBoxItem>
+                        <ComboBoxItem>&gt;</ComboBoxItem>
+                        <ComboBoxItem>&gt;=</ComboBoxItem>
+                        <ComboBoxItem>&lt;</ComboBoxItem>
+                        <ComboBoxItem>&lt;=</ComboBoxItem>
+                        <ComboBoxItem>&lt;&gt;</ComboBoxItem>
                     </ComboBox>
                     <TextBox x:Name="Value3" x:FieldModifier="public" Margin="0,2,0,0" Width="220" HorizontalAlignment="Left" Background="LightYellow"/>
                 </StackPanel>

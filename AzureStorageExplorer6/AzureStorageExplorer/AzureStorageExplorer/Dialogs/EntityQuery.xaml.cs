@@ -137,7 +137,7 @@ namespace AzureStorageExplorer
                 }
                 foreach (ComboBoxItem item in Condition2.Items)
                 {
-                    if (item.Content.ToString() == conditions[0])
+                    if (item.Content.ToString() == conditions[1])
                     {
                         Condition2.SelectedItem = item;
                         break;
@@ -158,7 +158,7 @@ namespace AzureStorageExplorer
                 }
                 foreach (ComboBoxItem item in Condition3.Items)
                 {
-                    if (item.Content.ToString() == conditions[0])
+                    if (item.Content.ToString() == conditions[2])
                     {
                         Condition3.SelectedItem = item;
                         break;

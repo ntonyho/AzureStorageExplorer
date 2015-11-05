@@ -103,7 +103,7 @@ namespace AzureStorageExplorer
         private String[] EntityQueryColumnName = null;
         private String[] EntityQueryCondition = null;
         private String[] EntityQueryValue = null;
-        
+
         #endregion
 
         #region Initialization
@@ -139,7 +139,7 @@ namespace AzureStorageExplorer
             queueClient = account.CreateCloudQueueClient();
 
             try
-            { 
+            {
                 var serviceProperties = await blobClient.GetServicePropertiesAsync();
 
                 if (serviceProperties.Cors.CorsRules.Count == 0)
@@ -153,7 +153,7 @@ namespace AzureStorageExplorer
                     ButtonBlobServiceCORSLabel.Text = "CORS (" + serviceProperties.Cors.CorsRules.Count.ToString() + ")";
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 // Disallowed for developer storage account.
             }
@@ -163,7 +163,7 @@ namespace AzureStorageExplorer
                 blobSection.Items.Clear();
                 queueSection.Items.Clear();
                 tableSection.Items.Clear();
-                
+
                 var tasks = new Task[] { LoadLogsContainerAsync(), LoadBlobContainersAsync(), LoadQueuesAsync(), LoadTablesAsync() };
                 await Task.WhenAll(tasks);
 
@@ -215,14 +215,16 @@ namespace AzureStorageExplorer
             //var containersCount = 0;
             while (containersSegment.Results != null)
             {
-                var tasks = containersSegment.Results.Select(async container =>
-                    blobSection.Items.Add(new OutlineItem()
+                IEnumerable<Task<OutlineItem>> tasks = containersSegment.Results.Select(async container =>
+                    new OutlineItem()
                     {
                         ItemType = ItemType.BLOB_CONTAINER,
                         Container = container.Name,
                         Permissions = await container.GetPermissionsAsync()
-                    }));
-                await Task.WhenAll(tasks);
+                    });
+                OutlineItem[] outlineItems = await Task.WhenAll(tasks);
+                outlineItems.ToList().ForEach(outlineItem => blobSection.Items.Add(outlineItem));
+
                 //containersCount += containersSegment.Results.Count();
 
                 if (containersSegment.ContinuationToken == null)
@@ -316,7 +318,7 @@ namespace AzureStorageExplorer
 
             QueueToolbarPanel.Visibility = Visibility.Collapsed;
             ButtonDeleteQueue.Visibility = Visibility.Collapsed;
-            
+
             MessageToolbarPanel.Visibility = Visibility.Collapsed;
 
             MessageListView.Visibility = Visibility.Collapsed;
@@ -514,9 +516,9 @@ namespace AzureStorageExplorer
         private void SortBlobList()
         {
             IEnumerable<BlobItem> x;
-            
+
             try
-            { 
+            {
                 ContainerListView.ItemsSource = null;
 
                 switch (BlobSortHeader)
@@ -736,7 +738,7 @@ namespace AzureStorageExplorer
                     TableListView.ItemsSource = EntityCollection;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 entities = from e in _EntityCollection select e;
 
@@ -1090,7 +1092,7 @@ namespace AzureStorageExplorer
             NewAction();
 
             // Configure open file dialog box 
-            
+
             OpenFileDialog dlg = new OpenFileDialog();
             dlg.Filter = "All files (*.*)|*.*|Image files (*.bmp,*.ico;*.jpg,*.gif,*.png,*.tif)|*.bmp;*.ico;*.jpg;*.jpeg;*.gif;*.png;*.tif"; // Filter files by extension 
             dlg.Multiselect = true;
@@ -1515,10 +1517,7 @@ namespace AzureStorageExplorer
 
             dlg.ContainerName.Text = SelectedBlobContainer;
 
-            TreeViewItem tvi = AccountTreeView.SelectedItem as TreeViewItem;
-            if (tvi == null) return;
-
-            OutlineItem item = tvi.Tag as OutlineItem;
+            OutlineItem item = AccountTreeView.SelectedItem as OutlineItem;
             if (item == null) return;
 
             if (item.Permissions == null) return;
@@ -1665,7 +1664,7 @@ namespace AzureStorageExplorer
         private void BlobServiceCORS_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
-            
+
             BlobServiceCORSDialog dlg = new BlobServiceCORSDialog();
 
             // Load dialog with current blob servicec CORS rules.
@@ -1680,7 +1679,7 @@ namespace AzureStorageExplorer
 
             ObservableCollection<CORSRule> rules = new ObservableCollection<CORSRule>();
 
-            foreach(CorsRule rule in serviceProperties.Cors.CorsRules)
+            foreach (CorsRule rule in serviceProperties.Cors.CorsRules)
             {
                 rules.Add(new CORSRule(rule));
             }
@@ -1788,7 +1787,7 @@ namespace AzureStorageExplorer
                         await ShowBlobContainerAsync(SelectedBlobContainer);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     ShowError("Error creating blob " + blobName + ": " + ex.Message);
                 }
@@ -1853,7 +1852,7 @@ namespace AzureStorageExplorer
                     }
                     else
                     {
-                        headerClicked.Column.HeaderTemplate =Resources["HeaderTemplateArrowDown"] as DataTemplate;
+                        headerClicked.Column.HeaderTemplate = Resources["HeaderTemplateArrowDown"] as DataTemplate;
                     }
 
                     // Remove arrow from previously sorted header 
@@ -2067,7 +2066,7 @@ namespace AzureStorageExplorer
         //*                     *
         //***********************
         // Delete selected queue.
-        
+
         private async void DeleteQueue_Click(object sender, RoutedEventArgs e)
         {
             NewAction();
@@ -2526,7 +2525,7 @@ namespace AzureStorageExplorer
             if (dlg.ShowDialog().Value)
             {
                 bool downloadAll = dlg.DownloadAllEntities.IsChecked.Value;
-                
+
                 String format = "csv";
                 if (dlg.DownloadFormatCSV.IsChecked.Value)
                 {
@@ -2565,7 +2564,7 @@ namespace AzureStorageExplorer
                         return;
                     }
                 }
-                
+
                 if (!downloadAll)
                 {
                     DownloadEntities(SelectedTableContainer, entities.ToArray(), format, outputFile, autoOpen);
@@ -2781,10 +2780,9 @@ namespace AzureStorageExplorer
                             col++;
                         }
                     }
-                    await ShowTableContainerAsync(SelectedTableContainer);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ShowError("Error processing query: " + ex.Message);
             }
@@ -2885,10 +2883,6 @@ namespace AzureStorageExplorer
                 {
                     await SaveDefaultEntityFilterAsync();
                 }
-
-                // Refresh the blob list display with the new filter settings.
-
-                await ShowTableContainerAsync(SelectedTableContainer);
             }
         }
 
@@ -2898,7 +2892,7 @@ namespace AzureStorageExplorer
         {
             return TableColumnNames != null || TableColumnNames.Values.All(b => b);
         }
-        
+
         //*********************
         //*                   *
         //*  EntityNew_Click  *
@@ -3201,7 +3195,7 @@ namespace AzureStorageExplorer
                         closeBox.Tag = error.Key;
                         ErrorMessage.Inlines.Add(closeBox);
                         closeBox.MouseDown += ErrorMessageMouseDown;
-                        
+
                         Run run = new Run(error.Value.Message);
                         run.FontWeight = FontWeights.Bold;
                         run.Foreground = new SolidColorBrush(Colors.DarkRed);
@@ -3269,7 +3263,7 @@ namespace AzureStorageExplorer
                 if (container != null)
                 {
                     var segment = await container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, null, null, null, null);
-                    
+
                     while (segment != null)
                     {
                         IEnumerable<IListBlobItem> blobs = segment.Results;
@@ -3343,7 +3337,7 @@ namespace AzureStorageExplorer
                                     }
                                 }
                             }
-                            catch(Exception)
+                            catch (Exception)
                             {
 
                             }
@@ -3372,7 +3366,7 @@ namespace AzureStorageExplorer
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ShowError("Error retrieving blob list: " + ex.Message);
             }
@@ -3495,72 +3489,16 @@ namespace AzureStorageExplorer
                 {
                     EntityQuery.IsChecked = true;
 
-                    IEnumerable<ElasticTableEntity> q = null;
-
-                    switch (EntityQueryCondition[0])
+                    for (int i = 0; i < this.EntityQueryColumnName.Length; i++)
                     {
-                        case "equals":
-                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]) == EntityQueryValue[0]).Select(e => e);
-                            break;
-                        case "does not equal":
-                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]) != EntityQueryValue[0]).Select(e => e);
-                            break;
-                        case "contains":
-                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]).Contains(EntityQueryValue[0])).Select(e => e);
-                            break;
-                        case "starts with":
-                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]).StartsWith(EntityQueryValue[0])).Select(e => e);
-                            break;
-                        case "ends with":
-                            q = table.ExecuteQuery(query).Where(e => e.Value(EntityQueryColumnName[0]).EndsWith(EntityQueryValue[0])).Select(e => e);
-                            break;
+                        this.AppendQueryFilter(
+                            query,
+                            this.EntityQueryColumnName[i],
+                            this.EntityQueryCondition[i],
+                            this.EntityQueryValue[i]);
                     }
 
-                    if (EntityQueryColumnName.Length > 1)
-                    {
-                        switch (EntityQueryCondition[1])
-                        {
-                            case "equals":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[1]) == EntityQueryValue[1]);
-                                break;
-                            case "does not equal":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[1]) != EntityQueryValue[1]);
-                                break;
-                            case "contains":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[1]).Contains(EntityQueryValue[1]));
-                                break;
-                            case "starts with":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[1]).StartsWith(EntityQueryValue[1]));
-                                break;
-                            case "ends with":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[1]).EndsWith(EntityQueryValue[1]));
-                                break;
-                        }
-                    }
-
-                    if (EntityQueryColumnName.Length > 2)
-                    {
-                        switch (EntityQueryCondition[2])
-                        {
-                            case "equals":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[2]) == EntityQueryValue[2]);
-                                break;
-                            case "does not equal":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[2]) != EntityQueryValue[2]);
-                                break;
-                            case "contains":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[2]).Contains(EntityQueryValue[2]));
-                                break;
-                            case "starts with":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[2]).StartsWith(EntityQueryValue[2]));
-                                break;
-                            case "ends with":
-                                q = q.Where(e => e.Value(EntityQueryColumnName[2]).EndsWith(EntityQueryValue[2]));
-                                break;
-                        }
-                    }
-
-                    entities = q.ToList();
+                    entities = table.ExecuteQuery(query).ToList();
                 }
                 else
                 {
@@ -3657,6 +3595,66 @@ namespace AzureStorageExplorer
             }
         }
 
+        private void AppendQueryFilter(TableQuery<ElasticTableEntity> query, string columnName, string condition, string value)
+        {
+            if (!string.IsNullOrEmpty(condition))
+            {
+                string filter;
+                switch (condition)
+                {
+                    case "==":
+                        filter = TableQuery.GenerateFilterCondition(
+                            columnName,
+                            QueryComparisons.Equal,
+                            value);
+                        break;
+                    case ">":
+                        filter = TableQuery.GenerateFilterCondition(
+                            columnName,
+                            QueryComparisons.GreaterThan,
+                            value);
+                        break;
+                    case ">=":
+                        filter = TableQuery.GenerateFilterCondition(
+                            columnName,
+                            QueryComparisons.GreaterThanOrEqual,
+                            value);
+                        break;
+                    case "<":
+                        filter = TableQuery.GenerateFilterCondition(
+                            columnName,
+                            QueryComparisons.LessThan,
+                            value);
+                        break;
+                    case "<=":
+                        filter = TableQuery.GenerateFilterCondition(
+                            columnName,
+                            QueryComparisons.LessThanOrEqual,
+                            value);
+                        break;
+                    case "<>":
+                        filter = TableQuery.GenerateFilterCondition(
+                            columnName,
+                            QueryComparisons.LessThanOrEqual,
+                            value);
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+
+                if (string.IsNullOrEmpty(query.FilterString))
+                {
+                    query.FilterString = filter;
+                }
+                else
+                {
+                    query.FilterString = TableQuery.CombineFilters(
+                        query.FilterString,
+                        TableOperators.And,
+                        filter);
+                }
+            }
+        }
 
         //****************************
         //*                          *
@@ -3725,14 +3723,14 @@ namespace AzureStorageExplorer
                     using (TextReader reader = File.OpenText(filename))
                     {
                         string[] items = null;
-                        while((line = await reader.ReadLineAsync()) != null)
+                        while ((line = await reader.ReadLineAsync()) != null)
                         {
                             items = line.Split('|');
                             if (items.Length >= 2)
                             {
                                 name = items[0];
                                 value = items[1];
-                                switch(name)
+                                switch (name)
                                 {
                                     case "MaxBlobCount":
                                         MaxBlobCountFilter = Convert.ToInt32(value);
@@ -3764,7 +3762,7 @@ namespace AzureStorageExplorer
                                         break;
                                     case "BlobType":
                                         BlobTypeFilter = Convert.ToInt32(value);
-                                        switch(BlobTypeFilter)
+                                        switch (BlobTypeFilter)
                                         {
                                             case 0:
                                             case 1:
@@ -3812,7 +3810,7 @@ namespace AzureStorageExplorer
 
                 } // end if
             } // end try
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 //Console.WriteLine(ex.Message);
             }
@@ -3868,7 +3866,7 @@ namespace AzureStorageExplorer
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ShowError("Error saving blob filter settings to file " + filename + ": " + ex.Message);
             }
@@ -3918,7 +3916,7 @@ namespace AzureStorageExplorer
                         }
 
                         bool isPageBlob = false;
-                            
+
                         if (blobName.ToLower().EndsWith(".vhd"))
                         {
                             isPageBlob = true;
@@ -4079,71 +4077,71 @@ namespace AzureStorageExplorer
 
                         //if (BlobNameFilter == null || blockBlob.Name.IndexOf(BlobNameFilter, 0, StringComparison.OrdinalIgnoreCase) != -1)
                         //{
-                            //if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
-                            //    (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
-                            //{
-                                MessageItem messageItem = new MessageItem()
-                                {
-                                    Id = message.Id,
-                                    DequeueCount = message.DequeueCount,
-                                    //InsertionTime = message.InsertionTime.Value,
-                                    //ExpirationTime = message.ExpirationTime.Value,
-                                    //NextVisibleTime = message.NextVisibleTime.Value,
-                                    PopReceipt = message.PopReceipt,
-                                    //BytesValue = "byte[" + message.AsBytes.Length.ToString() + "]",
-                                    //StringValue = message.AsString
-                                };
+                        //if ((MinBlobSize == -1 || blockBlob.Properties.Length >= MinBlobSize) &&
+                        //    (MaxBlobSize == -1 || blockBlob.Properties.Length <= MaxBlobSize))
+                        //{
+                        MessageItem messageItem = new MessageItem()
+                        {
+                            Id = message.Id,
+                            DequeueCount = message.DequeueCount,
+                            //InsertionTime = message.InsertionTime.Value,
+                            //ExpirationTime = message.ExpirationTime.Value,
+                            //NextVisibleTime = message.NextVisibleTime.Value,
+                            PopReceipt = message.PopReceipt,
+                            //BytesValue = "byte[" + message.AsBytes.Length.ToString() + "]",
+                            //StringValue = message.AsString
+                        };
 
-                                String stringValue = message.AsString;
-                                if (stringValue == null)
-                                {
-                                    messageItem.StringValue = "NULL";
-                                }
-                                else
-                                {
-                                    messageItem.StringValue = stringValue;
-                                }
+                        String stringValue = message.AsString;
+                        if (stringValue == null)
+                        {
+                            messageItem.StringValue = "NULL";
+                        }
+                        else
+                        {
+                            messageItem.StringValue = stringValue;
+                        }
 
-                                if (message.PopReceipt == null)
-                                {
-                                    messageItem.PopReceipt = "NULL";
-                                }
-                                else
-                                {
-                                    messageItem.PopReceipt = message.PopReceipt;
-                                }
+                        if (message.PopReceipt == null)
+                        {
+                            messageItem.PopReceipt = "NULL";
+                        }
+                        else
+                        {
+                            messageItem.PopReceipt = message.PopReceipt;
+                        }
 
-                                if (message.InsertionTime.HasValue)
-                                {
-                                    messageItem.InsertionTime = message.InsertionTime.Value.ToString();
-                                }
-                                else
-                                {
-                                    messageItem.ExpirationTime = "NULL";
-                                }
+                        if (message.InsertionTime.HasValue)
+                        {
+                            messageItem.InsertionTime = message.InsertionTime.Value.ToString();
+                        }
+                        else
+                        {
+                            messageItem.ExpirationTime = "NULL";
+                        }
 
-                                if (message.ExpirationTime.HasValue)
-                                {
-                                    messageItem.ExpirationTime = message.ExpirationTime.Value.ToString();
-                                }
-                                else
-                                {
-                                    messageItem.ExpirationTime = "NULL";
-                                }
+                        if (message.ExpirationTime.HasValue)
+                        {
+                            messageItem.ExpirationTime = message.ExpirationTime.Value.ToString();
+                        }
+                        else
+                        {
+                            messageItem.ExpirationTime = "NULL";
+                        }
 
-                                if (message.NextVisibleTime.HasValue)
-                                {
-                                    messageItem.NextVisibleTime = message.NextVisibleTime.Value.ToString();
-                                }
-                                else
-                                {
-                                    messageItem.NextVisibleTime = "NULL";
-                                }
+                        if (message.NextVisibleTime.HasValue)
+                        {
+                            messageItem.NextVisibleTime = message.NextVisibleTime.Value.ToString();
+                        }
+                        else
+                        {
+                            messageItem.NextVisibleTime = "NULL";
+                        }
 
-                                _MessageCollection.Add(messageItem);
-                                containerCount++;
-                                //containerSize += blockBlob.Properties.Length;
-                            //}
+                        _MessageCollection.Add(messageItem);
+                        containerCount++;
+                        //containerSize += blockBlob.Properties.Length;
+                        //}
                         //}
 
                     } // end foreach
@@ -4941,7 +4939,7 @@ namespace AzureStorageExplorer
 
         private string quote_csv(String value)
         {
-            if (String.IsNullOrEmpty(value) || value==NULL_VALUE)
+            if (String.IsNullOrEmpty(value) || value == NULL_VALUE)
             {
                 return "\"\"";
             }
@@ -5080,7 +5078,7 @@ namespace AzureStorageExplorer
                 {
                     return length.ToString();
                 }
-                }
+            }
             else if (length < (1024 * 1024))
             {
                 return Math.Round(n / 1024, 2).ToString() + "K";
@@ -5103,7 +5101,7 @@ namespace AzureStorageExplorer
             }
             else
             {
-                switch(state.Status)
+                switch (state.Status)
                 {
                     case CopyStatus.Pending:
                         return "Pending";
@@ -5125,13 +5123,13 @@ namespace AzureStorageExplorer
         #endregion
 
         #region Menu Item Handlers
-        
+
         private void MenuItem_StorageAccount_ViewConnectionString_Click(object sender, RoutedEventArgs e)
         {
             CloudStorageAccount account = new CloudStorageAccount(new StorageCredentials(Account.Name, Account.Key), Account.UseSSL);
 
             String connectionString = null;
-           
+
             if (this.Account.IsDeveloperAccount)
             {
                 connectionString = "UseDevelopmentStorage=true;";
@@ -5159,7 +5157,12 @@ namespace AzureStorageExplorer
 
         #endregion
 
-
+        private void AccountTreeViewFilter_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            blobSection.SetFilter(AccountTreeViewFilter.Text);
+            queueSection.SetFilter(AccountTreeViewFilter.Text);
+            tableSection.SetFilter(AccountTreeViewFilter.Text);
+        }
     }
 }
 
